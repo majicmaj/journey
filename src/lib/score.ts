@@ -54,7 +54,7 @@ export function computeDaySummary(
         habitId: h.id,
         contribution: Math.round(clamp(raw, 0, 1) * 100),
         completed: h.kind === "boolean" ? Boolean(e?.completed) : raw >= 1,
-        value: e?.value,
+        value: e?.value ?? null,
       };
     });
 
