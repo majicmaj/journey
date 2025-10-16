@@ -1,0 +1,183 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  /* Create a font token that Tailwind turns into the utility class `font-display` */
+  --font-display: "Pixelify Sans", ui-sans-serif, system-ui, -apple-system,
+                  "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+                  "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+:root {
+  --radius: 0px;
+  --background:oklch(0.924 0.05 65.123);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.5833 0.0889 61.41);
+  --primary-foreground: oklch(0.981 0.03 57.708);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.34 0.08 65.123);
+  --input: oklch(0.34 0.08 65.123);
+  --ring: oklch(0.795 0.184 86.047);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.5833 0.0889 61.41);
+  --sidebar-primary-foreground:oklch(0.981 0.03 57.708);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.5833 0.0889 61.41);
+}
+
+.dark {
+  --background:oklch(0.24 0.03 65.123);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.5833 0.0889 61.41);
+  --primary-foreground: oklch(0.981 0.03 57.708);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.924 0.0689 61.4 / 10%);
+  --input: oklch(0.924 0.0689 61.4 / 15%);
+  --ring: oklch(0.554 0.135 66.442);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.5833 0.0889 61.41);
+  --sidebar-primary-foreground: oklch(0.981 0.03 57.708);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.5833 0.0889 61.41);
+}
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50 active:top-0.5;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+@layer utilities {
+  /* Pixel-art frame: outer border drawn OUTSIDE, corners missing.
+     Inner bevel: bottom + right only (inside). */
+  .pixel-frame {
+    --p: 4px;                 
+    --outer: var(--border); 
+    --lower: oklch(0.24 0.0689 61.4 / 40%);
+    --upper: oklch(0.924 0.0689 61.4 / 20%);
+    position: relative;
+    overflow: visible;        /* ensure the outside border isn't clipped */
+    /* text-shadow: 1.5px 1.5px 0px var(--outer); */
+    text-shadow: 2px 2px 0px var(--outer);
+  }
+
+  /* OUTER border OUTSIDE the element */
+  .pixel-frame::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--p)); /* expand box by --p on all sides */
+    background:
+      /* top (short by --p on both ends) */
+      linear-gradient(var(--outer), var(--outer))
+        left var(--p) top / calc(100% - 2*var(--p)) var(--p) no-repeat,
+      /* bottom */
+      linear-gradient(var(--outer), var(--outer))
+        left var(--p) bottom / calc(100% - 2*var(--p)) var(--p) no-repeat,
+      /* left */
+      linear-gradient(var(--outer), var(--outer))
+        left top var(--p) / var(--p) calc(100% - 2*var(--p)) no-repeat,
+      /* right */
+      linear-gradient(var(--outer), var(--outer))
+        right top var(--p) / var(--p) calc(100% - 2*var(--p)) no-repeat;
+    pointer-events: none;
+  }
+
+  /* INNER bevel (inside): only bottom & right, full length */
+  .pixel-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0; /* moves bevel inside the content box */
+    background:
+      /* top full width */
+      linear-gradient(var(--upper), var(--upper))
+        left var(--p) top / 100% var(--p) no-repeat,
+      /* bottom full width */
+      linear-gradient(var(--lower), var(--lower))
+        left 0 bottom / 100% var(--p) no-repeat,
+      /* left full height */
+      linear-gradient(var(--upper), var(--upper))
+        left 0 top / var(--p) 100% no-repeat,
+      /* right full height */
+      linear-gradient(var(--lower), var(--lower))
+        right 0 top / var(--p) 100% no-repeat;
+    pointer-events: none;
+  }
+}
