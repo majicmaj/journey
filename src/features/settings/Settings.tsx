@@ -1,6 +1,7 @@
 import { PixelButton, PixelInput } from "@/components/pixel";
 import { useSettings } from "@/hooks/useData";
 import { db } from "@/lib/db";
+import { seedMockData } from "@/lib/seed";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Settings() {
@@ -50,6 +51,15 @@ export default function Settings() {
       </label>
       <PixelButton onClick={() => db.delete().then(() => location.reload())}>
         Reset DB
+      </PixelButton>
+      <PixelButton
+        onClick={async () => {
+          await seedMockData({ days: 120, dayStart: data.dayStart });
+          qc.invalidateQueries({ queryKey: ["habits"] });
+          qc.invalidateQueries({ queryKey: ["entries"] });
+        }}
+      >
+        Seed Mock Data
       </PixelButton>
     </div>
   );

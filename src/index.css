@@ -15,6 +15,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-light: var(--light);
+  --color-dark: var(--dark);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -48,6 +50,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 :root {
+  --light: oklch(1 0 0);
+  --dark: oklch(0 0 0);
   --radius: 0px;
   --background: oklch(0.924 0.05 65.123);
   --foreground: oklch(0.141 0.005 285.823);
@@ -61,7 +65,7 @@
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
+  --accent: oklch(0.98 0.04 50.123);
   --accent-foreground: oklch(0.21 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.34 0.08 65.123);
@@ -83,6 +87,8 @@
 }
 
 .dark {
+  --light: oklch(0 0 0);
+  --dark: oklch(1 0 0);
   --background: oklch(0.24 0.03 65.123);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);
@@ -133,8 +139,6 @@
   .pixel-frame {
     --p: 4px;
     --outer: var(--border);
-    --lower: oklch(0.24 0.0689 61.4 / 40%);
-    --upper: oklch(0.924 0.0689 61.4 / 20%);
     position: relative;
     overflow: visible; /* ensure the outside border isn't clipped */
     /* text-shadow: 1.5px 1.5px 0px var(--outer); */
@@ -168,16 +172,28 @@
     inset: 0; /* moves bevel inside the content box */
     background:
       /* top full width */ linear-gradient(
-          var(--upper),
-          var(--upper)
+          color-mix(in srgb, var(--light) 20%, transparent),
+          color-mix(in srgb, var(--light) 20%, transparent)
         )
         left var(--p) top / 100% var(--p) no-repeat,
-      /* bottom full width */ linear-gradient(var(--lower), var(--lower)) left 0
-        bottom / 100% var(--p) no-repeat,
-      /* left full height */ linear-gradient(var(--upper), var(--upper)) left 0
-        top / var(--p) 100% no-repeat,
-      /* right full height */ linear-gradient(var(--lower), var(--lower)) right
-        0 top / var(--p) 100% no-repeat;
+      /* bottom full width */
+        linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        left 0 bottom / 100% var(--p) no-repeat,
+      /* left full height */
+        linear-gradient(
+          color-mix(in srgb, var(--light) 20%, transparent),
+          color-mix(in srgb, var(--light) 20%, transparent)
+        )
+        left 0 top / var(--p) 100% no-repeat,
+      /* right full height */
+        linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        right 0 top / var(--p) 100% no-repeat;
     pointer-events: none;
   }
 }
