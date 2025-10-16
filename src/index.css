@@ -51,7 +51,7 @@
   --radius: 0px;
   --background: oklch(0.924 0.05 65.123);
   --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
+  --card: oklch(0.94 0.02 50.123);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
@@ -117,11 +117,14 @@
 }
 
 @layer base {
+  button {
+    @apply active:top-0.5;
+  }
   * {
-    @apply border-border outline-ring/50 active:top-0.5;
+    @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-display;
   }
 }
 @layer utilities {
@@ -135,7 +138,7 @@
     position: relative;
     overflow: visible; /* ensure the outside border isn't clipped */
     /* text-shadow: 1.5px 1.5px 0px var(--outer); */
-    text-shadow: 2px 2px 0px var(--outer);
+    text-shadow: 2px 2px 0px color-mix(in srgb, var(--border) 10%, transparent);
   }
 
   /* OUTER border OUTSIDE the element */
