@@ -25,7 +25,7 @@ export function contributionRaw(
 }
 
 export function computeDaySummary(
-  dateKey: string,
+  _dateKey: string,
   habits: Habit[],
   entries: DailyEntry[]
 ): {
