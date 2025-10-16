@@ -4,8 +4,8 @@
 @theme {
   /* Create a font token that Tailwind turns into the utility class `font-display` */
   --font-display: "Pixelify Sans", ui-sans-serif, system-ui, -apple-system,
-                  "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
-                  "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -49,7 +49,7 @@
 }
 :root {
   --radius: 0px;
-  --background:oklch(0.924 0.05 65.123);
+  --background: oklch(0.924 0.05 65.123);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -75,7 +75,7 @@
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.141 0.005 285.823);
   --sidebar-primary: oklch(0.5833 0.0889 61.41);
-  --sidebar-primary-foreground:oklch(0.981 0.03 57.708);
+  --sidebar-primary-foreground: oklch(0.981 0.03 57.708);
   --sidebar-accent: oklch(0.967 0.001 286.375);
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
@@ -83,7 +83,7 @@
 }
 
 .dark {
-  --background:oklch(0.24 0.03 65.123);
+  --background: oklch(0.24 0.03 65.123);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);
   --card-foreground: oklch(0.985 0 0);
@@ -116,7 +116,6 @@
   --sidebar-ring: oklch(0.5833 0.0889 61.41);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50 active:top-0.5;
@@ -129,12 +128,12 @@
   /* Pixel-art frame: outer border drawn OUTSIDE, corners missing.
      Inner bevel: bottom + right only (inside). */
   .pixel-frame {
-    --p: 4px;                 
-    --outer: var(--border); 
+    --p: 4px;
+    --outer: var(--border);
     --lower: oklch(0.24 0.0689 61.4 / 40%);
     --upper: oklch(0.924 0.0689 61.4 / 20%);
     position: relative;
-    overflow: visible;        /* ensure the outside border isn't clipped */
+    overflow: visible; /* ensure the outside border isn't clipped */
     /* text-shadow: 1.5px 1.5px 0px var(--outer); */
     text-shadow: 2px 2px 0px var(--outer);
   }
@@ -145,18 +144,17 @@
     position: absolute;
     inset: calc(-1 * var(--p)); /* expand box by --p on all sides */
     background:
-      /* top (short by --p on both ends) */
-      linear-gradient(var(--outer), var(--outer))
-        left var(--p) top / calc(100% - 2*var(--p)) var(--p) no-repeat,
-      /* bottom */
-      linear-gradient(var(--outer), var(--outer))
-        left var(--p) bottom / calc(100% - 2*var(--p)) var(--p) no-repeat,
-      /* left */
-      linear-gradient(var(--outer), var(--outer))
-        left top var(--p) / var(--p) calc(100% - 2*var(--p)) no-repeat,
-      /* right */
-      linear-gradient(var(--outer), var(--outer))
-        right top var(--p) / var(--p) calc(100% - 2*var(--p)) no-repeat;
+      /* top (short by --p on both ends) */ linear-gradient(
+          var(--outer),
+          var(--outer)
+        )
+        left var(--p) top / calc(100% - 2 * var(--p)) var(--p) no-repeat,
+      /* bottom */ linear-gradient(var(--outer), var(--outer)) left var(--p)
+        bottom / calc(100% - 2 * var(--p)) var(--p) no-repeat,
+      /* left */ linear-gradient(var(--outer), var(--outer)) left top var(--p) /
+        var(--p) calc(100% - 2 * var(--p)) no-repeat,
+      /* right */ linear-gradient(var(--outer), var(--outer)) right top var(--p) /
+        var(--p) calc(100% - 2 * var(--p)) no-repeat;
     pointer-events: none;
   }
 
@@ -166,18 +164,17 @@
     position: absolute;
     inset: 0; /* moves bevel inside the content box */
     background:
-      /* top full width */
-      linear-gradient(var(--upper), var(--upper))
+      /* top full width */ linear-gradient(
+          var(--upper),
+          var(--upper)
+        )
         left var(--p) top / 100% var(--p) no-repeat,
-      /* bottom full width */
-      linear-gradient(var(--lower), var(--lower))
-        left 0 bottom / 100% var(--p) no-repeat,
-      /* left full height */
-      linear-gradient(var(--upper), var(--upper))
-        left 0 top / var(--p) 100% no-repeat,
-      /* right full height */
-      linear-gradient(var(--lower), var(--lower))
-        right 0 top / var(--p) 100% no-repeat;
+      /* bottom full width */ linear-gradient(var(--lower), var(--lower)) left 0
+        bottom / 100% var(--p) no-repeat,
+      /* left full height */ linear-gradient(var(--upper), var(--upper)) left 0
+        top / var(--p) 100% no-repeat,
+      /* right full height */ linear-gradient(var(--lower), var(--lower)) right
+        0 top / var(--p) 100% no-repeat;
     pointer-events: none;
   }
 }
