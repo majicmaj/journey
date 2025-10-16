@@ -61,7 +61,7 @@
   --popover-foreground: oklch(0.141 0.005 285.823);
   --primary: oklch(0.5833 0.0889 61.41);
   --primary-foreground: oklch(0.981 0.03 57.708);
-  --secondary: oklch(0.967 0.001 286.375);
+  --secondary: oklch(0.6433 0.169 126.41);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
@@ -132,6 +132,10 @@
   body {
     @apply bg-background text-foreground font-display;
   }
+
+  .pixelart-icons-font {
+    @apply inline-block;
+  }
 }
 @layer utilities {
   /* Pixel-art frame: outer border drawn OUTSIDE, corners missing.
@@ -171,24 +175,24 @@
     position: absolute;
     inset: 0; /* moves bevel inside the content box */
     background:
-      /* top full width */ linear-gradient(
+      /* top (short by --p on both ends) */ linear-gradient(
           color-mix(in srgb, var(--light) 20%, transparent),
           color-mix(in srgb, var(--light) 20%, transparent)
         )
         left var(--p) top / 100% var(--p) no-repeat,
-      /* bottom full width */
+      /* bottom (short by --p on both ends) */
         linear-gradient(
           color-mix(in srgb, var(--dark) 20%, transparent),
           color-mix(in srgb, var(--dark) 20%, transparent)
         )
         left 0 bottom / 100% var(--p) no-repeat,
-      /* left full height */
+      /* left (short by --p on both ends) */
         linear-gradient(
           color-mix(in srgb, var(--light) 20%, transparent),
           color-mix(in srgb, var(--light) 20%, transparent)
         )
         left 0 top / var(--p) 100% no-repeat,
-      /* right full height */
+      /* right (short by --p on both ends) */
         linear-gradient(
           color-mix(in srgb, var(--dark) 20%, transparent),
           color-mix(in srgb, var(--dark) 20%, transparent)

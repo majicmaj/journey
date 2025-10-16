@@ -13,7 +13,7 @@ export const PixelInput = forwardRef<HTMLInputElement, PixelInputProps>(
         <input
           ref={ref}
           className={cn(
-            "bg-card flex-1 text-foreground p-3 placeholder:text-muted-foreground outline-none",
+            "bg-card flex-1 text-foreground px-2 py-1.5 placeholder:text-muted-foreground outline-none",
             className
           )}
           {...props}
