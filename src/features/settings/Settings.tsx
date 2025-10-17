@@ -18,6 +18,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMemo, useState } from "react";
+import { SaveIcon } from "@/components/pixel/icons";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Settings() {
   const { data } = useSettings();
@@ -242,26 +245,24 @@ export default function Settings() {
       <hr className="my-4 w-full border-2" />
 
       <label className="flex items-center gap-3">
-        <PixelInput
+        <Checkbox
           aria-label="Inline value input"
-          type="checkbox"
           checked={data.inlineValueInput}
-          onChange={(e) =>
+          onCheckedChange={(checked: boolean) =>
             db.settings
-              .put({ ...data, inlineValueInput: e.target.checked })
+              .put({ ...data, inlineValueInput: checked })
               .then(() => qc.invalidateQueries({ queryKey: ["settings"] }))
           }
         />
         <span>Inline value input</span>
       </label>
       <label className="flex items-center gap-3">
-        <PixelInput
+        <Checkbox
           aria-label="Show streaks"
-          type="checkbox"
           checked={data.showStreaks}
-          onChange={(e) =>
+          onCheckedChange={(checked: boolean) =>
             db.settings
-              .put({ ...data, showStreaks: e.target.checked })
+              .put({ ...data, showStreaks: checked })
               .then(() => qc.invalidateQueries({ queryKey: ["settings"] }))
           }
         />
@@ -272,13 +273,12 @@ export default function Settings() {
 
       <div className="flex flex-col gap-3">
         <label className="flex items-center gap-3">
-          <PixelInput
-            type="checkbox"
+          <Checkbox
             checked={Boolean(data.themeDark)}
-            onChange={async (e) => {
+            onCheckedChange={async (checked: boolean) => {
               const next = {
                 ...data,
-                themeDark: e.target.checked,
+                themeDark: checked,
               } as AppSettings;
               await db.settings.put(next);
               applyTheme(next);
@@ -358,7 +358,7 @@ export default function Settings() {
 
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
           <span className="text-sm">Saved themes</span>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <PixelInput
               placeholder="Theme name"
               onKeyDown={async (e) => {
@@ -383,7 +383,7 @@ export default function Settings() {
                 qc.invalidateQueries({ queryKey: ["settings"] });
               }}
             />
-            <PixelButton
+            <Button
               onClick={async () => {
                 const input =
                   (document.activeElement as HTMLInputElement) ?? undefined;
@@ -406,9 +406,10 @@ export default function Settings() {
                 if (input) input.value = "";
                 qc.invalidateQueries({ queryKey: ["settings"] });
               }}
+              size="icon"
             >
-              Save theme
-            </PixelButton>
+              <SaveIcon className="size-8" />
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-2">
             {(data.savedThemes ?? []).map((t) => (
