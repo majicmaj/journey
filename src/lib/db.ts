@@ -6,6 +6,10 @@ export interface Settings {
   dayStart: string; // "HH:mm"
   inlineValueInput: boolean;
   showStreaks: boolean;
+  // theming
+  themePreset?: string; // e.g. "default", "ocean", ...
+  themeDark?: boolean; // whether to apply the `dark` class on root
+  themeVars?: Record<string, string>; // CSS variable overrides, keys without leading -- (e.g. "background")
 }
 
 class HabitDB extends Dexie {
@@ -27,13 +31,34 @@ export const db = new HabitDB();
 
 export async function getOrInitSettings(): Promise<Settings> {
   const existing = await db.settings.get("settings");
-  if (existing) return existing;
   const defaults: Settings = {
     id: "settings",
     dayStart: "00:00",
     inlineValueInput: false,
     showStreaks: false,
+    themePreset: "default",
+    themeDark: false,
+    themeVars: {},
   };
+  if (existing) {
+    // Backfill newly added fields for older records
+    const upgraded: Settings = {
+      ...defaults,
+      ...existing,
+      themeVars: existing.themeVars ?? {},
+      themePreset: existing.themePreset ?? "default",
+      themeDark: existing.themeDark ?? false,
+    };
+    // Persist any backfilled fields so future reads are consistent
+    if (
+      upgraded.themeVars !== existing.themeVars ||
+      upgraded.themePreset !== existing.themePreset ||
+      upgraded.themeDark !== existing.themeDark
+    ) {
+      await db.settings.put(upgraded);
+    }
+    return upgraded;
+  }
   await db.settings.put(defaults);
   return defaults;
 }

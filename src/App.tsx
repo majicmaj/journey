@@ -53,7 +53,7 @@ function MobileBottomNav() {
   }) => (
     <Button
       asChild
-      variant={isActive(to, pathname) ? "default" : "outline"}
+      variant={isActive(to, pathname) ? "default" : "background"}
       size="icon-lg"
       aria-label={label}
     >

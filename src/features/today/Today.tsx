@@ -156,8 +156,8 @@ export default function Day() {
 
       <footer className="flex gap-3">
         <PixelInput
-          aria-label="New habit title"
-          placeholder="New habit title…"
+          aria-label="New habit"
+          placeholder="New habit..."
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="flex-1"
