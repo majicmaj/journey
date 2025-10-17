@@ -16,6 +16,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckIcon,
+  PlusIcon,
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,7 @@ export default function Day() {
               )
             }
           >
-            <ChevronLeftIcon className="size-6" />
+            <ChevronLeftIcon className="size-8" />
           </Button>
           <div className="pixel-frame bg-card">
             <Input
@@ -83,7 +84,7 @@ export default function Day() {
             }
             disabled={activeKey >= baseTodayKey}
           >
-            <ChevronRightIcon className="size-6" />
+            <ChevronRightIcon className="size-8" />
           </Button>
           <Button
             className="ml-2"
@@ -161,7 +162,7 @@ export default function Day() {
           onChange={(e) => setTitle(e.target.value)}
           className="flex-1"
         />
-        <PixelButton
+        <Button
           onClick={() => {
             const t = title.trim();
             if (!t) return;
@@ -175,9 +176,10 @@ export default function Day() {
             create.mutate(habit);
             setTitle("");
           }}
+          size="icon"
         >
-          Add
-        </PixelButton>
+          <PlusIcon className="size-8" />
+        </Button>
       </footer>
     </div>
   );
@@ -211,10 +213,10 @@ function HabitRow({
           <Button
             aria-label={entry?.completed ? "Mark incomplete" : "Mark complete"}
             size="icon"
-            variant={entry?.completed ? "secondary" : "outline"}
+            variant={entry?.completed ? "secondary" : "background"}
             onClick={onToggle}
           >
-            {entry?.completed && <CheckIcon className="text-light size-6" />}
+            {entry?.completed && <CheckIcon className="text-light size-8" />}
           </Button>
           <div>{habit.title}</div>
         </div>
@@ -241,7 +243,7 @@ function HabitRow({
             )}
           </div>
           <Button aria-label="Edit habit" onClick={onEdit} size="icon">
-            <EditIcon className="size-6" />
+            <EditIcon className="size-8" />
           </Button>
         </div>
       </div>
@@ -405,9 +407,9 @@ function Progress({ className, value }: { className: string; value: number }) {
         className="bg-secondary h-full transition-all"
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
-      <div className="absolute inset-0 grid grid-cols-10 opacity-30">
+      <div className="absolute inset-0 grid grid-cols-10">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="border-r border-border" />
+          <div key={i} className="border-r-4 border-border" />
         ))}
       </div>
     </div>

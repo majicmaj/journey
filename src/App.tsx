@@ -40,7 +40,6 @@ function App() {
 }
 
 export default App;
-
 function MobileBottomNav() {
   const { pathname } = useLocation();
   const Item = ({
@@ -66,8 +65,9 @@ function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden pixel-frame bg-card text-card-foreground p-2 absolute bottom-0 left-0 right-0 z-50"
-      // style={{ paddingBottom: "calc(env(safe-area-inset-bottom)" }}
+      className="md:hidden fixed inset-x-0 bottom-0 z-50 pixel-frame bg-card text-card-foreground p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      role="navigation"
+      aria-label="Mobile"
     >
       <div className="mx-auto max-w-md grid grid-cols-2 gap-2 justify-items-center">
         <Item to="/" Icon={Home} label="Day" />
