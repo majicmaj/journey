@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMemo, useState } from "react";
-import { SaveIcon } from "@/components/pixel/icons";
+import { CloseIcon, SaveIcon } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -229,7 +229,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex flex-col gap-3 max-w-sm">
+    <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
         <span className="text-sm">Day start (HH:mm)</span>
         <PixelInput
@@ -318,13 +318,14 @@ export default function Settings() {
           <summary className="cursor-pointer select-none bg-background p-2 text-sm">
             Custom colors
           </summary>
-          <div className="grid grid-cols-1 px-2  pt-2 gap-3">
+          <div className="grid grid-cols-1 px-2 py-3 gap-3">
             {THEME_KEYS.map(({ key, label }) => (
               <ColorRow key={key} keyName={key} label={label} settings={data} />
             ))}
           </div>
-          <div className="flex gap-3 flex-col sm:flex-row">
-            <PixelButton
+          <div className="flex gap-3 p-3 flex-col sm:flex-row">
+            <Button
+              variant="destructive"
               onClick={async () => {
                 const next = { ...data, themeVars: {} } as AppSettings;
                 await db.settings.put(next);
@@ -332,9 +333,10 @@ export default function Settings() {
                 qc.invalidateQueries({ queryKey: ["settings"] });
               }}
             >
+              <CloseIcon className="size-8" />
               Reset custom colors
-            </PixelButton>
-            <PixelButton
+            </Button>
+            <Button
               onClick={async () => {
                 const preset = THEME_PRESETS.find(
                   (p) => p.id === (data.themePreset ?? "default")
@@ -352,7 +354,7 @@ export default function Settings() {
               }}
             >
               Apply preset values
-            </PixelButton>
+            </Button>
           </div>
         </details>
 

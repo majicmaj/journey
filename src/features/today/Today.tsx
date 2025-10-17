@@ -66,7 +66,7 @@ export default function Day() {
             <Input
               aria-label="Select date"
               type="date"
-              className="bg-card px-2 py-1"
+              className="bg-card px-2 py-1 text-foreground"
               value={activeKey}
               onChange={(e) =>
                 setActiveKey(
@@ -223,7 +223,9 @@ function HabitRow({
             variant={entry?.completed ? "secondary" : "background"}
             onClick={onToggle}
           >
-            {entry?.completed && <CheckIcon className="text-light size-8" />}
+            {entry?.completed && (
+              <CheckIcon className="text-foreground size-8" />
+            )}
           </Button>
           <div>{habit.title}</div>
         </div>
