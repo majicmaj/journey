@@ -15,6 +15,7 @@ import {
   SaveIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CheckIcon,
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 
@@ -204,14 +205,14 @@ function HabitRow({
     <PixelCard className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
+          <Button
             aria-label={entry?.completed ? "Mark incomplete" : "Mark complete"}
-            className={cn(
-              "pixel-frame h-6 w-6 bg-background",
-              entry?.completed && "bg-primary"
-            )}
+            size="icon"
+            variant={entry?.completed ? "secondary" : "outline"}
             onClick={onToggle}
-          />
+          >
+            {entry?.completed && <CheckIcon className="text-light size-6" />}
+          </Button>
           <div>{habit.title}</div>
         </div>
         <div className="flex items-end gap-3">
@@ -398,7 +399,7 @@ function Progress({ className, value }: { className: string; value: number }) {
       aria-valuenow={value}
     >
       <div
-        className="bg-secondary h-full"
+        className="bg-secondary h-full transition-all"
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
       <div className="absolute inset-0 grid grid-cols-10 opacity-30">
