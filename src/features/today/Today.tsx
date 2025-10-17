@@ -20,6 +20,13 @@ import {
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Day() {
   const settings = useSettings();
@@ -275,16 +282,20 @@ function HabitEditorInline({
       <label className="flex items-center gap-2">
         <span className="w-24 text-sm">Kind</span>
         <div className="pixel-frame w-full">
-          <select
-            className="bg-background px-2 py-2 w-full"
+          <Select
             value={draft.kind}
-            onChange={(e) =>
-              setDraft({ ...draft, kind: e.target.value as Habit["kind"] })
+            onValueChange={(value) =>
+              setDraft({ ...draft, kind: value as Habit["kind"] })
             }
           >
-            <option value="boolean">Boolean</option>
-            <option value="quantified">Quantified</option>
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="pixel-frame">
+              <SelectItem value="boolean">Boolean</SelectItem>
+              <SelectItem value="quantified">Quantified</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </label>
       <label className="flex items-center gap-2">

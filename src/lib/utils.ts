@@ -40,8 +40,9 @@ export type ThemeVars = Record<string, string>;
 export type ThemePreset = {
   id: string;
   name: string;
-  dark?: boolean;
-  vars: ThemeVars;
+  dark?: boolean; // recommended default mode for this preset
+  varsLight: ThemeVars;
+  varsDark: ThemeVars;
 };
 
 export const THEME_PRESETS: ThemePreset[] = [
@@ -49,13 +50,22 @@ export const THEME_PRESETS: ThemePreset[] = [
     id: "default",
     name: "Default",
     dark: false,
-    vars: {},
+    varsLight: {},
+    varsDark: {},
   },
   {
     id: "midnight",
     name: "Midnight",
     dark: true,
-    vars: {
+    varsLight: {
+      background: "oklch(0.95 0.03 265)",
+      foreground: "oklch(0.2 0.02 265)",
+      primary: "oklch(0.6 0.1 280)",
+      "primary-foreground": "oklch(0.98 0 0)",
+      accent: "oklch(0.9 0.04 260)",
+      border: "oklch(0.5 0.06 260)",
+    },
+    varsDark: {
       background: "oklch(0.2 0.03 265)",
       foreground: "oklch(0.98 0 0)",
       primary: "oklch(0.6 0.1 280)",
@@ -68,7 +78,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     id: "ocean",
     name: "Ocean",
     dark: false,
-    vars: {
+    varsLight: {
       background: "oklch(0.95 0.03 210)",
       foreground: "oklch(0.2 0.02 220)",
       primary: "oklch(0.6 0.12 210)",
@@ -77,19 +87,39 @@ export const THEME_PRESETS: ThemePreset[] = [
       accent: "oklch(0.92 0.03 210)",
       border: "oklch(0.5 0.06 210)",
     },
+    varsDark: {
+      background: "oklch(0.22 0.04 210)",
+      foreground: "oklch(0.98 0 0)",
+      primary: "oklch(0.65 0.12 210)",
+      "primary-foreground": "oklch(0.98 0.02 210)",
+      secondary: "oklch(0.35 0.06 220)",
+      accent: "oklch(0.3 0.05 210)",
+      border: "oklch(0.6 0.08 210)",
+    },
   },
   {
     id: "sunset",
     name: "Sunset",
     dark: false,
-    vars: {
-      background: "oklch(0.97 0.05 60)",
+    varsLight: {
+      background: "oklch(0.97 0.1 20)",
+      card: "oklch(0.98 0.02 20)",
       foreground: "oklch(0.2 0.02 40)",
       primary: "oklch(0.65 0.2 30)",
       "primary-foreground": "oklch(0.98 0.03 60)",
-      secondary: "oklch(0.7 0.18 50)",
+      secondary: "oklch(0.8 0.28 100)",
       accent: "oklch(0.98 0.04 50)",
       border: "oklch(0.4 0.07 50)",
+    },
+    varsDark: {
+      background: "oklch(0.25 0.05 30)",
+      card: "oklch(0.3 0.02 40)",
+      foreground: "oklch(0.98 0 0)",
+      primary: "oklch(0.62 0.2 30)",
+      "primary-foreground": "oklch(0.98 0.04 60)",
+      secondary: "oklch(0.5 0.2 50)",
+      accent: "oklch(0.3 0.04 50)",
+      border: "oklch(0.6 0.07 50)",
     },
   },
 ];

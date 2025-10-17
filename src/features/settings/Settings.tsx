@@ -1,15 +1,215 @@
 import { PixelButton, PixelInput } from "@/components/pixel";
 import { useSettings } from "@/hooks/useData";
-import { db } from "@/lib/db";
+import { db, type Settings as AppSettings } from "@/lib/db";
 import { seedMockData } from "@/lib/seed";
 import { useQueryClient } from "@tanstack/react-query";
 import { THEME_KEYS, THEME_PRESETS } from "@/lib/utils";
 import { applyTheme } from "@/lib/theme";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useMemo, useState } from "react";
 
 export default function Settings() {
   const { data } = useSettings();
   const qc = useQueryClient();
   if (!data) return null;
+
+  function generateOKLCHGrid(): string[] {
+    const lightness = [0.95, 0.85, 0.75]; // 3 rows
+    const hues = [0, 30, 60, 120, 180, 220, 260, 300]; // 8 cols
+    const chroma = 0.12;
+    const out: string[] = [];
+    for (const l of lightness) {
+      for (const h of hues) out.push(`oklch(${l} ${chroma} ${h})`);
+    }
+    return out;
+  }
+
+  function ColorRow({
+    keyName,
+    label,
+    settings,
+  }: {
+    keyName: string;
+    label: string;
+    settings: AppSettings;
+  }) {
+    const value = settings.themeVars?.[keyName] ?? "";
+    const computed =
+      typeof window !== "undefined"
+        ? getComputedStyle(document.documentElement)
+            .getPropertyValue(`--${keyName}`)
+            .trim()
+        : "";
+
+    const baseGrid = useMemo(() => generateOKLCHGrid(), []);
+    const presetValues = useMemo(
+      () =>
+        Array.from(
+          new Set([
+            computed,
+            ...(settings.themeDark
+              ? THEME_PRESETS.map((p) => p.varsDark[keyName])
+              : THEME_PRESETS.map((p) => p.varsLight[keyName])
+            ).filter(Boolean),
+            ...baseGrid,
+          ] as string[])
+        ).filter(Boolean),
+      [computed, settings.themeDark, keyName, baseGrid]
+    );
+
+    const [l, setL] = useState(0.6);
+    const [c, setC] = useState(0.1);
+    const [h, setH] = useState(220);
+    const oklchValue = `oklch(${l} ${c} ${h})`;
+
+    return (
+      <div className="flex sm:items-center flex-col sm:flex-row gap-2">
+        <label className="w-40 text-sm" htmlFor={`theme-${keyName}`}>
+          {label}
+        </label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              id={`theme-${keyName}`}
+              className="pixel-frame flex-1 bg-background p-2 text-left flex items-center gap-2"
+              aria-label={`Pick color for ${label}`}
+            >
+              <span
+                className="inline-block size-4 pixel-frame"
+                style={{ background: value || computed || undefined }}
+              />
+              <span className="truncate">
+                {value || computed || "Choose color"}
+              </span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="pixel-frame w-[min(28rem,95vw)]"
+          >
+            <div className="grid grid-cols-8 gap-2">
+              {presetValues.slice(0, 24).map((v) => (
+                <button
+                  key={v}
+                  className="pixel-frame size-8"
+                  style={{ background: v }}
+                  title={v}
+                  onClick={async () => {
+                    const nextVars = { ...(settings.themeVars ?? {}) };
+                    nextVars[keyName] = v;
+                    const next: AppSettings = {
+                      ...settings,
+                      themeVars: nextVars,
+                    };
+                    await db.settings.put(next);
+                    applyTheme(next);
+                    qc.invalidateQueries({ queryKey: ["settings"] });
+                  }}
+                />
+              ))}
+            </div>
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm w-16">OKLCH</span>
+                <span
+                  className="inline-block size-6 pixel-frame"
+                  style={{ background: oklchValue }}
+                />
+                <span className="text-xs text-muted-foreground truncate">
+                  {oklchValue}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs w-8">L</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={l}
+                    onChange={(e) => setL(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs w-8">C</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={0.4}
+                    step={0.005}
+                    value={c}
+                    onChange={(e) => setC(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs w-8">H</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    step={1}
+                    value={h}
+                    onChange={(e) => setH(parseInt(e.target.value, 10))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm w-16">Manual</span>
+                <PixelInput
+                  defaultValue={value || computed}
+                  placeholder={computed || `CSS color, oklch(...) or #hex`}
+                  onBlur={async (e) => {
+                    const nextVars = { ...(settings.themeVars ?? {}) };
+                    const v = e.target.value.trim();
+                    if (v) nextVars[keyName] = v;
+                    else delete nextVars[keyName];
+                    const next: AppSettings = {
+                      ...settings,
+                      themeVars: nextVars,
+                    };
+                    await db.settings.put(next);
+                    applyTheme(next);
+                    qc.invalidateQueries({ queryKey: ["settings"] });
+                  }}
+                />
+                <PixelButton
+                  onClick={async () => {
+                    const nextVars = { ...(settings.themeVars ?? {}) };
+                    nextVars[keyName] = oklchValue;
+                    const next: AppSettings = {
+                      ...settings,
+                      themeVars: nextVars,
+                    };
+                    await db.settings.put(next);
+                    applyTheme(next);
+                    qc.invalidateQueries({ queryKey: ["settings"] });
+                  }}
+                >
+                  Use color
+                </PixelButton>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3 max-w-sm">
       <label className="flex flex-col gap-1">
@@ -23,12 +223,14 @@ export default function Settings() {
           }
         />
       </label>
+
+      <hr className="my-4 w-full border-2" />
+
       <label className="flex items-center gap-3">
-        <input
+        <PixelInput
           aria-label="Inline value input"
           type="checkbox"
           checked={data.inlineValueInput}
-          className="pixel-frame"
           onChange={(e) =>
             db.settings
               .put({ ...data, inlineValueInput: e.target.checked })
@@ -38,11 +240,10 @@ export default function Settings() {
         <span>Inline value input</span>
       </label>
       <label className="flex items-center gap-3">
-        <input
+        <PixelInput
           aria-label="Show streaks"
           type="checkbox"
           checked={data.showStreaks}
-          className="pixel-frame"
           onChange={(e) =>
             db.settings
               .put({ ...data, showStreaks: e.target.checked })
@@ -52,14 +253,18 @@ export default function Settings() {
         <span>Show streaks</span>
       </label>
 
-      <div className="flex flex-col gap-2">
+      <hr className="my-4 w-full border-2" />
+
+      <div className="flex flex-col gap-3">
         <label className="flex items-center gap-3">
-          <input
+          <PixelInput
             type="checkbox"
-            className="pixel-frame"
             checked={Boolean(data.themeDark)}
             onChange={async (e) => {
-              const next = { ...data, themeDark: e.target.checked };
+              const next = {
+                ...data,
+                themeDark: e.target.checked,
+              } as AppSettings;
               await db.settings.put(next);
               applyTheme(next);
               qc.invalidateQueries({ queryKey: ["settings"] });
@@ -70,57 +275,43 @@ export default function Settings() {
 
         <label className="flex flex-col gap-1">
           <span className="text-sm">Theme preset</span>
-          <select
-            className="pixel-frame bg-background p-2"
-            value={data.themePreset ?? "default"}
-            onChange={async (e) => {
-              const next = { ...data, themePreset: e.target.value };
-              await db.settings.put(next);
-              applyTheme(next);
-              qc.invalidateQueries({ queryKey: ["settings"] });
-            }}
-          >
-            {THEME_PRESETS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="pixel-frame flex">
+            <Select
+              value={data.themePreset ?? "default"}
+              onValueChange={async (value) => {
+                const next = { ...data, themePreset: value } as AppSettings;
+                await db.settings.put(next);
+                applyTheme(next);
+                qc.invalidateQueries({ queryKey: ["settings"] });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                {THEME_PRESETS.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </label>
 
-        <div className="flex flex-col gap-3">
-          <span className="text-sm">Custom colors</span>
+        <details className="flex flex-col gap-3">
+          <summary className="cursor-pointer select-none pixel-frame bg-background p-2 text-sm">
+            Custom colors
+          </summary>
           <div className="grid grid-cols-1 gap-3">
-            {THEME_KEYS.map(({ key, label }) => {
-              const value = data.themeVars?.[key] ?? "";
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <label className="w-40 text-sm" htmlFor={`theme-${key}`}>
-                    {label}
-                  </label>
-                  <input
-                    id={`theme-${key}`}
-                    className="pixel-frame flex-1 bg-background p-2"
-                    placeholder={`CSS color, e.g. oklch(...) or #hex`}
-                    value={value}
-                    onChange={async (e) => {
-                      const nextVars = { ...(data.themeVars ?? {}) };
-                      nextVars[key] = e.target.value;
-                      if (!e.target.value) delete nextVars[key];
-                      const next = { ...data, themeVars: nextVars };
-                      await db.settings.put(next);
-                      applyTheme(next);
-                      qc.invalidateQueries({ queryKey: ["settings"] });
-                    }}
-                  />
-                </div>
-              );
-            })}
+            {THEME_KEYS.map(({ key, label }) => (
+              <ColorRow key={key} keyName={key} label={label} settings={data} />
+            ))}
           </div>
           <div className="flex gap-3 flex-col sm:flex-row">
             <PixelButton
               onClick={async () => {
-                const next = { ...data, themeVars: {} };
+                const next = { ...data, themeVars: {} } as AppSettings;
                 await db.settings.put(next);
                 applyTheme(next);
                 qc.invalidateQueries({ queryKey: ["settings"] });
@@ -130,15 +321,16 @@ export default function Settings() {
             </PixelButton>
             <PixelButton
               onClick={async () => {
-                // If preset implies dark, adjust toggle to preset's dark default
                 const preset = THEME_PRESETS.find(
                   (p) => p.id === (data.themePreset ?? "default")
                 );
                 const next = {
                   ...data,
-                  themeVars: preset?.vars ?? {},
+                  themeVars:
+                    (data.themeDark ? preset?.varsDark : preset?.varsLight) ??
+                    {},
                   themeDark: Boolean(preset?.dark ?? data.themeDark),
-                };
+                } as AppSettings;
                 await db.settings.put(next);
                 applyTheme(next);
                 qc.invalidateQueries({ queryKey: ["settings"] });
@@ -147,8 +339,11 @@ export default function Settings() {
               Apply preset values
             </PixelButton>
           </div>
-        </div>
+        </details>
       </div>
+
+      <hr className="my-4 w-full border-2" />
+
       <PixelButton onClick={() => db.delete().then(() => location.reload())}>
         Reset DB
       </PixelButton>

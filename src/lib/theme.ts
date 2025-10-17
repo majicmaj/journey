@@ -28,13 +28,16 @@ export function applyTheme(settings: Settings) {
   const preset = getPresetById(settings.themePreset);
   // First clear previously applied override keys to avoid accumulation
   const keysToClear = new Set<string>();
-  for (const p of THEME_PRESETS)
-    for (const k of Object.keys(p.vars)) keysToClear.add(k);
+  for (const p of THEME_PRESETS) {
+    for (const k of Object.keys(p.varsLight)) keysToClear.add(k);
+    for (const k of Object.keys(p.varsDark)) keysToClear.add(k);
+  }
   if (settings.themeVars)
     for (const k of Object.keys(settings.themeVars)) keysToClear.add(k);
   clearCssVars([...keysToClear]);
 
-  // Apply preset then user overrides
-  if (preset?.vars) applyCssVars(preset.vars);
+  // Apply preset variant then user overrides
+  const variantVars = settings.themeDark ? preset?.varsDark : preset?.varsLight;
+  if (variantVars) applyCssVars(variantVars);
   if (settings.themeVars) applyCssVars(settings.themeVars);
 }
