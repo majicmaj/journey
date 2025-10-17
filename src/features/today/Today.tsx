@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { PixelButton, PixelCard, PixelInput } from "@/components/pixel";
+import { PixelCard, PixelInput } from "@/components/pixel";
 import {
   useDaySummary,
   useEntries,
@@ -279,6 +279,14 @@ function HabitEditorInline({
   const [weightInput, setWeightInput] = useState<string>(String(habit.weight));
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
+      <label className="flex items-center gap-2 col-span-full sm:col-span-2">
+        <span className="w-24 text-sm">Title</span>
+        <PixelInput
+          value={draft.title}
+          className="bg-background"
+          onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+        />
+      </label>
       <label className="flex items-center gap-2">
         <span className="w-24 text-sm">Kind</span>
         <div className="pixel-frame w-full">
