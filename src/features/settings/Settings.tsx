@@ -340,6 +340,103 @@ export default function Settings() {
             </PixelButton>
           </div>
         </details>
+
+        <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
+          <span className="text-sm">Saved themes</span>
+          <div className="flex gap-2">
+            <PixelInput
+              placeholder="Theme name"
+              onKeyDown={async (e) => {
+                if (e.key !== "Enter") return;
+                const name = (e.target as HTMLInputElement).value.trim();
+                if (!name) return;
+                const theme = {
+                  id:
+                    crypto.randomUUID?.() ??
+                    Math.random().toString(36).slice(2),
+                  name,
+                  dark: Boolean(data.themeDark),
+                  presetId: data.themePreset,
+                  vars: data.themeVars ?? {},
+                };
+                const next: AppSettings = {
+                  ...data,
+                  savedThemes: [...(data.savedThemes ?? []), theme],
+                };
+                await db.settings.put(next);
+                (e.target as HTMLInputElement).value = "";
+                qc.invalidateQueries({ queryKey: ["settings"] });
+              }}
+            />
+            <PixelButton
+              onClick={async () => {
+                const input =
+                  (document.activeElement as HTMLInputElement) ?? undefined;
+                const name = input?.value?.trim?.() ?? "";
+                if (!name) return;
+                const theme = {
+                  id:
+                    crypto.randomUUID?.() ??
+                    Math.random().toString(36).slice(2),
+                  name,
+                  dark: Boolean(data.themeDark),
+                  presetId: data.themePreset,
+                  vars: data.themeVars ?? {},
+                };
+                const next: AppSettings = {
+                  ...data,
+                  savedThemes: [...(data.savedThemes ?? []), theme],
+                };
+                await db.settings.put(next);
+                if (input) input.value = "";
+                qc.invalidateQueries({ queryKey: ["settings"] });
+              }}
+            >
+              Save theme
+            </PixelButton>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {(data.savedThemes ?? []).map((t) => (
+              <div key={t.id} className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="text-sm">{t.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t.dark ? "Dark" : "Light"} · {t.presetId ?? "custom"}
+                  </div>
+                </div>
+                <PixelButton
+                  onClick={async () => {
+                    const next: AppSettings = {
+                      ...data,
+                      themeDark: t.dark,
+                      themePreset: t.presetId ?? "default",
+                      themeVars: t.vars,
+                    };
+                    await db.settings.put(next);
+                    applyTheme(next);
+                    qc.invalidateQueries({ queryKey: ["settings"] });
+                  }}
+                >
+                  Apply
+                </PixelButton>
+                <PixelButton
+                  onClick={async () => {
+                    const next: AppSettings = {
+                      ...data,
+                      savedThemes: (data.savedThemes ?? []).filter(
+                        (x) => x.id !== t.id
+                      ),
+                    };
+                    await db.settings.put(next);
+                    qc.invalidateQueries({ queryKey: ["settings"] });
+                  }}
+                >
+                  Delete
+                </PixelButton>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <hr className="my-4 w-full border-2" />

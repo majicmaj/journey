@@ -10,6 +10,13 @@ export interface Settings {
   themePreset?: string; // e.g. "default", "ocean", ...
   themeDark?: boolean; // whether to apply the `dark` class on root
   themeVars?: Record<string, string>; // CSS variable overrides, keys without leading -- (e.g. "background")
+  savedThemes?: Array<{
+    id: string; // uuid
+    name: string;
+    dark: boolean;
+    presetId: string | undefined;
+    vars: Record<string, string>;
+  }>;
 }
 
 class HabitDB extends Dexie {
@@ -39,6 +46,7 @@ export async function getOrInitSettings(): Promise<Settings> {
     themePreset: "default",
     themeDark: false,
     themeVars: {},
+    savedThemes: [],
   };
   if (existing) {
     // Backfill newly added fields for older records
@@ -48,6 +56,7 @@ export async function getOrInitSettings(): Promise<Settings> {
       themeVars: existing.themeVars ?? {},
       themePreset: existing.themePreset ?? "default",
       themeDark: existing.themeDark ?? false,
+      savedThemes: existing.savedThemes ?? [],
     };
     // Persist any backfilled fields so future reads are consistent
     if (
