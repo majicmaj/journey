@@ -6,7 +6,7 @@ import "@fontsource/pixelify-sans/400.css";
 import "@fontsource/pixelify-sans/700.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Today from "@/features/today/Today";
+import Day from "@/features/today/Today";
 import Settings from "@/features/settings/Settings";
 
 const router = createBrowserRouter([
@@ -14,7 +14,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <Today /> },
+      { index: true, element: <Day /> },
       { path: "settings", element: <Settings /> },
     ],
   },

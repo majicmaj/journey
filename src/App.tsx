@@ -25,7 +25,7 @@ function App() {
     <div className="font-display min-h-svh p-3 flex flex-col gap-3">
       {/* Desktop top nav */}
       <nav className="hidden md:flex pixel-frame bg-card text-card-foreground p-3 gap-3 justify-center">
-        <NavButton to="/">Today</NavButton>
+        <NavButton to="/">Day</NavButton>
         <NavButton to="/settings">Settings</NavButton>
       </nav>
 
@@ -70,7 +70,7 @@ function MobileBottomNav() {
       // style={{ paddingBottom: "calc(env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto max-w-md grid grid-cols-2 gap-2 justify-items-center">
-        <Item to="/" Icon={Home} label="Today" />
+        <Item to="/" Icon={Home} label="Day" />
         <Item to="/settings" Icon={Sliders} label="Settings" />
       </div>
     </nav>

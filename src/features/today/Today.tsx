@@ -9,17 +9,24 @@ import {
 import { toDayKey } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { type Habit } from "@/types/habit";
-import { CloseIcon, EditIcon, SaveIcon } from "@/components/pixel/icons";
+import {
+  CloseIcon,
+  EditIcon,
+  SaveIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 
-export default function Today() {
+export default function Day() {
   const settings = useSettings();
-  const todayKey = useMemo(
+  const baseTodayKey = useMemo(
     () => toDayKey(new Date(), settings.data?.dayStart ?? "00:00"),
     [settings.data?.dayStart]
   );
-  const { habitsQ, entriesQ, summary } = useDaySummary(todayKey);
-  const { upsert } = useEntries(todayKey);
+  const [activeKey, setActiveKey] = useState<string>(baseTodayKey);
+  const { habitsQ, entriesQ, summary } = useDaySummary(activeKey);
+  const { upsert } = useEntries(activeKey);
   const { create, update } = useHabits();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -27,8 +34,60 @@ export default function Today() {
   return (
     <div className="flex flex-col gap-3">
       <header className="flex items-center gap-3 flex-wrap">
-        <div className="w-full sm:w-auto pixel-frame bg-card px-3 py-2">
-          {todayKey}
+        <div className="flex items-center gap-2">
+          <Button
+            aria-label="Previous day"
+            size="icon"
+            onClick={() =>
+              setActiveKey(
+                toDayKey(
+                  new Date(
+                    new Date(activeKey + "T00:00:00").getTime() -
+                      24 * 60 * 60 * 1000
+                  ),
+                  settings.data?.dayStart ?? "00:00"
+                )
+              )
+            }
+          >
+            <ChevronLeftIcon className="size-6" />
+          </Button>
+          <input
+            aria-label="Select date"
+            type="date"
+            className="pixel-frame bg-card px-2 py-1"
+            value={activeKey}
+            onChange={(e) =>
+              setActiveKey(
+                toDayKey(e.target.value, settings.data?.dayStart ?? "00:00")
+              )
+            }
+          />
+          <Button
+            aria-label="Next day"
+            size="icon"
+            onClick={() =>
+              setActiveKey(
+                toDayKey(
+                  new Date(
+                    new Date(activeKey + "T00:00:00").getTime() +
+                      24 * 60 * 60 * 1000
+                  ),
+                  settings.data?.dayStart ?? "00:00"
+                )
+              )
+            }
+            disabled={activeKey >= baseTodayKey}
+          >
+            <ChevronRightIcon className="size-6" />
+          </Button>
+          <Button
+            className="ml-2"
+            onClick={() => setActiveKey(baseTodayKey)}
+            aria-label="Go to today"
+          >
+            Today
+          </Button>
         </div>
         <Progress
           className="w-full sm:w-64 p"
@@ -50,14 +109,14 @@ export default function Today() {
               onToggle={() =>
                 upsert.mutate({
                   habitId: h.id,
-                  date: todayKey,
+                  date: activeKey,
                   completed: !(entry?.completed ?? false),
                 })
               }
               onSetValue={(v) =>
                 upsert.mutate({
                   habitId: h.id,
-                  date: todayKey,
+                  date: activeKey,
                   value: v,
                   completed: entry?.completed ?? false,
                 })
@@ -188,24 +247,27 @@ function HabitEditorInline({
 }) {
   const [draft, setDraft] = useState<Habit>({ ...habit });
   return (
-    <div className="mt-1 grid gap-2 grid-cols-1 sm:grid-cols-2">
+    <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-2">
         <span className="w-24 text-sm">Kind</span>
-        <select
-          className="pixel-frame bg-background px-2 py-1"
-          value={draft.kind}
-          onChange={(e) =>
-            setDraft({ ...draft, kind: e.target.value as Habit["kind"] })
-          }
-        >
-          <option value="boolean">Boolean</option>
-          <option value="quantified">Quantified</option>
-        </select>
+        <div className="pixel-frame w-full">
+          <select
+            className="bg-background px-2 py-2 w-full"
+            value={draft.kind}
+            onChange={(e) =>
+              setDraft({ ...draft, kind: e.target.value as Habit["kind"] })
+            }
+          >
+            <option value="boolean">Boolean</option>
+            <option value="quantified">Quantified</option>
+          </select>
+        </div>
       </label>
       <label className="flex items-center gap-2">
         <span className="w-24 text-sm">Unit</span>
         <PixelInput
           value={draft.unit ?? ""}
+          className="bg-background"
           onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
         />
       </label>
@@ -213,6 +275,7 @@ function HabitEditorInline({
         <span className="w-24 text-sm">Target</span>
         <PixelInput
           type="number"
+          className="bg-background"
           value={draft.target ?? 0}
           onChange={(e) =>
             setDraft({ ...draft, target: Number(e.target.value) })
@@ -223,6 +286,7 @@ function HabitEditorInline({
         <span className="w-24 text-sm">Min</span>
         <PixelInput
           type="number"
+          className="bg-background"
           value={draft.min ?? 0}
           onChange={(e) => setDraft({ ...draft, min: Number(e.target.value) })}
         />
@@ -231,6 +295,7 @@ function HabitEditorInline({
         <span className="w-24 text-sm">Max</span>
         <PixelInput
           type="number"
+          className="bg-background"
           value={draft.max ?? 0}
           onChange={(e) => setDraft({ ...draft, max: Number(e.target.value) })}
         />
@@ -240,6 +305,7 @@ function HabitEditorInline({
         <span className="w-24 text-sm">Weight</span>
         <PixelInput
           type="number"
+          className="bg-background"
           value={draft.weight}
           onChange={(e) =>
             setDraft({ ...draft, weight: Number(e.target.value) })
