@@ -122,4 +122,76 @@ export const THEME_PRESETS: ThemePreset[] = [
       border: "oklch(0.6 0.07 50)",
     },
   },
+  {
+    id: "minecraft",
+    name: "Minecraft",
+    dark: false,
+    varsLight: {
+      background: "oklch(0.94 0.02 60)",
+      card: "oklch(0.85 0.0 120)",
+      foreground: "oklch(0.35 0.05 130)",
+      primary: "oklch(0.64 0.18 142)", // grass
+      "primary-foreground": "oklch(0.98 0 0)",
+      secondary: "oklch(0.6 0.13 60)", // dirt
+      "secondary-foreground": "oklch(0.98 0.01 90)",
+      accent: "oklch(0.82 0.12 110)",
+      border: "oklch(0.6 0 60)",
+    },
+    varsDark: {
+      background: "oklch(0.23 0.05 140)",
+      card: "oklch(0.2 0.03 140)",
+      foreground: "oklch(0.96 0.01 140)",
+      primary: "oklch(0.74 0.12 142)",
+      "primary-foreground": "oklch(0.98 0 0)",
+      secondary: "oklch(0.5 0.12 60)",
+      "secondary-foreground": "oklch(0.98 0.01 90)",
+      accent: "oklch(0.42 0.08 120)",
+      border: "oklch(0.5 0.12 60)",
+    },
+  },
+  {
+    id: "hextech",
+    name: "Hextech",
+    dark: true,
+    varsLight: {
+      background: "oklch(0.95 0.03 260)",
+      card: "oklch(0.98 0.02 95)",
+      foreground: "oklch(0.25 0.03 250)",
+      primary: "oklch(0.7 0.18 190)", // teal
+      "primary-foreground": "oklch(0.98 0 0)",
+      secondary: "oklch(0.75 0.12 85)", // gold
+      "secondary-foreground": "oklch(0.25 0.03 250)",
+      accent: "oklch(0.4 0.06 260)", // steel blue
+      border: "oklch(0.75 0.12 85)",
+    },
+    varsDark: {
+      background: "oklch(0.17 0.03 260)",
+      card: "oklch(0.2 0.04 260)",
+      foreground: "oklch(0.9 0.04 95)",
+      primary: "oklch(0.7 0.18 190)",
+      "primary-foreground": "oklch(0.1 0.02 260)",
+      secondary: "oklch(0.75 0.12 85)",
+      "secondary-foreground": "oklch(0.1 0.02 260)",
+      accent: "oklch(0.38 0.06 260)",
+      border: "oklch(0.75 0.12 85)",
+    },
+  },
+  {
+    id: "space",
+    name: "Space",
+    dark: true,
+    varsLight: {
+      background: "oklch(0.95 0.03 95)",
+      card: "oklch(0.98 0.02 95)",
+      foreground: "oklch(0.25 0.03 250)",
+      primary: "oklch(0.7 0.18 190)",
+    },
+    varsDark: {
+      background: "oklch(0.17 0.03 260)",
+      card: "oklch(0.2 0.04 260)",
+      foreground: "oklch(0.9 0.04 95)",
+      primary: "oklch(0.7 0.18 190)",
+      "primary-foreground": "oklch(0.1 0.02 260)",
+    },
+  },
 ];

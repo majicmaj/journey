@@ -202,6 +202,21 @@ export default function Settings() {
                 >
                   Use color
                 </PixelButton>
+                <PixelButton
+                  onClick={async () => {
+                    const nextVars = { ...(settings.themeVars ?? {}) };
+                    delete nextVars[keyName];
+                    const next: AppSettings = {
+                      ...settings,
+                      themeVars: nextVars,
+                    };
+                    await db.settings.put(next);
+                    applyTheme(next);
+                    qc.invalidateQueries({ queryKey: ["settings"] });
+                  }}
+                >
+                  Reset
+                </PixelButton>
               </div>
             </div>
           </PopoverContent>
@@ -299,11 +314,11 @@ export default function Settings() {
           </div>
         </label>
 
-        <details className="flex flex-col gap-3">
-          <summary className="cursor-pointer select-none pixel-frame bg-background p-2 text-sm">
+        <details className="flex flex-col bg-card pixel-frame">
+          <summary className="cursor-pointer select-none bg-background p-2 text-sm">
             Custom colors
           </summary>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 px-2  pt-2 gap-3">
             {THEME_KEYS.map(({ key, label }) => (
               <ColorRow key={key} keyName={key} label={label} settings={data} />
             ))}
