@@ -181,8 +181,8 @@ export const THEME_PRESETS: ThemePreset[] = [
     name: "Space",
     dark: true,
     varsLight: {
-      background: "oklch(0.95 0.03 95)",
-      card: "oklch(0.98 0.02 95)",
+      background: "oklch(1 0 0)",
+      card: "oklch(0.92 0 0)",
       foreground: "oklch(0.25 0.03 250)",
       primary: "oklch(0.7 0.18 190)",
     },
