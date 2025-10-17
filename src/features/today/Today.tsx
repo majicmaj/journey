@@ -18,6 +18,7 @@ import {
   CheckIcon,
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function Day() {
   const settings = useSettings();
@@ -35,7 +36,7 @@ export default function Day() {
   return (
     <div className="flex flex-col gap-3">
       <header className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             aria-label="Previous day"
             size="icon"
@@ -53,17 +54,19 @@ export default function Day() {
           >
             <ChevronLeftIcon className="size-6" />
           </Button>
-          <input
-            aria-label="Select date"
-            type="date"
-            className="pixel-frame bg-card px-2 py-1"
-            value={activeKey}
-            onChange={(e) =>
-              setActiveKey(
-                toDayKey(e.target.value, settings.data?.dayStart ?? "00:00")
-              )
-            }
-          />
+          <div className="pixel-frame bg-card">
+            <Input
+              aria-label="Select date"
+              type="date"
+              className="bg-card px-2 py-1"
+              value={activeKey}
+              onChange={(e) =>
+                setActiveKey(
+                  toDayKey(e.target.value, settings.data?.dayStart ?? "00:00")
+                )
+              }
+            />
+          </div>
           <Button
             aria-label="Next day"
             size="icon"
