@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
+import { Input } from "../ui/input";
 
 export interface PixelInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -7,11 +8,12 @@ export interface PixelInputProps
 }
 
 export const PixelInput = forwardRef<HTMLInputElement, PixelInputProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, disabled, ...props }, ref) => {
     return (
-      <div className="pixel-frame w-full flex">
-        <input
+      <div className={cn("pixel-frame w-full flex", disabled && "opacity-50")}>
+        <Input
           ref={ref}
+          disabled={disabled}
           className={cn(
             "bg-card flex-1 text-foreground px-2 py-1.5 placeholder:text-muted-foreground outline-none",
             className

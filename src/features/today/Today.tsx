@@ -106,13 +106,27 @@ export default function Day() {
               habit={h}
               entry={entry}
               inlineValueInput={settings.data?.inlineValueInput ?? true}
-              onToggle={() =>
-                upsert.mutate({
-                  habitId: h.id,
-                  date: activeKey,
-                  completed: !(entry?.completed ?? false),
-                })
-              }
+              onToggle={() => {
+                const nextCompleted = !(entry?.completed ?? false);
+                if (h.kind === "quantified" && nextCompleted) {
+                  const threshold =
+                    h.target != null ? h.target : h.min != null ? h.min : 0;
+                  const currentValue = entry?.value ?? 0;
+                  const nextValue = Math.max(currentValue, threshold ?? 0);
+                  upsert.mutate({
+                    habitId: h.id,
+                    date: activeKey,
+                    completed: nextCompleted,
+                    value: nextValue,
+                  });
+                } else {
+                  upsert.mutate({
+                    habitId: h.id,
+                    date: activeKey,
+                    completed: nextCompleted,
+                  });
+                }
+              }}
               onSetValue={(v) =>
                 upsert.mutate({
                   habitId: h.id,
@@ -180,7 +194,7 @@ function HabitRow({
   entry: { completed?: boolean; value?: number | null } | undefined;
   inlineValueInput: boolean;
   onToggle: () => void;
-  onSetValue: (v: number) => void;
+  onSetValue: (v: number | null) => void;
   onEdit: () => void;
   isEditing: boolean;
   onSaveHabit: (next: Habit) => void;
@@ -206,10 +220,13 @@ function HabitRow({
               <>
                 <PixelInput
                   aria-label={`value-${habit.id}`}
-                  className="w-32 pr-12"
+                  className="w-32 pr-12 bg-background"
                   type="number"
-                  defaultValue={entry?.value ?? 0}
-                  onBlur={(ev) => onSetValue(Number(ev.currentTarget.value))}
+                  defaultValue={entry?.value ?? ""}
+                  onBlur={(ev) => {
+                    const raw = ev.currentTarget.value.trim();
+                    onSetValue(raw === "" ? null : Number(raw));
+                  }}
                 />
                 <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
                   {habit.unit ?? ""}
@@ -246,6 +263,7 @@ function HabitEditorInline({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<Habit>({ ...habit });
+  const [weightInput, setWeightInput] = useState<string>(String(habit.weight));
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-2">
@@ -264,40 +282,79 @@ function HabitEditorInline({
         </div>
       </label>
       <label className="flex items-center gap-2">
-        <span className="w-24 text-sm">Unit</span>
+        <span
+          className={cn(
+            "w-24 text-sm",
+            draft.kind === "boolean" && "opacity-50"
+          )}
+        >
+          Unit
+        </span>
         <PixelInput
           value={draft.unit ?? ""}
           className="bg-background"
+          disabled={draft.kind === "boolean"}
           onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
         />
       </label>
       <label className="flex items-center gap-2">
-        <span className="w-24 text-sm">Target</span>
+        <span
+          className={cn(
+            "w-24 text-sm",
+            draft.kind === "boolean" && "opacity-50"
+          )}
+        >
+          Target
+        </span>
         <PixelInput
           type="number"
           className="bg-background"
-          value={draft.target ?? 0}
-          onChange={(e) =>
-            setDraft({ ...draft, target: Number(e.target.value) })
-          }
+          value={draft.target ?? ""}
+          disabled={draft.kind === "boolean"}
+          onChange={(e) => {
+            const v = e.target.value;
+            setDraft({ ...draft, target: v === "" ? null : Number(v) });
+          }}
         />
       </label>
       <label className="flex items-center gap-2">
-        <span className="w-24 text-sm">Min</span>
+        <span
+          className={cn(
+            "w-24 text-sm",
+            draft.kind === "boolean" && "opacity-50"
+          )}
+        >
+          Min
+        </span>
         <PixelInput
           type="number"
           className="bg-background"
-          value={draft.min ?? 0}
-          onChange={(e) => setDraft({ ...draft, min: Number(e.target.value) })}
+          value={draft.min ?? ""}
+          disabled={draft.kind === "boolean"}
+          onChange={(e) => {
+            const v = e.target.value;
+            setDraft({ ...draft, min: v === "" ? null : Number(v) });
+          }}
         />
       </label>
       <label className="flex items-center gap-2">
-        <span className="w-24 text-sm">Max</span>
+        <span
+          className={cn(
+            "w-24 text-sm",
+            draft.kind === "boolean" && "opacity-50"
+          )}
+        >
+          Max
+        </span>
         <PixelInput
           type="number"
           className="bg-background"
-          value={draft.max ?? 0}
-          onChange={(e) => setDraft({ ...draft, max: Number(e.target.value) })}
+          value={draft.max ?? ""}
+          disabled={draft.kind === "boolean"}
+          onChange={(e) => {
+            const v = e.target.value;
+            setDraft({ ...draft, max: v === "" ? null : Number(v) });
+          }}
         />
       </label>
 
@@ -306,22 +363,26 @@ function HabitEditorInline({
         <PixelInput
           type="number"
           className="bg-background"
-          value={draft.weight}
-          onChange={(e) =>
-            setDraft({ ...draft, weight: Number(e.target.value) })
-          }
+          value={weightInput}
+          onChange={(e) => setWeightInput(e.target.value)}
+          onBlur={(e) => {
+            const raw = e.currentTarget.value.trim();
+            const parsed = raw === "" ? 0 : Number(raw);
+            setWeightInput(String(parsed));
+            setDraft({
+              ...draft,
+              weight: Number.isFinite(parsed) ? parsed : 0,
+            });
+          }}
         />
       </label>
-      <div className="col-span-full flex gap-2 justify-end">
-        <button className="pixel-frame px-3 py-1" onClick={onCancel}>
-          <CloseIcon className="size-4" />
-        </button>
-        <button
-          className="pixel-frame px-3 py-1 bg-primary text-primary-foreground"
-          onClick={() => onSave(draft)}
-        >
-          <SaveIcon className="size-4" />
-        </button>
+      <div className="col-span-full flex gap-3 justify-end">
+        <Button onClick={onCancel} size="icon" variant="outline">
+          <CloseIcon className="size-5" />
+        </Button>
+        <Button onClick={() => onSave(draft)} size="icon">
+          <SaveIcon className="size-5" />
+        </Button>
       </div>
     </div>
   );

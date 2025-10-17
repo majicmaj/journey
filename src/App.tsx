@@ -29,7 +29,7 @@ function App() {
         <NavButton to="/settings">Settings</NavButton>
       </nav>
 
-      <main className="flex-1 p-1overflow-y-auto">
+      <main className="flex-1 p-1overflow-y-auto pb-20 sm:pb-0">
         <Outlet />
       </main>
 
@@ -66,7 +66,7 @@ function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden pixel-frame bg-card text-card-foreground p-2 fixed bottom-0 left-0 right-0 z-50"
+      className="md:hidden pixel-frame bg-card text-card-foreground p-2 absolute bottom-0 left-0 right-0 z-50"
       // style={{ paddingBottom: "calc(env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto max-w-md grid grid-cols-2 gap-2 justify-items-center">
