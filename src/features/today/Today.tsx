@@ -220,13 +220,6 @@ export default function Day() {
             Today
           </Button>
         </div>
-        <Progress
-          className="w-full sm:w-64 p"
-          value={summary?.totalScore ?? 0}
-        />
-
-        <hr className="w-full border-2 my-2" />
-
         <div className="grid grid-cols-2 w-full sm:flex items-center gap-3 flex-wrap ml-auto">
           <div className="pixel-frame">
             <Select
@@ -296,8 +289,10 @@ export default function Day() {
           </div>
         </div>
       </header>
-
-      <div className="border-2 border-border w-full h-px my-2" />
+      <Progress
+        className="w-full my-2 sm:w-64 p"
+        value={summary?.totalScore ?? 0}
+      />
 
       <section className="flex flex-col gap-3">
         {processed.map(({ habit: h, entry }) => {
