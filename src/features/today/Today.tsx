@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { PixelCard, PixelInput } from "@/components/pixel";
+import { PixelCard } from "@/components/pixel";
 import {
   useDaySummary,
   useEntries,
@@ -398,7 +398,7 @@ export default function Day() {
       <div className="border-2 border-border w-full h-px my-2" />
 
       <footer className="flex gap-3">
-        <PixelInput
+        <Input
           aria-label="New habit"
           placeholder="New habit..."
           value={title}
@@ -482,7 +482,7 @@ function HabitRow({
           {habit.kind === "quantified" && inlineValueInput && (
             <div className="relative w-32">
               <>
-                <PixelInput
+                <Input
                   aria-label={`value-${habit.id}`}
                   className="w-32 pr-12 bg-background"
                   type="number"
@@ -536,7 +536,7 @@ function HabitEditorInline({
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-2 col-span-full sm:col-span-2">
         <span className="w-24 text-sm">Title</span>
-        <PixelInput
+        <Input
           value={draft.title}
           className="bg-background"
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
@@ -570,7 +570,7 @@ function HabitEditorInline({
         >
           Unit
         </span>
-        <PixelInput
+        <Input
           value={draft.unit ?? ""}
           className="bg-background"
           disabled={draft.kind === "boolean"}
@@ -586,7 +586,7 @@ function HabitEditorInline({
         >
           Target
         </span>
-        <PixelInput
+        <Input
           type="number"
           className="bg-background"
           value={draft.target ?? ""}
@@ -606,7 +606,7 @@ function HabitEditorInline({
         >
           Min
         </span>
-        <PixelInput
+        <Input
           type="number"
           className="bg-background"
           value={draft.min ?? ""}
@@ -626,7 +626,7 @@ function HabitEditorInline({
         >
           Max
         </span>
-        <PixelInput
+        <Input
           type="number"
           className="bg-background"
           value={draft.max ?? ""}
@@ -640,7 +640,7 @@ function HabitEditorInline({
 
       <label className="flex items-center gap-2">
         <span className="w-24 text-sm">Weight</span>
-        <PixelInput
+        <Input
           type="number"
           className="bg-background"
           value={weightInput}
