@@ -225,13 +225,15 @@ export default function Day() {
           value={summary?.totalScore ?? 0}
         />
 
-        <div className="flex items-center gap-2 ml-auto">
+        <hr className="w-full border-2 my-2" />
+
+        <div className="grid grid-cols-2 w-full sm:flex items-center gap-3 flex-wrap ml-auto">
           <div className="pixel-frame">
             <Select
               value={sortKey}
               onValueChange={(v: SortKey) => setSortKey(v)}
             >
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full sm:w-36 bg-card">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
@@ -249,7 +251,7 @@ export default function Day() {
               value={sortDir}
               onValueChange={(v: "asc" | "desc") => setSortDir(v)}
             >
-              <SelectTrigger className="w-28">
+              <SelectTrigger className="w-full sm:w-28 bg-card">
                 <SelectValue placeholder="Order" />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
@@ -265,7 +267,7 @@ export default function Day() {
                 setFilterKind(v)
               }
             >
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full sm:w-36 bg-card">
                 <SelectValue placeholder="Kind" />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
@@ -282,7 +284,7 @@ export default function Day() {
                 setFilterCompletion(v)
               }
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40 bg-card">
                 <SelectValue placeholder="Completion" />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
