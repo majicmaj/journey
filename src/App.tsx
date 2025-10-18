@@ -65,13 +65,15 @@ function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed inset-x-0 bottom-0 z-50 pixel-frame bg-card text-card-foreground p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      className="md:hidden grid px-2 fixed inset-x-0 bottom-0 z-50 bg-card text-card-foreground pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
       role="navigation"
       aria-label="Mobile"
     >
-      <div className="mx-auto max-w-md grid grid-cols-2 gap-2 justify-items-center">
-        <Item to="/" Icon={Home} label="Day" />
-        <Item to="/settings" Icon={Sliders} label="Settings" />
+      <div className="pixel-frame p-2">
+        <div className="mx-auto max-w-md grid grid-cols-2 gap-2 justify-items-center">
+          <Item to="/" Icon={Home} label="Day" />
+          <Item to="/settings" Icon={Sliders} label="Settings" />
+        </div>
       </div>
     </nav>
   );
