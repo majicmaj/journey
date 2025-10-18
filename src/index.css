@@ -89,11 +89,11 @@
 .dark {
   --light: oklch(0 0 0);
   --dark: oklch(1 0 0);
-  --background: oklch(0.24 0.02 265.123);
+  --background: oklch(0.24 0.01 65.123);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
+  --card: oklch(0.21 0.02 85.885);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
+  --popover: oklch(0.21 0.02 85.885);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.5833 0.0889 61.41);
   --primary-foreground: oklch(0.981 0.03 57.708);
@@ -104,7 +104,7 @@
   --accent: oklch(0.274 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.644 0.245 22.216);
-  --border: oklch(0.34 0.03 265.123);
+  --border: oklch(0.44 0.05 65.123);
   --input: oklch(0.924 0.0689 61.4 / 15%);
   --ring: oklch(0.554 0.135 66.442);
   --chart-1: oklch(0.488 0.243 264.376);
@@ -196,6 +196,38 @@
         linear-gradient(
           color-mix(in srgb, var(--dark) 20%, transparent),
           color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        right 0 top / var(--p) 100% no-repeat;
+    pointer-events: none;
+  }
+  /* INNER bevel (inside): only bottom & right, full length */
+  /* dark variant */
+  .dark .pixel-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0; /* moves bevel inside the content box */
+    background:
+      /* top (short by --p on both ends) */ linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        left var(--p) top / 100% var(--p) no-repeat,
+      /* bottom (short by --p on both ends) */
+        linear-gradient(
+          color-mix(in srgb, var(--light) 30%, transparent),
+          color-mix(in srgb, var(--light) 30%, transparent)
+        )
+        left 0 bottom / 100% var(--p) no-repeat,
+      /* left (short by --p on both ends) */
+        linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        left 0 top / var(--p) 100% no-repeat,
+      /* right (short by --p on both ends) */
+        linear-gradient(
+          color-mix(in srgb, var(--light) 30%, transparent),
+          color-mix(in srgb, var(--light) 30%, transparent)
         )
         right 0 top / var(--p) 100% no-repeat;
     pointer-events: none;

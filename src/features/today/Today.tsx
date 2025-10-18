@@ -212,8 +212,8 @@ export default function Day() {
 
   return (
     <div className="flex flex-col gap-3">
-      <header className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto sm:flex-0">
           <Button
             aria-label="Previous day"
             size="icon"
@@ -231,11 +231,11 @@ export default function Day() {
           >
             <ChevronLeftIcon className="size-8" />
           </Button>
-          <div className="pixel-frame bg-card">
+          <div className="pixel-frame bg-card flex-1">
             <Input
               aria-label="Select date"
               type="date"
-              className="bg-card px-2 py-1 text-foreground"
+              className="w-full bg-card px-2 py-1 text-foreground"
               value={activeKey}
               onChange={(e) =>
                 setActiveKey(
@@ -262,15 +262,16 @@ export default function Day() {
           >
             <ChevronRightIcon className="size-8" />
           </Button>
-          <Button
-            className="ml-2"
-            onClick={() => setActiveKey(baseTodayKey)}
-            aria-label="Go to today"
-          >
-            Today
-          </Button>
         </div>
-        <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap ml-auto">
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => setActiveKey(baseTodayKey)}
+          aria-label="Go to today"
+          disabled={activeKey === baseTodayKey}
+        >
+          Today
+        </Button>
+        <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap">
           <div className="pixel-frame">
             <Select
               value={sortKey}
@@ -452,8 +453,8 @@ function HabitRow({
 }) {
   return (
     <PixelCard className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start pt-1 justify-between gap-3">
+        <div className="flex items-start gap-3">
           <Button
             aria-label={entry?.completed ? "Mark incomplete" : "Mark complete"}
             size="icon"
@@ -465,15 +466,21 @@ function HabitRow({
             )}
           </Button>
           <div className="flex items-center gap-2">
-            <span>{habit.title}</span>
+            <span
+              className={cn(
+                !isEditing ? "text-lg line-clamp-1" : "line-clamp-5"
+              )}
+            >
+              {habit.title}
+            </span>
             {typeof streak !== "undefined" && streak > 0 ? (
               <span className="text-xs text-muted-foreground">{streak}d</span>
             ) : null}
           </div>
         </div>
         <div className="flex items-end gap-3">
-          <div className="relative w-32">
-            {habit.kind === "quantified" && inlineValueInput ? (
+          {habit.kind === "quantified" && inlineValueInput && (
+            <div className="relative w-32">
               <>
                 <PixelInput
                   aria-label={`value-${habit.id}`}
@@ -489,10 +496,8 @@ function HabitRow({
                   {habit.unit ?? ""}
                 </div>
               </>
-            ) : (
-              <div className="w-32" />
-            )}
-          </div>
+            </div>
+          )}
           <Button aria-label="Edit habit" onClick={onEdit} size="icon">
             {isEditing ? (
               <CloseIcon className="size-8" />
