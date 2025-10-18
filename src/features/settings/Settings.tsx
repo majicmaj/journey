@@ -229,14 +229,17 @@ export default function Settings() {
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1">
         <span className="text-sm">Day start (HH:mm)</span>
-        <Input
-          value={data.dayStart}
-          onChange={(e) =>
-            db.settings
-              .put({ ...data, dayStart: e.target.value })
-              .then(() => qc.invalidateQueries({ queryKey: ["settings"] }))
-          }
-        />
+        <div className="pixel-frame">
+          <Input
+            value={data.dayStart}
+            className="bg-card"
+            onChange={(e) =>
+              db.settings
+                .put({ ...data, dayStart: e.target.value })
+                .then(() => qc.invalidateQueries({ queryKey: ["settings"] }))
+            }
+          />
+        </div>
       </label>
 
       <hr className="my-4 w-full border-2" />
@@ -297,7 +300,7 @@ export default function Settings() {
                 qc.invalidateQueries({ queryKey: ["settings"] });
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
@@ -312,7 +315,7 @@ export default function Settings() {
         </label>
 
         <details className="flex flex-col bg-card pixel-frame">
-          <summary className="cursor-pointer select-none bg-background p-2 text-sm">
+          <summary className="cursor-pointer select-none bg-card p-2 text-sm">
             Custom colors
           </summary>
           <div className="grid grid-cols-1 px-2 py-3 gap-3">
@@ -358,30 +361,32 @@ export default function Settings() {
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
           <span className="text-sm">Saved themes</span>
           <div className="flex gap-3">
-            <Input
-              placeholder="Theme name"
-              onKeyDown={async (e) => {
-                if (e.key !== "Enter") return;
-                const name = (e.target as HTMLInputElement).value.trim();
-                if (!name) return;
-                const theme = {
-                  id:
-                    crypto.randomUUID?.() ??
-                    Math.random().toString(36).slice(2),
-                  name,
-                  dark: Boolean(data.themeDark),
-                  presetId: data.themePreset,
-                  vars: data.themeVars ?? {},
-                };
-                const next: AppSettings = {
-                  ...data,
-                  savedThemes: [...(data.savedThemes ?? []), theme],
-                };
-                await db.settings.put(next);
-                (e.target as HTMLInputElement).value = "";
-                qc.invalidateQueries({ queryKey: ["settings"] });
-              }}
-            />
+            <div className="pixel-frame flex-1">
+              <Input
+                placeholder="Theme name"
+                onKeyDown={async (e) => {
+                  if (e.key !== "Enter") return;
+                  const name = (e.target as HTMLInputElement).value.trim();
+                  if (!name) return;
+                  const theme = {
+                    id:
+                      crypto.randomUUID?.() ??
+                      Math.random().toString(36).slice(2),
+                    name,
+                    dark: Boolean(data.themeDark),
+                    presetId: data.themePreset,
+                    vars: data.themeVars ?? {},
+                  };
+                  const next: AppSettings = {
+                    ...data,
+                    savedThemes: [...(data.savedThemes ?? []), theme],
+                  };
+                  await db.settings.put(next);
+                  (e.target as HTMLInputElement).value = "";
+                  qc.invalidateQueries({ queryKey: ["settings"] });
+                }}
+              />
+            </div>
             <Button
               onClick={async () => {
                 const Input =
