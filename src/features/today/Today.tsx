@@ -398,13 +398,15 @@ export default function Day() {
       <div className="border-2 border-border w-full h-px my-2" />
 
       <footer className="flex gap-3">
-        <Input
-          aria-label="New habit"
-          placeholder="New habit..."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="flex-1"
-        />
+        <div className="pixel-frame flex-1">
+          <Input
+            aria-label="New habit"
+            placeholder="New habit..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="flex-1 bg-card"
+          />
+        </div>
         <Button
           onClick={() => {
             const t = title.trim();
@@ -480,7 +482,7 @@ function HabitRow({
         </div>
         <div className="flex items-end gap-3">
           {habit.kind === "quantified" && inlineValueInput && (
-            <div className="relative w-32">
+            <div className="relative w-32 pixel-frame">
               <>
                 <Input
                   aria-label={`value-${habit.id}`}
