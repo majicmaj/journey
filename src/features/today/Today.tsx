@@ -220,7 +220,7 @@ export default function Day() {
             Today
           </Button>
         </div>
-        <div className="grid grid-cols-2 w-full sm:flex items-center gap-3 flex-wrap ml-auto">
+        <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap ml-auto">
           <div className="pixel-frame">
             <Select
               value={sortKey}
