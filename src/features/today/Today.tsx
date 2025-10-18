@@ -17,8 +17,18 @@ import {
   ChevronRightIcon,
   CheckIcon,
   PlusIcon,
+  TrashIcon,
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -40,6 +50,115 @@ export default function Day() {
   const { create, update } = useHabits();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Sorting & filtering state
+  type SortKey =
+    | "title"
+    | "weight"
+    | "createdAt"
+    | "completed"
+    | "value"
+    | "contribution";
+  const [sortKey, setSortKey] = useState<SortKey>("weight");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [filterKind, setFilterKind] = useState<
+    "all" | "boolean" | "quantified"
+  >("all");
+  const [filterCompletion, setFilterCompletion] = useState<
+    "all" | "completed" | "incomplete"
+  >("all");
+
+  const processed = useMemo(() => {
+    const habits = habitsQ.data ?? [];
+    const entries = entriesQ.data ?? [];
+    const entryByHabitId = new Map(entries.map((e) => [e.habitId, e]));
+    const summaryByHabitId = new Map(
+      (summary?.byHabit ?? []).map((s) => [s.habitId, s])
+    );
+
+    type Row = {
+      habit: Habit;
+      entry?: { completed?: boolean; value?: number | null } | undefined;
+      completed: boolean;
+      value: number | null;
+      contribution: number;
+    };
+
+    let rows: Row[] = habits.map((h) => {
+      const entry = entryByHabitId.get(h.id);
+      const s = summaryByHabitId.get(h.id);
+      return {
+        habit: h,
+        entry,
+        completed: s?.completed ?? entry?.completed ?? false,
+        value: entry?.value ?? null,
+        contribution: s?.contribution ?? 0,
+      };
+    });
+
+    // Filter
+    if (filterKind !== "all") {
+      rows = rows.filter((r) => r.habit.kind === filterKind);
+    }
+    if (filterCompletion !== "all") {
+      rows = rows.filter((r) =>
+        filterCompletion === "completed" ? r.completed : !r.completed
+      );
+    }
+
+    // Sort
+    const dir = sortDir === "asc" ? 1 : -1;
+    rows.sort((a, b) => {
+      const by = ((): number => {
+        switch (sortKey) {
+          case "title":
+            return a.habit.title.localeCompare(b.habit.title);
+          case "weight":
+            return a.habit.weight === b.habit.weight
+              ? a.habit.title.localeCompare(b.habit.title)
+              : a.habit.weight < b.habit.weight
+              ? -1
+              : 1;
+          case "createdAt":
+            return a.habit.createdAt < b.habit.createdAt ? -1 : 1;
+          case "completed":
+            return Number(a.completed) === Number(b.completed)
+              ? a.habit.title.localeCompare(b.habit.title)
+              : Number(a.completed) < Number(b.completed)
+              ? -1
+              : 1;
+          case "value": {
+            const av = a.value ?? -Infinity;
+            const bv = b.value ?? -Infinity;
+            return av === bv
+              ? a.habit.title.localeCompare(b.habit.title)
+              : av < bv
+              ? -1
+              : 1;
+          }
+          case "contribution":
+            return a.contribution === b.contribution
+              ? a.habit.title.localeCompare(b.habit.title)
+              : a.contribution < b.contribution
+              ? -1
+              : 1;
+          default:
+            return 0;
+        }
+      })();
+      return by * dir;
+    });
+
+    return rows;
+  }, [
+    habitsQ.data,
+    entriesQ.data,
+    summary,
+    sortKey,
+    sortDir,
+    filterKind,
+    filterCompletion,
+  ]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -105,13 +224,81 @@ export default function Day() {
           className="w-full sm:w-64 p"
           value={summary?.totalScore ?? 0}
         />
+
+        <div className="flex items-center gap-2 ml-auto">
+          <div className="pixel-frame">
+            <Select
+              value={sortKey}
+              onValueChange={(v: SortKey) => setSortKey(v)}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="weight">Sort: Weight</SelectItem>
+                <SelectItem value="title">Sort: Title</SelectItem>
+                <SelectItem value="createdAt">Sort: Created</SelectItem>
+                <SelectItem value="completed">Sort: Completed</SelectItem>
+                <SelectItem value="value">Sort: Value</SelectItem>
+                <SelectItem value="contribution">Sort: Contribution</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="pixel-frame">
+            <Select
+              value={sortDir}
+              onValueChange={(v: "asc" | "desc") => setSortDir(v)}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Order" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="asc">Asc</SelectItem>
+                <SelectItem value="desc">Desc</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="pixel-frame">
+            <Select
+              value={filterKind}
+              onValueChange={(v: "all" | "boolean" | "quantified") =>
+                setFilterKind(v)
+              }
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Kind" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="all">All kinds</SelectItem>
+                <SelectItem value="boolean">Boolean</SelectItem>
+                <SelectItem value="quantified">Quantified</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="pixel-frame">
+            <Select
+              value={filterCompletion}
+              onValueChange={(v: "all" | "completed" | "incomplete") =>
+                setFilterCompletion(v)
+              }
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Completion" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="incomplete">Incomplete</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </header>
 
       <div className="border-2 border-border w-full h-px my-2" />
 
       <section className="flex flex-col gap-3">
-        {(habitsQ.data ?? []).map((h) => {
-          const entry = (entriesQ.data ?? []).find((e) => e.habitId === h.id);
+        {processed.map(({ habit: h, entry }) => {
           return (
             <HabitRow
               key={h.id}
@@ -252,7 +439,11 @@ function HabitRow({
             )}
           </div>
           <Button aria-label="Edit habit" onClick={onEdit} size="icon">
-            <EditIcon className="size-8" />
+            {isEditing ? (
+              <CloseIcon className="size-8" />
+            ) : (
+              <EditIcon className="size-8" />
+            )}
           </Button>
         </div>
       </div>
@@ -279,6 +470,8 @@ function HabitEditorInline({
 }) {
   const [draft, setDraft] = useState<Habit>({ ...habit });
   const [weightInput, setWeightInput] = useState<string>(String(habit.weight));
+  const { remove } = useHabits();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-2 col-span-full sm:col-span-2">
@@ -403,13 +596,47 @@ function HabitEditorInline({
           }}
         />
       </label>
-      <div className="col-span-full flex gap-3 justify-end">
-        <Button onClick={onCancel} size="icon" variant="outline">
-          <CloseIcon className="size-5" />
-        </Button>
-        <Button onClick={() => onSave(draft)} size="icon">
-          <SaveIcon className="size-5" />
-        </Button>
+      <div className="col-span-full flex gap-3 justify-between">
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={() => setConfirmOpen(true)}
+            >
+              <TrashIcon className="size-8" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete habit?</DialogTitle>
+              <DialogDescription>
+                This will permanently remove "{habit.title}" and all of its
+                daily entries. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  await remove.mutateAsync(habit.id);
+                  setConfirmOpen(false);
+                  onCancel();
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => onSave(draft)} size="icon">
+            <SaveIcon className="size-8" />
+          </Button>
+        </div>
       </div>
     </div>
   );

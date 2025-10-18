@@ -117,7 +117,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       foreground: "oklch(0.98 0 0)",
       primary: "oklch(0.62 0.2 30)",
       "primary-foreground": "oklch(0.98 0.04 60)",
-      secondary: "oklch(0.5 0.2 50)",
+      secondary: "oklch(0.8 0.28 100)",
       accent: "oklch(0.3 0.04 50)",
       border: "oklch(0.6 0.07 50)",
     },

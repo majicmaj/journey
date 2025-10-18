@@ -24,7 +24,21 @@ export function useHabits() {
     mutationFn: async (habit: Habit) => db.habits.put(habit),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
   });
-  return { ...query, create, update };
+  const remove = useMutation({
+    mutationFn: async (habitId: string) => {
+      // Remove the habit and all its entries in a single transaction
+      await db.transaction("rw", db.habits, db.entries, async () => {
+        await db.entries.where("habitId").equals(habitId).delete();
+        await db.habits.delete(habitId);
+      });
+    },
+    onSuccess: async () => {
+      qc.invalidateQueries({ queryKey: ["habits"] });
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-range"] });
+    },
+  });
+  return { ...query, create, update, remove };
 }
 
 export function useEntries(dateKey: string) {
