@@ -100,6 +100,14 @@ export function useDailySummariesRange(fromKey: string, toKey: string) {
   return { habitsQ, rangeQ, summaries };
 }
 
+export function useEntriesRange(fromKey: string, toKey: string) {
+  return useQuery({
+    queryKey: ["entries-range", fromKey, toKey],
+    queryFn: async () =>
+      db.entries.where("date").between(fromKey, toKey, true, true).toArray(),
+  });
+}
+
 function enumerateDateKeys(fromKey: string, toKey: string): string[] {
   const out: string[] = [];
   const start = new Date(fromKey + "T00:00:00");

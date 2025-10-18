@@ -5,10 +5,12 @@ import {
   useEntries,
   useHabits,
   useSettings,
+  useEntriesRange,
 } from "@/hooks/useData";
 import { toDayKey } from "@/lib/dates";
+import { contributionRaw } from "@/lib/score";
 import { cn } from "@/lib/utils";
-import { type Habit } from "@/types/habit";
+import { type Habit, type DailyEntry } from "@/types/habit";
 import {
   CloseIcon,
   EditIcon,
@@ -50,6 +52,15 @@ export default function Day() {
   const { create, update } = useHabits();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Range entries for streak calculation
+  const dayStart = settings.data?.dayStart ?? "00:00";
+  const fromKey = useMemo(() => {
+    const base = new Date(activeKey + "T00:00:00");
+    const prev = new Date(base.getTime() - 365 * 24 * 60 * 60 * 1000);
+    return toDayKey(prev, dayStart);
+  }, [activeKey, dayStart]);
+  const rangeQ = useEntriesRange(fromKey, activeKey);
 
   // Sorting & filtering state
   type SortKey =
@@ -158,6 +169,45 @@ export default function Day() {
     sortDir,
     filterKind,
     filterCompletion,
+  ]);
+
+  const streakByHabitId = useMemo(() => {
+    if (!settings.data?.showStreaks) return new Map<string, number>();
+    const habits = habitsQ.data ?? [];
+    const all = rangeQ.data ?? [];
+    // Build map: habitId -> dateKey -> entry
+    const entriesByHabit = new Map<string, Map<string, DailyEntry>>();
+    for (const e of all) {
+      const m: Map<string, DailyEntry> =
+        entriesByHabit.get(e.habitId) ?? new Map();
+      m.set(e.date, e);
+      entriesByHabit.set(e.habitId, m);
+    }
+    const out = new Map<string, number>();
+    const active = new Date(activeKey + "T00:00:00");
+    for (const h of habits) {
+      let streak = 0;
+      // Count backwards starting at activeKey
+      for (let i = 0; i < 366; i++) {
+        const d = new Date(active.getTime() - i * 24 * 60 * 60 * 1000);
+        const key = toDayKey(d, dayStart);
+        if (key < fromKey) break;
+        const e: DailyEntry | undefined = entriesByHabit.get(h.id)?.get(key);
+        const raw = contributionRaw(e, h);
+        const done = raw >= 1;
+        if (done) streak += 1;
+        else break;
+      }
+      out.set(h.id, streak);
+    }
+    return out;
+  }, [
+    settings.data?.showStreaks,
+    habitsQ.data,
+    rangeQ.data,
+    activeKey,
+    dayStart,
+    fromKey,
   ]);
 
   return (
@@ -301,6 +351,7 @@ export default function Day() {
               key={h.id}
               habit={h}
               entry={entry}
+              streak={streakByHabitId.get(h.id) ?? 0}
               inlineValueInput={settings.data?.inlineValueInput ?? true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
@@ -379,6 +430,7 @@ export default function Day() {
 function HabitRow({
   habit,
   entry,
+  streak,
   inlineValueInput,
   onToggle,
   onSetValue,
@@ -389,6 +441,7 @@ function HabitRow({
 }: {
   habit: Habit;
   entry: { completed?: boolean; value?: number | null } | undefined;
+  streak?: number;
   inlineValueInput: boolean;
   onToggle: () => void;
   onSetValue: (v: number | null) => void;
@@ -411,7 +464,12 @@ function HabitRow({
               <CheckIcon className="text-foreground size-8" />
             )}
           </Button>
-          <div>{habit.title}</div>
+          <div className="flex items-center gap-2">
+            <span>{habit.title}</span>
+            {typeof streak !== "undefined" && streak > 0 ? (
+              <span className="text-xs text-muted-foreground">{streak}d</span>
+            ) : null}
+          </div>
         </div>
         <div className="flex items-end gap-3">
           <div className="relative w-32">
