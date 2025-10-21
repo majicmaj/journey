@@ -216,135 +216,139 @@ export default function Day() {
     <div className="flex flex-col gap-3">
       <header
         className={cn(
-          "h-0 p-0 flex flex-col gap-3 transition-all duration-300 overflow-hidden",
+          "h-0 transition-all duration-300 overflow-hidden",
           // "border overflow-hidden flex items-center justify-between flex-col sm:flex-row gap-3 flex-wrap",
-          headerExpanded && "h-50 p-1"
+          headerExpanded && "h-50"
         )}
       >
-        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto sm:flex-0">
-          <Button
-            aria-label="Previous day"
-            size="icon"
-            onClick={() =>
-              setActiveKey(
-                toDayKey(
-                  new Date(
-                    new Date(activeKey + "T00:00:00").getTime() -
-                      24 * 60 * 60 * 1000
-                  ),
-                  settings.data?.dayStart ?? "00:00"
-                )
-              )
-            }
-          >
-            <ChevronLeftIcon className="size-8" />
-          </Button>
-          <div className="pixel-frame bg-card flex-1">
-            <Input
-              aria-label="Select date"
-              type="date"
-              className="w-full bg-card px-2 py-1 text-foreground"
-              value={activeKey}
-              onChange={(e) =>
+        <div className="m-1 flex flex-col gap-3">
+          <div className="flex items-center gap-3 flex-1 w-full sm:w-auto sm:flex-0">
+            <Button
+              aria-label="Previous day"
+              size="icon"
+              onClick={() =>
                 setActiveKey(
-                  toDayKey(e.target.value, settings.data?.dayStart ?? "00:00")
+                  toDayKey(
+                    new Date(
+                      new Date(activeKey + "T00:00:00").getTime() -
+                        24 * 60 * 60 * 1000
+                    ),
+                    settings.data?.dayStart ?? "00:00"
+                  )
                 )
               }
-            />
+            >
+              <ChevronLeftIcon className="size-8" />
+            </Button>
+            <div className="pixel-frame bg-card flex-1">
+              <Input
+                aria-label="Select date"
+                type="date"
+                className="w-full bg-card px-2 py-1 text-foreground"
+                value={activeKey}
+                onChange={(e) =>
+                  setActiveKey(
+                    toDayKey(e.target.value, settings.data?.dayStart ?? "00:00")
+                  )
+                }
+              />
+            </div>
+            <Button
+              aria-label="Next day"
+              size="icon"
+              onClick={() =>
+                setActiveKey(
+                  toDayKey(
+                    new Date(
+                      new Date(activeKey + "T00:00:00").getTime() +
+                        24 * 60 * 60 * 1000
+                    ),
+                    settings.data?.dayStart ?? "00:00"
+                  )
+                )
+              }
+              disabled={activeKey >= baseTodayKey}
+            >
+              <ChevronRightIcon className="size-8" />
+            </Button>
           </div>
           <Button
-            aria-label="Next day"
-            size="icon"
-            onClick={() =>
-              setActiveKey(
-                toDayKey(
-                  new Date(
-                    new Date(activeKey + "T00:00:00").getTime() +
-                      24 * 60 * 60 * 1000
-                  ),
-                  settings.data?.dayStart ?? "00:00"
-                )
-              )
-            }
-            disabled={activeKey >= baseTodayKey}
+            className="w-full sm:w-auto"
+            onClick={() => setActiveKey(baseTodayKey)}
+            aria-label="Go to today"
+            disabled={activeKey === baseTodayKey}
           >
-            <ChevronRightIcon className="size-8" />
+            Today
           </Button>
-        </div>
-        <Button
-          className="w-full sm:w-auto"
-          onClick={() => setActiveKey(baseTodayKey)}
-          aria-label="Go to today"
-          disabled={activeKey === baseTodayKey}
-        >
-          Today
-        </Button>
-        <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap">
-          <div className="pixel-frame">
-            <Select
-              value={sortKey}
-              onValueChange={(v: SortKey) => setSortKey(v)}
-            >
-              <SelectTrigger className="w-full sm:w-36 bg-card">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                <SelectItem value="weight">Sort: Weight</SelectItem>
-                <SelectItem value="title">Sort: Title</SelectItem>
-                <SelectItem value="createdAt">Sort: Created</SelectItem>
-                <SelectItem value="completed">Sort: Completed</SelectItem>
-                <SelectItem value="value">Sort: Value</SelectItem>
-                <SelectItem value="contribution">Sort: Contribution</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="pixel-frame">
-            <Select
-              value={sortDir}
-              onValueChange={(v: "asc" | "desc") => setSortDir(v)}
-            >
-              <SelectTrigger className="w-full sm:w-28 bg-card">
-                <SelectValue placeholder="Order" />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                <SelectItem value="asc">Asc</SelectItem>
-                <SelectItem value="desc">Desc</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="pixel-frame">
-            <Select
-              value={filterKind}
-              onValueChange={(v: "all" | "boolean" | "quantified") =>
-                setFilterKind(v)
-              }
-            >
-              <SelectTrigger className="w-full sm:w-36 bg-card">
-                <SelectValue placeholder="Kind" />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                <SelectItem value="all">All kinds</SelectItem>
-                <SelectItem value="boolean">Boolean</SelectItem>
-                <SelectItem value="quantified">Quantified</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="pixel-frame">
-            <Select
-              value={filterCompletion}
-              onValueChange={(v: "all" | "completed" | "incomplete") =>
-                setFilterCompletion(v)
-              }
-            >
-              <SelectTrigger className="w-full sm:w-40 bg-card">
-                <SelectValue placeholder="Completion" />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="incomplete">Incomplete</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap">
+            <div className="pixel-frame">
+              <Select
+                value={sortKey}
+                onValueChange={(v: SortKey) => setSortKey(v)}
+              >
+                <SelectTrigger className="w-full sm:w-36 bg-card">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="weight">Sort: Weight</SelectItem>
+                  <SelectItem value="title">Sort: Title</SelectItem>
+                  <SelectItem value="createdAt">Sort: Created</SelectItem>
+                  <SelectItem value="completed">Sort: Completed</SelectItem>
+                  <SelectItem value="value">Sort: Value</SelectItem>
+                  <SelectItem value="contribution">
+                    Sort: Contribution
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="pixel-frame">
+              <Select
+                value={sortDir}
+                onValueChange={(v: "asc" | "desc") => setSortDir(v)}
+              >
+                <SelectTrigger className="w-full sm:w-28 bg-card">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="asc">Asc</SelectItem>
+                  <SelectItem value="desc">Desc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="pixel-frame">
+              <Select
+                value={filterKind}
+                onValueChange={(v: "all" | "boolean" | "quantified") =>
+                  setFilterKind(v)
+                }
+              >
+                <SelectTrigger className="w-full sm:w-36 bg-card">
+                  <SelectValue placeholder="Kind" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="all">All kinds</SelectItem>
+                  <SelectItem value="boolean">Boolean</SelectItem>
+                  <SelectItem value="quantified">Quantified</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="pixel-frame">
+              <Select
+                value={filterCompletion}
+                onValueChange={(v: "all" | "completed" | "incomplete") =>
+                  setFilterCompletion(v)
+                }
+              >
+                <SelectTrigger className="w-full sm:w-40 bg-card">
+                  <SelectValue placeholder="Completion" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="incomplete">Incomplete</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </header>
