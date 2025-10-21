@@ -166,3 +166,37 @@ export const TrashIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     />
   </svg>
 );
+
+export const ChevronDownIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
+  props
+) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <path
+      d="M7 8H5v2h2v2h2v2h2v2h2v-2h2v-2h2v-2h2V8h-2v2h-2v2h-2v2h-2v-2H9v-2H7V8z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const ChevronUpIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
+  props
+) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <path
+      d="M7 16H5v-2h2v-2h2v-2h2V8h2v2h2v2h2v2h2v2h-2v-2h-2v-2h-2v-2h-2v2H9v2H7v2z"
+      fill="currentColor"
+    />
+  </svg>
+);

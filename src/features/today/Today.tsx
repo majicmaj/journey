@@ -20,6 +20,8 @@ import {
   CheckIcon,
   PlusIcon,
   TrashIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +54,7 @@ export default function Day() {
   const { create, update } = useHabits();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-
+  const [headerExpanded, setHeaderExpanded] = useState(false);
   // Range entries for streak calculation
   const dayStart = settings.data?.dayStart ?? "00:00";
   const fromKey = useMemo(() => {
@@ -212,7 +214,13 @@ export default function Day() {
 
   return (
     <div className="flex flex-col gap-3">
-      <header className="flex items-center justify-between flex-col sm:flex-row gap-3 flex-wrap">
+      <header
+        className={cn(
+          "h-0 p-0 flex flex-col gap-3 transition-all duration-300 overflow-hidden",
+          // "border overflow-hidden flex items-center justify-between flex-col sm:flex-row gap-3 flex-wrap",
+          headerExpanded && "h-50 p-1"
+        )}
+      >
         <div className="flex items-center gap-3 flex-1 w-full sm:w-auto sm:flex-0">
           <Button
             aria-label="Previous day"
@@ -340,6 +348,19 @@ export default function Day() {
           </div>
         </div>
       </header>
+
+      <Button
+        variant={headerExpanded ? "secondary" : "ghost"}
+        className="w-full"
+        size="icon"
+        onClick={() => setHeaderExpanded((prev) => !prev)}
+      >
+        {headerExpanded ? (
+          <ChevronUpIcon className="size-8" />
+        ) : (
+          <ChevronDownIcon className="size-8" />
+        )}
+      </Button>
       <Progress
         className="w-full my-2 sm:w-64 p"
         value={summary?.totalScore ?? 0}
