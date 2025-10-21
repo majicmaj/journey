@@ -213,7 +213,12 @@ export default function Day() {
   ]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div
+      className={cn(
+        "flex flex-col gap-3 transition-all mt-0 duration-300",
+        !headerExpanded && "-mt-3"
+      )}
+    >
       <header
         className={cn(
           "h-0 transition-all duration-300 overflow-hidden",
