@@ -22,7 +22,7 @@ const NavButton = ({
 
 function App() {
   return (
-    <div className="font-display max-h-svh overflow-y-auto min-h-svh p-3 flex flex-col gap-3">
+    <div className="font-display max-h-svh overflow-y-auto min-h-svh flex flex-col gap-3">
       {/* Desktop top nav */}
       <nav className="hidden md:flex pixel-frame bg-card text-card-foreground p-3 gap-3 justify-center">
         <NavButton to="/">Day</NavButton>

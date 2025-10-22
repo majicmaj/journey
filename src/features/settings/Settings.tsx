@@ -226,7 +226,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 p-3">
       <label className="flex flex-col gap-1">
         <span className="text-sm">Day start (HH:mm)</span>
         <div className="pixel-frame">
