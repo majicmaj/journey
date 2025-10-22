@@ -200,3 +200,39 @@ export const ChevronUpIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
     />
   </svg>
 );
+
+export const IceIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <image
+      x="0px"
+      y="0px"
+      width="24px"
+      height="24px"
+      xlinkHref="data:img/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACVBMVEX///8NreT///8T2xHZAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAHdElNRQfpChYHACNldZf/AAAAUUlEQVQY03WQwQ3AMAgDzRDeB+8A+69SoipKE1KExD0MBgDAHG9MMMl3AANfKOWRKWeYcgGoTA35BKtS6AtgweDw+IdLV5vc3fuG/Yrrpfs3HrMnIxXIImX7AAAAAElFTkSuQmCC"
+    />
+  </svg>
+);
+
+export const FireIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <image
+      x="0px"
+      y="0px"
+      width="24px"
+      height="24px"
+      xlinkHref="data:img/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgAgMAAABvDLAlAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACVBMVEX////0AQP////fOVIeAAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAHdElNRQfpChYHFBNtAnAGAAAAOElEQVQI12NgYGUAASgZgESGIkgGKBmARIaCZaFkAEgATrIikaEgQDYZACeBDgGbCbY+AOxeEAkADQQhMKakATIAAAAASUVORK5CYII="
+    />
+  </svg>
+);

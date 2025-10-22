@@ -22,6 +22,8 @@ import {
   TrashIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  IceIcon,
+  FireIcon,
 } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -211,6 +213,26 @@ export default function Day() {
     dayStart,
     fromKey,
   ]);
+
+  // Whether a habit has ever been completed (within the loaded range)
+  const doneEverByHabitId = useMemo(() => {
+    if (!settings.data?.showStreaks) return new Map<string, boolean>();
+    const habits = habitsQ.data ?? [];
+    const all = rangeQ.data ?? [];
+    const entriesByHabit = new Map<string, DailyEntry[]>();
+    for (const e of all) {
+      const arr = entriesByHabit.get(e.habitId) ?? [];
+      arr.push(e);
+      entriesByHabit.set(e.habitId, arr);
+    }
+    const out = new Map<string, boolean>();
+    for (const h of habits) {
+      const arr = entriesByHabit.get(h.id) ?? [];
+      const anyDone = arr.some((e) => contributionRaw(e, h) >= 1);
+      out.set(h.id, anyDone);
+    }
+    return out;
+  }, [settings.data?.showStreaks, habitsQ.data, rangeQ.data]);
 
   // Cold streak: consecutive days up to activeKey where habit was NOT done
   const coldStreakByHabitId = useMemo(() => {
@@ -422,6 +444,7 @@ export default function Day() {
               entry={entry}
               streak={streakByHabitId.get(h.id) ?? 0}
               coldStreak={coldStreakByHabitId.get(h.id) ?? 0}
+              isNew={doneEverByHabitId.get(h.id) === false}
               inlineValueInput={settings.data?.inlineValueInput ?? true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
@@ -504,6 +527,7 @@ function HabitRow({
   entry,
   streak,
   coldStreak,
+  isNew,
   inlineValueInput,
   onToggle,
   onSetValue,
@@ -516,6 +540,7 @@ function HabitRow({
   entry: { completed?: boolean; value?: number | null } | undefined;
   streak?: number;
   coldStreak?: number;
+  isNew?: boolean;
   inlineValueInput: boolean;
   onToggle: () => void;
   onSetValue: (v: number | null) => void;
@@ -527,7 +552,7 @@ function HabitRow({
   return (
     <PixelCard className="flex flex-col gap-2">
       <div className="flex items-start pt-1 justify-between gap-3">
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           <Button
             aria-label={entry?.completed ? "Mark incomplete" : "Mark complete"}
             size="icon"
@@ -538,19 +563,33 @@ function HabitRow({
               <CheckIcon className="text-foreground size-8" />
             )}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col">
             <span
               className={cn(
-                !isEditing ? "text-lg line-clamp-1" : "line-clamp-5"
+                !isEditing ? "text-sm line-clamp-1" : "line-clamp-5"
               )}
             >
               {habit.title}
             </span>
-            {typeof streak !== "undefined" && streak > 0 ? (
-              <span className="text-xs text-muted-foreground">{streak}d</span>
-            ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
-              <span className="text-xs text-destructive">-{coldStreak}d</span>
-            ) : null}
+            <div>
+              {typeof streak !== "undefined" && streak > 0 ? (
+                <div className="flex items-center gap-1">
+                  <FireIcon className="size-3" />
+                  <span className="text-xs text-muted-foreground">
+                    {streak}d
+                  </span>
+                </div>
+              ) : isNew ? (
+                <span className="text-xs text-destructive">new!</span>
+              ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
+                <div className="flex items-center gap-1">
+                  <IceIcon className="size-3" />
+                  <span className="text-xs text-muted-foreground">
+                    -{coldStreak}d
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
         <div className="flex items-end gap-3">
