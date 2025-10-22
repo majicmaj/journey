@@ -191,8 +191,14 @@ export default function Day() {
     const active = new Date(activeKey + "T00:00:00");
     for (const h of habits) {
       let streak = 0;
-      // Count backwards starting at activeKey
-      for (let i = 0; i < 366; i++) {
+      // Determine whether the active day is completed; if not, start from yesterday
+      const todayEntry: DailyEntry | undefined = entriesByHabit
+        .get(h.id)
+        ?.get(activeKey);
+      const todayDone = contributionRaw(todayEntry, h) >= 1;
+      const startOffset = todayDone ? 0 : 1;
+      // Count backwards starting at activeKey (including today only if done)
+      for (let i = startOffset; i < 366; i++) {
         const d = new Date(active.getTime() - i * 24 * 60 * 60 * 1000);
         const key = toDayKey(d, dayStart);
         if (key < fromKey) break;
@@ -260,7 +266,7 @@ export default function Day() {
         if (!done) streak += 1;
         else break;
       }
-      out.set(h.id, streak);
+      out.set(h.id, streak - 1); // -1 because we don't count the current day
     }
     return out;
   }, [
@@ -584,7 +590,13 @@ function HabitRow({
               ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
                 <div className="flex items-center gap-1">
                   <IceIcon className="size-3" />
-                  <span className="text-xs text-muted-foreground">
+                  <span
+                    className={cn(
+                      "text-xs text-muted-foreground",
+                      coldStreak > 3 && "font-bold",
+                      coldStreak > 6 && "text-destructive"
+                    )}
+                  >
                     -{coldStreak}d
                   </span>
                 </div>
