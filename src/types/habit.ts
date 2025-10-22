@@ -8,7 +8,7 @@ export interface Habit {
   color?: string;
   tags?: string[];
   weight: number; // default 1.0, [0.1 .. 5.0]
-  kind: "boolean" | "quantified";
+  kind: "boolean" | "quantified" | "time";
   unit?: Unit;
   target?: number | null;
   min?: number | null;

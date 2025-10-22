@@ -89,7 +89,7 @@ function DayPane({
   const [sortKey, setSortKey] = useState<SortKey>("weight");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [filterKind, setFilterKind] = useState<
-    "all" | "boolean" | "quantified"
+    "all" | "boolean" | "quantified" | "time"
   >("all");
   const [filterCompletion, setFilterCompletion] = useState<
     "all" | "completed" | "incomplete"
@@ -374,7 +374,7 @@ function DayPane({
             <div className="pixel-frame">
               <Select
                 value={filterKind}
-                onValueChange={(v: "all" | "boolean" | "quantified") =>
+                onValueChange={(v: "all" | "boolean" | "quantified" | "time") =>
                   setFilterKind(v)
                 }
               >
@@ -385,6 +385,7 @@ function DayPane({
                   <SelectItem value="all">All kinds</SelectItem>
                   <SelectItem value="boolean">Boolean</SelectItem>
                   <SelectItem value="quantified">Quantified</SelectItem>
+                  <SelectItem value="time">Time</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -439,24 +440,37 @@ function DayPane({
               inlineValueInput={settings.data?.inlineValueInput ?? true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
-                if (h.kind === "quantified" && nextCompleted) {
-                  const threshold =
-                    h.target != null ? h.target : h.min != null ? h.min : 0;
-                  const currentValue = entry?.value ?? 0;
-                  const nextValue = Math.max(currentValue, threshold ?? 0);
-                  upsert.mutate({
-                    habitId: h.id,
-                    date: dayKey,
-                    completed: nextCompleted,
-                    value: nextValue,
-                  });
-                } else {
-                  upsert.mutate({
-                    habitId: h.id,
-                    date: dayKey,
-                    completed: nextCompleted,
-                  });
+                if (nextCompleted) {
+                  if (h.kind === "quantified") {
+                    const threshold =
+                      h.target != null ? h.target : h.min != null ? h.min : 0;
+                    const currentValue = entry?.value ?? 0;
+                    const nextValue = Math.max(currentValue, threshold ?? 0);
+                    upsert.mutate({
+                      habitId: h.id,
+                      date: dayKey,
+                      completed: true,
+                      value: nextValue,
+                    });
+                    return;
+                  }
+                  if (h.kind === "time") {
+                    const now = new Date();
+                    const minutes = now.getHours() * 60 + now.getMinutes();
+                    upsert.mutate({
+                      habitId: h.id,
+                      date: dayKey,
+                      completed: true,
+                      value: minutes,
+                    });
+                    return;
+                  }
                 }
+                upsert.mutate({
+                  habitId: h.id,
+                  date: dayKey,
+                  completed: nextCompleted,
+                });
               }}
               onSetValue={(v) =>
                 upsert.mutate({
@@ -613,25 +627,47 @@ function HabitRow({
           </div>
         </div>
         <div className="flex items-end gap-3">
-          {habit.kind === "quantified" && inlineValueInput && (
-            <div className="relative w-32 pixel-frame">
-              <>
-                <Input
-                  aria-label={`value-${habit.id}`}
-                  className="w-32 pr-12 bg-background"
-                  type="number"
-                  defaultValue={entry?.value ?? ""}
-                  onBlur={(ev) => {
-                    const raw = ev.currentTarget.value.trim();
-                    onSetValue(raw === "" ? null : Number(raw));
-                  }}
-                />
-                <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
-                  {habit.unit ?? ""}
-                </div>
-              </>
-            </div>
-          )}
+          {(habit.kind === "quantified" || habit.kind === "time") &&
+            inlineValueInput && (
+              <div className="relative w-32 pixel-frame">
+                <>
+                  <Input
+                    aria-label={`value-${habit.id}`}
+                    className="w-32 pr-12 bg-background"
+                    type={habit.kind === "time" ? "time" : "number"}
+                    defaultValue={
+                      habit.kind === "time"
+                        ? typeof entry?.value === "number"
+                          ? `${String(Math.floor(entry.value / 60)).padStart(
+                              2,
+                              "0"
+                            )}:${String(entry.value % 60).padStart(2, "0")}`
+                          : ""
+                        : entry?.value ?? ""
+                    }
+                    onBlur={(ev) => {
+                      const raw = ev.currentTarget.value.trim();
+                      if (habit.kind === "time") {
+                        // Expect HH:MM, convert to minutes
+                        if (raw === "") onSetValue(null);
+                        else {
+                          const [hh, mm] = raw.split(":").map((s) => Number(s));
+                          const minutes =
+                            (Number.isFinite(hh) ? hh : 0) * 60 +
+                            (Number.isFinite(mm) ? mm : 0);
+                          onSetValue(minutes);
+                        }
+                      } else {
+                        onSetValue(raw === "" ? null : Number(raw));
+                      }
+                    }}
+                  />
+                  <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
+                    {habit.kind === "time" ? "hh:mm" : habit.unit ?? ""}
+                  </div>
+                </>
+              </div>
+            )}
           <Button aria-label="Edit habit" onClick={onEdit} size="icon-sm">
             {isEditing ? (
               <CloseIcon className="size-6" />
@@ -691,6 +727,7 @@ function HabitEditorInline({
             <SelectContent className="pixel-frame">
               <SelectItem value="boolean">Boolean</SelectItem>
               <SelectItem value="quantified">Quantified</SelectItem>
+              <SelectItem value="time">Time</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -699,7 +736,7 @@ function HabitEditorInline({
         <span
           className={cn(
             "w-24 text-sm",
-            draft.kind === "boolean" && "opacity-50"
+            (draft.kind === "boolean" || draft.kind === "time") && "opacity-50"
           )}
         >
           Unit
@@ -707,7 +744,7 @@ function HabitEditorInline({
         <Input
           value={draft.unit ?? ""}
           className="bg-background"
-          disabled={draft.kind === "boolean"}
+          disabled={draft.kind === "boolean" || draft.kind === "time"}
           onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
         />
       </label>
@@ -720,16 +757,43 @@ function HabitEditorInline({
         >
           Target
         </span>
-        <Input
-          type="number"
-          className="bg-background"
-          value={draft.target ?? ""}
-          disabled={draft.kind === "boolean"}
-          onChange={(e) => {
-            const v = e.target.value;
-            setDraft({ ...draft, target: v === "" ? null : Number(v) });
-          }}
-        />
+        {draft.kind === "time" ? (
+          <Input
+            type="time"
+            className="bg-background"
+            value={
+              typeof draft.target === "number"
+                ? `${String(Math.floor(draft.target / 60)).padStart(
+                    2,
+                    "0"
+                  )}:${String(draft.target % 60).padStart(2, "0")}`
+                : ""
+            }
+            disabled={false}
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (raw === "") setDraft({ ...draft, target: null });
+              else {
+                const [hh, mm] = raw.split(":").map((s) => Number(s));
+                const minutes =
+                  (Number.isFinite(hh) ? hh : 0) * 60 +
+                  (Number.isFinite(mm) ? mm : 0);
+                setDraft({ ...draft, target: minutes });
+              }
+            }}
+          />
+        ) : (
+          <Input
+            type="number"
+            className="bg-background"
+            value={draft.target ?? ""}
+            disabled={draft.kind === "boolean"}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDraft({ ...draft, target: v === "" ? null : Number(v) });
+            }}
+          />
+        )}
       </label>
       <label className="flex items-center gap-2">
         <span
@@ -740,16 +804,43 @@ function HabitEditorInline({
         >
           Min
         </span>
-        <Input
-          type="number"
-          className="bg-background"
-          value={draft.min ?? ""}
-          disabled={draft.kind === "boolean"}
-          onChange={(e) => {
-            const v = e.target.value;
-            setDraft({ ...draft, min: v === "" ? null : Number(v) });
-          }}
-        />
+        {draft.kind === "time" ? (
+          <Input
+            type="time"
+            className="bg-background"
+            value={
+              typeof draft.min === "number"
+                ? `${String(Math.floor(draft.min / 60)).padStart(
+                    2,
+                    "0"
+                  )}:${String(draft.min % 60).padStart(2, "0")}`
+                : ""
+            }
+            disabled={false}
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (raw === "") setDraft({ ...draft, min: null });
+              else {
+                const [hh, mm] = raw.split(":").map((s) => Number(s));
+                const minutes =
+                  (Number.isFinite(hh) ? hh : 0) * 60 +
+                  (Number.isFinite(mm) ? mm : 0);
+                setDraft({ ...draft, min: minutes });
+              }
+            }}
+          />
+        ) : (
+          <Input
+            type="number"
+            className="bg-background"
+            value={draft.min ?? ""}
+            disabled={draft.kind === "boolean"}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDraft({ ...draft, min: v === "" ? null : Number(v) });
+            }}
+          />
+        )}
       </label>
       <label className="flex items-center gap-2">
         <span
@@ -760,16 +851,43 @@ function HabitEditorInline({
         >
           Max
         </span>
-        <Input
-          type="number"
-          className="bg-background"
-          value={draft.max ?? ""}
-          disabled={draft.kind === "boolean"}
-          onChange={(e) => {
-            const v = e.target.value;
-            setDraft({ ...draft, max: v === "" ? null : Number(v) });
-          }}
-        />
+        {draft.kind === "time" ? (
+          <Input
+            type="time"
+            className="bg-background"
+            value={
+              typeof draft.max === "number"
+                ? `${String(Math.floor(draft.max / 60)).padStart(
+                    2,
+                    "0"
+                  )}:${String(draft.max % 60).padStart(2, "0")}`
+                : ""
+            }
+            disabled={false}
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (raw === "") setDraft({ ...draft, max: null });
+              else {
+                const [hh, mm] = raw.split(":").map((s) => Number(s));
+                const minutes =
+                  (Number.isFinite(hh) ? hh : 0) * 60 +
+                  (Number.isFinite(mm) ? mm : 0);
+                setDraft({ ...draft, max: minutes });
+              }
+            }}
+          />
+        ) : (
+          <Input
+            type="number"
+            className="bg-background"
+            value={draft.max ?? ""}
+            disabled={draft.kind === "boolean"}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDraft({ ...draft, max: v === "" ? null : Number(v) });
+            }}
+          />
+        )}
       </label>
 
       <label className="flex items-center gap-2">

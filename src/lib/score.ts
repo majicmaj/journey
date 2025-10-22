@@ -12,6 +12,7 @@ export function contributionRaw(
   if (habit.kind === "boolean") {
     return entry.completed ? 1 : 0;
   }
+  // For quantified and time kinds we both use numeric value scaling
   const value = typeof entry.value === "number" ? entry.value : 0;
   const { target, min, max } = habit;
   if (target != null) {
