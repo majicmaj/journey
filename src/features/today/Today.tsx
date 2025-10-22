@@ -212,6 +212,44 @@ export default function Day() {
     fromKey,
   ]);
 
+  // Cold streak: consecutive days up to activeKey where habit was NOT done
+  const coldStreakByHabitId = useMemo(() => {
+    if (!settings.data?.showStreaks) return new Map<string, number>();
+    const habits = habitsQ.data ?? [];
+    const all = rangeQ.data ?? [];
+    const entriesByHabit = new Map<string, Map<string, DailyEntry>>();
+    for (const e of all) {
+      const m: Map<string, DailyEntry> =
+        entriesByHabit.get(e.habitId) ?? new Map();
+      m.set(e.date, e);
+      entriesByHabit.set(e.habitId, m);
+    }
+    const out = new Map<string, number>();
+    const active = new Date(activeKey + "T00:00:00");
+    for (const h of habits) {
+      let streak = 0;
+      for (let i = 0; i < 366; i++) {
+        const d = new Date(active.getTime() - i * 24 * 60 * 60 * 1000);
+        const key = toDayKey(d, dayStart);
+        if (key < fromKey) break;
+        const e: DailyEntry | undefined = entriesByHabit.get(h.id)?.get(key);
+        const raw = contributionRaw(e, h);
+        const done = raw >= 1;
+        if (!done) streak += 1;
+        else break;
+      }
+      out.set(h.id, streak);
+    }
+    return out;
+  }, [
+    settings.data?.showStreaks,
+    habitsQ.data,
+    rangeQ.data,
+    activeKey,
+    dayStart,
+    fromKey,
+  ]);
+
   return (
     <div
       className={cn(
@@ -383,6 +421,7 @@ export default function Day() {
               habit={h}
               entry={entry}
               streak={streakByHabitId.get(h.id) ?? 0}
+              coldStreak={coldStreakByHabitId.get(h.id) ?? 0}
               inlineValueInput={settings.data?.inlineValueInput ?? true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
@@ -464,6 +503,7 @@ function HabitRow({
   habit,
   entry,
   streak,
+  coldStreak,
   inlineValueInput,
   onToggle,
   onSetValue,
@@ -475,6 +515,7 @@ function HabitRow({
   habit: Habit;
   entry: { completed?: boolean; value?: number | null } | undefined;
   streak?: number;
+  coldStreak?: number;
   inlineValueInput: boolean;
   onToggle: () => void;
   onSetValue: (v: number | null) => void;
@@ -507,6 +548,8 @@ function HabitRow({
             </span>
             {typeof streak !== "undefined" && streak > 0 ? (
               <span className="text-xs text-muted-foreground">{streak}d</span>
+            ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
+              <span className="text-xs text-destructive">-{coldStreak}d</span>
             ) : null}
           </div>
         </div>
