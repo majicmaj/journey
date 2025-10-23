@@ -426,6 +426,7 @@ function DayPane({
         )}
       </Button>
       <Progress
+        key={dayKey}
         className="w-full my-2 sm:w-64 p"
         value={summary?.totalScore ?? 0}
       />
