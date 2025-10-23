@@ -581,9 +581,9 @@ function HabitRow({
   onCancelEdit: () => void;
 }) {
   return (
-    <PixelCard className="flex flex-col gap-2">
+    <PixelCard className="flex flex-col gap-3">
       <div className="flex items-start pt-1 justify-between gap-3">
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-3">
           <Button
             aria-label={entry?.completed ? "Mark incomplete" : "Mark complete"}
             size="icon"
@@ -709,7 +709,7 @@ function HabitEditorInline({
   const qc = useQueryClient();
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
-      <label className="flex items-center gap-2 col-span-full sm:col-span-2">
+      <label className="flex items-center gap-3 col-span-full sm:col-span-2">
         <span className="w-24 text-sm">Title</span>
         <Input
           value={draft.title}
@@ -717,7 +717,7 @@ function HabitEditorInline({
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
         />
       </label>
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-3">
         <span className="w-24 text-sm">Kind</span>
         <div className="pixel-frame w-full">
           <Select
@@ -737,7 +737,7 @@ function HabitEditorInline({
           </Select>
         </div>
       </label>
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-3">
         <span
           className={cn(
             "w-24 text-sm",
@@ -753,7 +753,7 @@ function HabitEditorInline({
           onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
         />
       </label>
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-3">
         <span
           className={cn(
             "w-24 text-sm",
@@ -800,7 +800,7 @@ function HabitEditorInline({
           />
         )}
       </label>
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-3">
         <span
           className={cn(
             "w-24 text-sm",
@@ -847,7 +847,7 @@ function HabitEditorInline({
           />
         )}
       </label>
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-3">
         <span
           className={cn(
             "w-24 text-sm",
@@ -895,7 +895,7 @@ function HabitEditorInline({
         )}
       </label>
 
-      <label className="flex items-center gap-2">
+      <label className="flex items-center gap-3">
         <span className="w-24 text-sm">Weight</span>
         <Input
           type="number"
@@ -974,8 +974,8 @@ function HabitEditorInline({
               <DialogHeader>
                 <DialogTitle>Change type and delete history?</DialogTitle>
                 <DialogDescription>
-                  Changing the type of "{habit.title}" will delete all its
-                  existing daily entries. This cannot be undone.
+                  Changing the type of a habit will delete all its existing
+                  daily entries. This cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
