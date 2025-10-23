@@ -155,15 +155,15 @@ export const THEME_PRESETS: ThemePreset[] = [
     name: "Hextech",
     dark: true,
     varsLight: {
-      background: "oklch(0.9 0.1 260)",
-      card: "oklch(0.95 0.01 85)", // gold
-      foreground: "oklch(0.25 0.03 250)",
-      primary: "oklch(0.7 0.18 190)", // teal
+      background: "oklch(0.926 0.025 85)",
+      card: "oklch(1 0 0)",
+      foreground: "oklch(0.22 0.04 260)",
+      primary: "oklch(0.63 0.09 210)",
       "primary-foreground": "oklch(0.98 0 0)",
-      secondary: "oklch(0.75 0.12 85)", // gold
-      "secondary-foreground": "oklch(0.25 0.03 250)",
+      secondary: "oklch(0.7128 0.1075 85.17)",
+      "secondary-foreground": "oklch(0.22 0.04 260)",
       accent: "oklch(0.8 0.06 260)", // steel blue
-      border: "oklch(0.75 0.12 85)",
+      border: "oklch(0.59 0.0859 84.58)",
     },
     varsDark: {
       background: "oklch(0.22 0.04 260)",

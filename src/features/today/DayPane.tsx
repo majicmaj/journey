@@ -16,13 +16,9 @@ import {
   CloseIcon,
   EditIcon,
   SaveIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   CheckIcon,
   PlusIcon,
   TrashIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
   IceIcon,
   FireIcon,
 } from "@/components/pixel/icons";
@@ -49,22 +45,24 @@ import { db } from "@/lib/db";
 
 function DayPane({
   dayKey,
-  baseTodayKey,
-  onSetDayKey,
-  onPrev,
-  onNext,
-  canGoNext,
   headerExpanded,
-  setHeaderExpanded,
+  sortKey,
+  sortDir,
+  filterKind,
+  filterCompletion,
 }: {
   dayKey: string;
-  baseTodayKey: string;
-  onSetDayKey: (k: string) => void;
-  onPrev: () => void;
-  onNext: () => void;
-  canGoNext: boolean;
   headerExpanded: boolean;
-  setHeaderExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  sortKey:
+    | "title"
+    | "weight"
+    | "createdAt"
+    | "completed"
+    | "value"
+    | "contribution";
+  sortDir: "asc" | "desc";
+  filterKind: "all" | "boolean" | "quantified" | "time";
+  filterCompletion: "all" | "completed" | "incomplete";
 }) {
   const settings = useSettings();
   const { habitsQ, entriesQ, summary } = useDaySummary(dayKey);
@@ -81,21 +79,7 @@ function DayPane({
   }, [dayKey, dayStart]);
   const rangeQ = useEntriesRange(fromKey, dayKey);
 
-  type SortKey =
-    | "title"
-    | "weight"
-    | "createdAt"
-    | "completed"
-    | "value"
-    | "contribution";
-  const [sortKey, setSortKey] = useState<SortKey>("weight");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [filterKind, setFilterKind] = useState<
-    "all" | "boolean" | "quantified" | "time"
-  >("all");
-  const [filterCompletion, setFilterCompletion] = useState<
-    "all" | "completed" | "incomplete"
-  >("all");
+  // Sorting and filtering are controlled by parent (Today.tsx)
 
   const processed = useMemo(() => {
     const habits = habitsQ.data ?? [];
@@ -297,134 +281,7 @@ function DayPane({
         !headerExpanded && "-mt-3"
       )}
     >
-      <header
-        className={cn(
-          "h-0 transition-all duration-300 overflow-hidden",
-          headerExpanded && "h-50"
-        )}
-      >
-        <div className="m-1 flex flex-col gap-3">
-          <div className="flex items-center gap-3 flex-1 w-full sm:w-auto sm:flex-0">
-            <Button aria-label="Previous day" size="icon" onClick={onPrev}>
-              <ChevronLeftIcon className="size-8" />
-            </Button>
-            <div className="pixel-frame bg-card flex-1">
-              <Input
-                aria-label="Select date"
-                type="date"
-                key={dayKey}
-                className="w-full bg-card px-2 py-1 text-foreground"
-                value={dayKey}
-                onChange={(e) =>
-                  onSetDayKey(
-                    toDayKey(e.target.value, settings.data?.dayStart ?? "00:00")
-                  )
-                }
-              />
-            </div>
-            <Button
-              aria-label="Next day"
-              size="icon"
-              onClick={onNext}
-              disabled={!canGoNext || dayKey >= baseTodayKey}
-            >
-              <ChevronRightIcon className="size-8" />
-            </Button>
-          </div>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => onSetDayKey(baseTodayKey)}
-            aria-label="Go to today"
-            disabled={dayKey === baseTodayKey}
-          >
-            Today
-          </Button>
-          <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap">
-            <div className="pixel-frame">
-              <Select
-                value={sortKey}
-                onValueChange={(v: SortKey) => setSortKey(v)}
-              >
-                <SelectTrigger className="w-full sm:w-36 bg-card">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="weight">Sort: Weight</SelectItem>
-                  <SelectItem value="title">Sort: Title</SelectItem>
-                  <SelectItem value="createdAt">Sort: Created</SelectItem>
-                  <SelectItem value="completed">Sort: Completed</SelectItem>
-                  <SelectItem value="value">Sort: Value</SelectItem>
-                  <SelectItem value="contribution">
-                    Sort: Contribution
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="pixel-frame">
-              <Select
-                value={sortDir}
-                onValueChange={(v: "asc" | "desc") => setSortDir(v)}
-              >
-                <SelectTrigger className="w-full sm:w-28 bg-card">
-                  <SelectValue placeholder="Order" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="asc">Asc</SelectItem>
-                  <SelectItem value="desc">Desc</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="pixel-frame">
-              <Select
-                value={filterKind}
-                onValueChange={(v: "all" | "boolean" | "quantified" | "time") =>
-                  setFilterKind(v)
-                }
-              >
-                <SelectTrigger className="w-full sm:w-36 bg-card">
-                  <SelectValue placeholder="Kind" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="all">All kinds</SelectItem>
-                  <SelectItem value="boolean">Boolean</SelectItem>
-                  <SelectItem value="quantified">Quantified</SelectItem>
-                  <SelectItem value="time">Time</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="pixel-frame">
-              <Select
-                value={filterCompletion}
-                onValueChange={(v: "all" | "completed" | "incomplete") =>
-                  setFilterCompletion(v)
-                }
-              >
-                <SelectTrigger className="w-full sm:w-40 bg-card">
-                  <SelectValue placeholder="Completion" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="incomplete">Incomplete</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <Button
-        variant={headerExpanded ? "secondary" : "ghost"}
-        className="w-full"
-        size="icon"
-        onClick={() => setHeaderExpanded((prev) => !prev)}
-      >
-        {headerExpanded ? (
-          <ChevronUpIcon className="size-8" />
-        ) : (
-          <ChevronDownIcon className="size-8" />
-        )}
-      </Button>
+      {/* Header toggle moved to Today.tsx */}
       <Progress
         key={dayKey}
         className="w-full my-2 sm:w-64 p"

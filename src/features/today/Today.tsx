@@ -4,6 +4,29 @@ import { useSettings } from "@/hooks/useData";
 import { toDayKey } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import DayPane from "./DayPane";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@/components/pixel/icons";
+
+type DaySortKey =
+  | "title"
+  | "weight"
+  | "createdAt"
+  | "completed"
+  | "value"
+  | "contribution";
 
 export default function Day() {
   const settings = useSettings();
@@ -13,6 +36,14 @@ export default function Day() {
   );
   const [activeKey, setActiveKey] = useState<string>(baseTodayKey);
   const [headerExpanded, setHeaderExpanded] = useState(false);
+  const [sortKey, setSortKey] = useState<DaySortKey>("weight");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [filterKind, setFilterKind] = useState<
+    "all" | "boolean" | "quantified" | "time"
+  >("all");
+  const [filterCompletion, setFilterCompletion] = useState<
+    "all" | "completed" | "incomplete"
+  >("all");
   // Swipe state
   const swipeContainerRef = useRef<HTMLDivElement | null>(null);
   const [dragX, setDragX] = useState(0);
@@ -144,11 +175,42 @@ export default function Day() {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className={cn(
-        "flex flex-col gap-3 transition-all mt-0 duration-300 overflow-hidden",
-        !headerExpanded && "-mt-3"
-      )}
+      className={
+        "flex flex-col gap-3 transition-all mt-0 duration-300 overflow-hidden"
+      }
     >
+      <div className="p-2 gap-3 flex flex-col">
+        <DayHeader
+          dayKey={activeKey}
+          baseTodayKey={baseTodayKey}
+          canGoNext={canGoNext}
+          onPrev={goToPrev}
+          onNext={goToNext}
+          onSetDayKey={setActiveKey}
+          dayStart={settings.data?.dayStart ?? "00:00"}
+          headerExpanded={headerExpanded}
+          sortKey={sortKey}
+          setSortKey={setSortKey}
+          sortDir={sortDir}
+          setSortDir={setSortDir}
+          filterKind={filterKind}
+          setFilterKind={setFilterKind}
+          filterCompletion={filterCompletion}
+          setFilterCompletion={setFilterCompletion}
+        />
+        <Button
+          variant={headerExpanded ? "secondary" : "ghost"}
+          className={cn("w-full", !headerExpanded && "-mt-2")}
+          size="icon"
+          onClick={() => setHeaderExpanded((prev) => !prev)}
+        >
+          {headerExpanded ? (
+            <ChevronUpIcon className="size-8" />
+          ) : (
+            <ChevronDownIcon className="size-8" />
+          )}
+        </Button>
+      </div>
       <div
         className={cn(
           isTransitioning ? "transition-transform duration-300 ease-out" : "",
@@ -161,40 +223,192 @@ export default function Day() {
         <div className="min-w-[100vw] w-[100vw] max-w-none px-3">
           <DayPane
             dayKey={prevKey}
-            baseTodayKey={baseTodayKey}
-            onSetDayKey={setActiveKey}
-            onPrev={goToPrev}
-            onNext={goToNext}
-            canGoNext={prevKey < baseTodayKey}
             headerExpanded={headerExpanded}
-            setHeaderExpanded={setHeaderExpanded}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            filterKind={filterKind}
+            filterCompletion={filterCompletion}
           />
         </div>
         <div className="min-w-[100vw] w-[100vw] max-w-none px-3">
           <DayPane
             dayKey={activeKey}
-            baseTodayKey={baseTodayKey}
-            onSetDayKey={setActiveKey}
-            onPrev={goToPrev}
-            onNext={goToNext}
-            canGoNext={canGoNext}
             headerExpanded={headerExpanded}
-            setHeaderExpanded={setHeaderExpanded}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            filterKind={filterKind}
+            filterCompletion={filterCompletion}
           />
         </div>
         <div className="min-w-[100vw] w-[100vw] max-w-none px-3">
           <DayPane
             dayKey={nextKey}
-            baseTodayKey={baseTodayKey}
-            onSetDayKey={setActiveKey}
-            onPrev={goToPrev}
-            onNext={goToNext}
-            canGoNext={nextKey < baseTodayKey}
             headerExpanded={headerExpanded}
-            setHeaderExpanded={setHeaderExpanded}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            filterKind={filterKind}
+            filterCompletion={filterCompletion}
           />
         </div>
       </div>
     </div>
+  );
+}
+
+function DayHeader({
+  dayKey,
+  baseTodayKey,
+  canGoNext,
+  onPrev,
+  onNext,
+  onSetDayKey,
+  dayStart,
+  headerExpanded,
+  sortKey,
+  setSortKey,
+  sortDir,
+  setSortDir,
+  filterKind,
+  setFilterKind,
+  filterCompletion,
+  setFilterCompletion,
+}: {
+  dayKey: string;
+  baseTodayKey: string;
+  canGoNext: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onSetDayKey: (k: string) => void;
+  dayStart: string;
+  headerExpanded: boolean;
+  sortKey:
+    | "title"
+    | "weight"
+    | "createdAt"
+    | "completed"
+    | "value"
+    | "contribution";
+  setSortKey: (
+    v: "title" | "weight" | "createdAt" | "completed" | "value" | "contribution"
+  ) => void;
+  sortDir: "asc" | "desc";
+  setSortDir: (v: "asc" | "desc") => void;
+  filterKind: "all" | "boolean" | "quantified" | "time";
+  setFilterKind: (v: "all" | "boolean" | "quantified" | "time") => void;
+  filterCompletion: "all" | "completed" | "incomplete";
+  setFilterCompletion: (v: "all" | "completed" | "incomplete") => void;
+}) {
+  return (
+    <header
+      className={cn(
+        "h-0 transition-all duration-300 overflow-hidden",
+        headerExpanded && "h-50"
+      )}
+    >
+      <div className="m-1 flex flex-col gap-3">
+        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto sm:flex-0">
+          <Button aria-label="Previous day" size="icon" onClick={onPrev}>
+            <ChevronLeftIcon className="size-8" />
+          </Button>
+          <div className="pixel-frame bg-card flex-1">
+            <Input
+              aria-label="Select date"
+              type="date"
+              key={dayKey}
+              className="w-full bg-card px-2 py-1 text-foreground"
+              value={dayKey}
+              onChange={(e) =>
+                onSetDayKey(toDayKey(e.target.value, dayStart ?? "00:00"))
+              }
+            />
+          </div>
+          <Button
+            aria-label="Next day"
+            size="icon"
+            onClick={onNext}
+            disabled={!canGoNext || dayKey >= baseTodayKey}
+          >
+            <ChevronRightIcon className="size-8" />
+          </Button>
+        </div>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => onSetDayKey(baseTodayKey)}
+          aria-label="Go to today"
+          disabled={dayKey === baseTodayKey}
+        >
+          Today
+        </Button>
+        <div className="grid grid-cols-2 mt-2 w-full sm:flex items-center gap-3 flex-wrap">
+          <div className="pixel-frame">
+            <Select
+              value={sortKey}
+              onValueChange={(v: DaySortKey) => setSortKey(v)}
+            >
+              <SelectTrigger className="w-full sm:w-36 bg-card">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="weight">Sort: Weight</SelectItem>
+                <SelectItem value="title">Sort: Title</SelectItem>
+                <SelectItem value="createdAt">Sort: Created</SelectItem>
+                <SelectItem value="completed">Sort: Completed</SelectItem>
+                <SelectItem value="value">Sort: Value</SelectItem>
+                <SelectItem value="contribution">Sort: Contribution</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="pixel-frame">
+            <Select
+              value={sortDir}
+              onValueChange={(v: "asc" | "desc") => setSortDir(v)}
+            >
+              <SelectTrigger className="w-full sm:w-28 bg-card">
+                <SelectValue placeholder="Order" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="asc">Asc</SelectItem>
+                <SelectItem value="desc">Desc</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="pixel-frame">
+            <Select
+              value={filterKind}
+              onValueChange={(v: "all" | "boolean" | "quantified" | "time") =>
+                setFilterKind(v)
+              }
+            >
+              <SelectTrigger className="w-full sm:w-36 bg-card">
+                <SelectValue placeholder="Kind" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="all">All kinds</SelectItem>
+                <SelectItem value="boolean">Boolean</SelectItem>
+                <SelectItem value="quantified">Quantified</SelectItem>
+                <SelectItem value="time">Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="pixel-frame">
+            <Select
+              value={filterCompletion}
+              onValueChange={(v: "all" | "completed" | "incomplete") =>
+                setFilterCompletion(v)
+              }
+            >
+              <SelectTrigger className="w-full sm:w-40 bg-card">
+                <SelectValue placeholder="Completion" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="incomplete">Incomplete</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }
