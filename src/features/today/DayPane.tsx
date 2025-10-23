@@ -534,7 +534,10 @@ export default DayPane;
 function Progress({ className, value }: { className: string; value: number }) {
   return (
     <div
-      className={cn("pixel-frame bg-card h-6 w-64 relative", className)}
+      className={cn(
+        "pixel-frame rounded-md overflow-hidden bg-card h-6 w-64 relative",
+        className
+      )}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
@@ -591,7 +594,7 @@ function HabitRow({
             onClick={onToggle}
           >
             {entry?.completed && (
-              <CheckIcon className="text-foreground size-8" />
+              <CheckIcon className="text-secondary-foreground size-8" />
             )}
           </Button>
           <div className="flex flex-col">
