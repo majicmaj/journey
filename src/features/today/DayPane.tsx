@@ -44,6 +44,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
+import { db } from "@/lib/db";
 
 function DayPane({
   dayKey,
@@ -310,6 +312,7 @@ function DayPane({
               <Input
                 aria-label="Select date"
                 type="date"
+                key={dayKey}
                 className="w-full bg-card px-2 py-1 text-foreground"
                 value={dayKey}
                 onChange={(e) =>
@@ -431,7 +434,7 @@ function DayPane({
         {processed.map(({ habit: h, entry }) => {
           return (
             <HabitRow
-              key={h.id}
+              key={`${h.id}-${dayKey}`}
               habit={h}
               entry={entry}
               streak={streakByHabitId.get(h.id) ?? 0}
@@ -702,6 +705,8 @@ function HabitEditorInline({
   const [weightInput, setWeightInput] = useState<string>(String(habit.weight));
   const { remove } = useHabits();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [kindConfirmOpen, setKindConfirmOpen] = useState(false);
+  const qc = useQueryClient();
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-2 col-span-full sm:col-span-2">
@@ -945,9 +950,59 @@ function HabitEditorInline({
           </DialogContent>
         </Dialog>
         <div className="flex items-center gap-3">
-          <Button onClick={() => onSave(draft)} size="icon">
+          <Button
+            onClick={async () => {
+              if (draft.kind !== habit.kind) {
+                const count = await db.entries
+                  .where("habitId")
+                  .equals(habit.id)
+                  .count();
+                if (count > 0) {
+                  setKindConfirmOpen(true);
+                  return;
+                }
+              }
+              onSave(draft);
+            }}
+            size="icon"
+          >
             <SaveIcon className="size-8" />
           </Button>
+
+          <Dialog open={kindConfirmOpen} onOpenChange={setKindConfirmOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Change type and delete history?</DialogTitle>
+                <DialogDescription>
+                  Changing the type of "{habit.title}" will delete all its
+                  existing daily entries. This cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDraft({ ...draft, kind: habit.kind });
+                    setKindConfirmOpen(false);
+                  }}
+                >
+                  Reset Type
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    await db.entries.where("habitId").equals(habit.id).delete();
+                    qc.invalidateQueries({ queryKey: ["entries"] });
+                    qc.invalidateQueries({ queryKey: ["entries-range"] });
+                    setKindConfirmOpen(false);
+                    onSave(draft);
+                  }}
+                >
+                  Confirm Change
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
