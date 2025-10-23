@@ -604,26 +604,16 @@ function HabitRow({
             </span>
             <div>
               {typeof streak !== "undefined" && streak > 0 ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 text-chart-1">
                   <FireIcon className="size-3" />
-                  <span className="text-xs text-muted-foreground">
-                    {streak}d
-                  </span>
+                  <span className="text-xs">{streak}d</span>
                 </div>
               ) : isNew ? (
                 <span className="text-xs text-destructive">new!</span>
               ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 text-chart-2">
                   <IceIcon className="size-3" />
-                  <span
-                    className={cn(
-                      "text-xs text-muted-foreground",
-                      coldStreak > 3 && "font-bold",
-                      coldStreak > 6 && "text-destructive"
-                    )}
-                  >
-                    -{coldStreak}d
-                  </span>
+                  <span className={"text-xs"}>-{coldStreak}d</span>
                 </div>
               ) : null}
             </div>
