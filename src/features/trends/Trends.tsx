@@ -256,7 +256,11 @@ export default function Trends() {
                   {(habitsQ.data ?? [])
                     .filter((h) => !h.archivedAt)
                     .map((h) => (
-                      <SelectItem key={h.id} value={h.id}>
+                      <SelectItem
+                        key={h.id}
+                        value={h.id}
+                        className="line-clamp-1"
+                      >
                         {h.title}
                       </SelectItem>
                     ))}
