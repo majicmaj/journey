@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Button } from "./components/ui/button";
-import { Home, Sliders } from "./components/pixel/icons";
+import { Home, Calendar, Sliders } from "./components/pixel/icons";
 
 const isActive = (path: string, currentPath: string) =>
   (currentPath.startsWith(path) && path !== "/") || currentPath === path;
@@ -26,6 +26,7 @@ function App() {
       {/* Desktop top nav */}
       <nav className="hidden md:flex pixel-frame bg-card text-card-foreground p-3 gap-3 justify-center">
         <NavButton to="/">Day</NavButton>
+        <NavButton to="/trends">Trends</NavButton>
         <NavButton to="/settings">Settings</NavButton>
       </nav>
 
@@ -70,8 +71,9 @@ function MobileBottomNav() {
       aria-label="Mobile"
     >
       <div className="pixel-frame p-2">
-        <div className="mx-auto max-w-md grid grid-cols-2 gap-2 justify-items-center">
+        <div className="mx-auto max-w-md grid grid-cols-3 gap-2 justify-items-center">
           <Item to="/" Icon={Home} label="Day" />
+          <Item to="/trends" Icon={Calendar} label="Trends" />
           <Item to="/settings" Icon={Sliders} label="Settings" />
         </div>
       </div>

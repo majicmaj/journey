@@ -27,6 +27,7 @@
     "luxon": "^3.7.2",
     "pixelarticons": "^1.8.1",
     "react": "^19.1.1",
+    "react-calendar-heatmap": "^1.10.0",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
     "tailwind-merge": "^3.3.1",

@@ -232,4 +232,60 @@
         right 0 top / var(--p) 100% no-repeat;
     pointer-events: none;
   }
+
+  /* Calendar heatmap overrides and theme colors */
+  .react-calendar-heatmap .color-empty {
+    fill: var(--muted);
+    opacity: 0.35;
+  }
+  .react-calendar-heatmap .color-scale-1 {
+    fill: color-mix(in oklch, var(--secondary) 35%, var(--background));
+  }
+  .react-calendar-heatmap .color-scale-2 {
+    fill: color-mix(in oklch, var(--secondary) 55%, var(--background));
+  }
+  .react-calendar-heatmap .color-scale-3 {
+    fill: color-mix(in oklch, var(--secondary) 75%, var(--background));
+  }
+  .react-calendar-heatmap .color-scale-4 {
+    fill: var(--secondary);
+  }
+
+  /* Small blocks for legend */
+  .bg-heat-empty {
+    background-color: color-mix(in oklch, var(--muted) 60%, transparent);
+  }
+  .bg-heat-1 {
+    background-color: color-mix(
+      in oklch,
+      var(--secondary) 35%,
+      var(--background)
+    );
+  }
+  .bg-heat-2 {
+    background-color: color-mix(
+      in oklch,
+      var(--secondary) 55%,
+      var(--background)
+    );
+  }
+  .bg-heat-3 {
+    background-color: color-mix(
+      in oklch,
+      var(--secondary) 75%,
+      var(--background)
+    );
+  }
+  .bg-heat-4 {
+    background-color: var(--secondary);
+  }
+
+  /* Make the squares a bit larger and more "pixel" styled */
+  .react-calendar-heatmap rect {
+    shape-rendering: crispEdges;
+    rx: 0;
+    ry: 0;
+    stroke: color-mix(in oklch, var(--border) 50%, transparent);
+    stroke-width: 1;
+  }
 }
