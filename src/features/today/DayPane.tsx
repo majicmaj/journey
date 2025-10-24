@@ -294,7 +294,7 @@ function DayPane({
               streak={streakByHabitId.get(h.id) ?? 0}
               coldStreak={coldStreakByHabitId.get(h.id) ?? 0}
               isNew={doneEverByHabitId.get(h.id) === false}
-              inlineValueInput={settings.data?.inlineValueInput ?? true}
+              inlineValueInput={true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
                 if (nextCompleted) {

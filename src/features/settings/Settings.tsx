@@ -246,30 +246,9 @@ export default function Settings() {
       </label>
 
       <hr className="my-4 w-full border-2" />
-
       <label className="flex items-center gap-3">
-        <Checkbox
-          aria-label="Inline value Input"
-          checked={data.inlineValueInput}
-          onCheckedChange={(checked: boolean) =>
-            db.settings
-              .put({ ...data, inlineValueInput: checked })
-              .then(() => qc.invalidateQueries({ queryKey: ["settings"] }))
-          }
-        />
-        <span>Inline value Input</span>
-      </label>
-      <label className="flex items-center gap-3">
-        <Checkbox
-          aria-label="Show streaks"
-          checked={data.showStreaks}
-          onCheckedChange={(checked: boolean) =>
-            db.settings
-              .put({ ...data, showStreaks: checked })
-              .then(() => qc.invalidateQueries({ queryKey: ["settings"] }))
-          }
-        />
-        <span>Show streaks</span>
+        <Checkbox aria-label="Show streaks" checked={true} disabled />
+        <span>Show streaks (always on)</span>
       </label>
 
       <hr className="my-4 w-full border-2" />

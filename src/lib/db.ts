@@ -41,8 +41,8 @@ export async function getOrInitSettings(): Promise<Settings> {
   const defaults: Settings = {
     id: "settings",
     dayStart: "00:00",
-    inlineValueInput: false,
-    showStreaks: false,
+    inlineValueInput: true,
+    showStreaks: true,
     themePreset: "default",
     themeDark: false,
     themeVars: {},
