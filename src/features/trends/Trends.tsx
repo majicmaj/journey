@@ -89,8 +89,8 @@ export default function Trends() {
   return (
     <div className="p-3 flex flex-col gap-4">
       <header className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <h1 className="text-2xl font-bold">Trends</h1>
-        <div className="flex gap-2 items-center flex-wrap">
+        <div className="grid w-full sm:flex gap-3 items-center flex-wrap">
+          <span className="opacity-70 text-sm">Range</span>
           <div className="pixel-frame">
             <Select
               value={preset}
@@ -101,7 +101,7 @@ export default function Trends() {
                 setPreset(v);
               }}
             >
-              <SelectTrigger className="w-48 bg-card">
+              <SelectTrigger className="w-full sm:w-48 bg-card">
                 <SelectValue placeholder="Range" />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
@@ -116,31 +116,36 @@ export default function Trends() {
             </Select>
           </div>
           {preset === "custom" && (
-            <div className="flex items-center gap-2">
+            <div className="sm:flex items-center gap-3 grid">
               <span className="opacity-70 text-sm">From</span>
-              <Input
-                type="date"
-                className="w-[11rem] bg-card"
-                value={from}
-                onChange={(e) =>
-                  setCustomRange((r) => ({
-                    from: e.target.value,
-                    to: r?.to ?? to,
-                  }))
-                }
-              />
+              <div className="pixel-frame">
+                <Input
+                  type="date"
+                  className="w-full sm:w-[11rem] bg-card"
+                  value={from}
+                  onChange={(e) =>
+                    setCustomRange((r) => ({
+                      from: e.target.value,
+                      to: r?.to ?? to,
+                    }))
+                  }
+                />
+              </div>
+
               <span className="opacity-70 text-sm">To</span>
-              <Input
-                type="date"
-                className="w-[11rem] bg-card"
-                value={to}
-                onChange={(e) =>
-                  setCustomRange((r) => ({
-                    from: r?.from ?? from,
-                    to: e.target.value,
-                  }))
-                }
-              />
+              <div className="pixel-frame">
+                <Input
+                  type="date"
+                  className="w-full sm:w-[11rem] bg-card"
+                  value={to}
+                  onChange={(e) =>
+                    setCustomRange((r) => ({
+                      from: r?.from ?? from,
+                      to: e.target.value,
+                    }))
+                  }
+                />
+              </div>
             </div>
           )}
         </div>
