@@ -79,6 +79,47 @@ function DayPane({
 
   // Sorting and filtering are controlled by parent (Today.tsx)
 
+  type Habit = {
+    kind: "quantified" | "time" | string;
+    min?: number | null;
+    max?: number | null;
+    target?: number | null;
+  };
+
+  function meetsCompletionThresholds(
+    h: Habit,
+    value: number | null | undefined
+  ): boolean {
+    if (h.kind !== "quantified" && h.kind !== "time") return false;
+
+    // Only accept finite numbers
+    const v =
+      typeof value === "number" && Number.isFinite(value) ? value : null;
+    if (v == null) return false;
+
+    // If no explicit min, use target as a minimum-style goal.
+    const min = h.min ?? h.target ?? null;
+    const max = h.max ?? null;
+
+    // Both bounds present -> inclusive range check.
+    if (min != null && max != null) {
+      // Invalid config (min > max) -> treat as not met.
+      if (min > max) return false;
+      return v >= min && v <= max;
+    }
+
+    if (min != null) return v >= min;
+    if (max != null) return v <= max;
+
+    // No thresholds present
+    return true;
+  }
+
+  function requiresValueForCompletion(h: Habit): boolean {
+    if (h.kind !== "quantified" && h.kind !== "time") return false;
+    return h.min != null || h.max != null || h.target != null;
+  }
+
   const processed = useMemo(() => {
     const habits = habitsQ.data ?? [];
     const entries = entriesQ.data ?? [];
@@ -297,21 +338,25 @@ function DayPane({
               inlineValueInput={true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
-                if (nextCompleted) {
-                  if (h.kind === "quantified") {
-                    const threshold =
-                      h.target != null ? h.target : h.min != null ? h.min : 0;
-                    const currentValue = entry?.value ?? 0;
-                    const nextValue = Math.max(currentValue, threshold ?? 0);
-                    upsert.mutate({
-                      habitId: h.id,
-                      date: dayKey,
-                      completed: true,
-                      value: nextValue,
-                    });
+                const isInput = h.kind === "quantified" || h.kind === "time";
+                if (nextCompleted && isInput) {
+                  const requires = requiresValueForCompletion(h);
+                  const currentValue = entry?.value ?? null;
+                  if (requires) {
+                    // Must have a value and meet thresholds to complete
+                    if (meetsCompletionThresholds(h, currentValue)) {
+                      upsert.mutate({
+                        habitId: h.id,
+                        date: dayKey,
+                        completed: true,
+                        value: currentValue,
+                      });
+                    }
+                    // If value is missing or doesn't meet thresholds, do nothing
                     return;
                   }
-                  if (h.kind === "time") {
+                  // No thresholds: allow convenience set for time kind
+                  if (h.kind === "time" && currentValue == null) {
                     const now = new Date();
                     const minutes = now.getHours() * 60 + now.getMinutes();
                     upsert.mutate({
@@ -323,20 +368,25 @@ function DayPane({
                     return;
                   }
                 }
+                // Generic toggle path (including marking incomplete)
                 upsert.mutate({
                   habitId: h.id,
                   date: dayKey,
                   completed: nextCompleted,
                 });
               }}
-              onSetValue={(v) =>
+              onSetValue={(v) => {
+                const requires = requiresValueForCompletion(h);
+                const shouldComplete = requires
+                  ? meetsCompletionThresholds(h, v)
+                  : entry?.completed ?? false;
                 upsert.mutate({
                   habitId: h.id,
                   date: dayKey,
                   value: v,
-                  completed: entry?.completed ?? false,
-                })
-              }
+                  completed: shouldComplete,
+                });
+              }}
               onEdit={() => setEditingId(editingId === h.id ? null : h.id)}
               isEditing={editingId === h.id}
               onSaveHabit={(next) => {
