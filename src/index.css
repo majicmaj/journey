@@ -235,8 +235,10 @@
 
   /* Calendar heatmap overrides and theme colors */
   .react-calendar-heatmap .color-empty {
-    fill: var(--muted);
-    opacity: 0.35;
+    fill: color-mix(in oklch, var(--secondary) 5%, var(--background));
+
+    /* fill: var(--card); */
+    opacity: 0.1;
   }
   .react-calendar-heatmap .color-scale-1 {
     fill: color-mix(in oklch, var(--secondary) 35%, var(--background));
