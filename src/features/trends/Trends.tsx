@@ -2,18 +2,27 @@ import { cloneElement, useMemo, useState } from "react";
 import type { CSSProperties, ReactElement } from "react";
 import CalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css"; // base styles; we'll override with our theme classes
-import { useDailySummariesRange, useSettings } from "@/hooks/useData";
+import { useEntriesRange, useHabits, useSettings } from "@/hooks/useData";
 import { toDayKey } from "@/lib/dates";
 
 import {
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { computeDaySummary } from "@/lib/score";
+import type { DailyEntry } from "@/types/habit";
 
 type RangePreset =
   | "this-year"
@@ -23,6 +32,8 @@ type RangePreset =
   | "last-90-days"
   | "last-30-days"
   | "custom";
+
+type HabitFilterMode = "all" | "one" | "many";
 
 function calcRange(
   preset: Exclude<RangePreset, "custom">,
@@ -60,9 +71,23 @@ function calcRange(
   }
 }
 
+function enumerateDateKeys(fromKey: string, toKey: string): string[] {
+  const out: string[] = [];
+  const start = new Date(fromKey + "T00:00:00");
+  const end = new Date(toKey + "T00:00:00");
+  const cur = new Date(start);
+  while (cur <= end) {
+    const key = cur.toISOString().slice(0, 10);
+    out.push(key);
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
 export default function Trends() {
   const settings = useSettings();
   const dayStart = settings.data?.dayStart ?? "00:00";
+  const habitsQ = useHabits();
   const [preset, setPreset] = useState<RangePreset>("last-90-days");
   const [customRange, setCustomRange] = useState<{
     from: string;
@@ -79,12 +104,51 @@ export default function Trends() {
   const from = computed.from;
   const to = computed.to;
 
-  const { summaries } = useDailySummariesRange(from, to);
+  // Habit filtering state
+  const [habitMode, setHabitMode] = useState<HabitFilterMode>("all");
+  const [habitId, setHabitId] = useState<string | null>(null);
+  const [habitIds, setHabitIds] = useState<string[]>([]);
+
+  const activeHabits = useMemo(() => {
+    const all = (habitsQ.data ?? []).filter((h) => !h.archivedAt);
+    if (habitMode === "all") return all;
+    if (habitMode === "one")
+      return habitId ? all.filter((h) => h.id === habitId) : [];
+    return all.filter((h) => habitIds.includes(h.id));
+  }, [habitsQ.data, habitMode, habitId, habitIds]);
+
+  // Compute summaries for filtered habits from entries
+  const entriesQ = useEntriesRange(from, to);
+  const summaries = useMemo(() => {
+    if (!entriesQ.data) return undefined;
+    const entriesByDate = new Map<string, DailyEntry[]>();
+    for (const e of entriesQ.data) {
+      const arr = entriesByDate.get(e.date) ?? [];
+      arr.push(e);
+      entriesByDate.set(e.date, arr);
+    }
+    const out: Array<{ date: string; totalScore: number }> = [];
+    for (const d of enumerateDateKeys(from, to)) {
+      const list = entriesByDate.get(d) ?? [];
+      const { totalScore } = computeDaySummary(d, activeHabits, list);
+      out.push({ date: d, totalScore });
+    }
+    return out;
+  }, [entriesQ.data, activeHabits, from, to]);
 
   const data = useMemo(
     () => (summaries ?? []).map((s) => ({ date: s.date, count: s.totalScore })),
     [summaries]
   );
+
+  const selectedCount =
+    habitMode === "many"
+      ? habitIds.length
+      : habitMode === "one"
+      ? habitId
+        ? 1
+        : 0
+      : habitsQ.data?.length ?? 0;
 
   return (
     <div className="p-3 flex flex-col gap-4">
@@ -147,6 +211,95 @@ export default function Trends() {
                 />
               </div>
             </div>
+          )}
+
+          <span className="opacity-70 text-sm">Habits</span>
+          <div className="pixel-frame">
+            <Select
+              value={habitMode}
+              onValueChange={(v: HabitFilterMode) => {
+                setHabitMode(v);
+                if (v === "one") {
+                  const first = (habitsQ.data ?? []).find((h) => !h.archivedAt);
+                  setHabitId(first?.id ?? null);
+                }
+                if (v === "many") {
+                  setHabitIds(
+                    (habitsQ.data ?? [])
+                      .filter((h) => !h.archivedAt)
+                      .map((h) => h.id)
+                  );
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48 bg-card">
+                <SelectValue placeholder="Habits" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="all">All habits</SelectItem>
+                <SelectItem value="one">Just one</SelectItem>
+                <SelectItem value="many">Certain habits</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {habitMode === "one" && (
+            <div className="pixel-frame">
+              <Select
+                value={habitId ?? ""}
+                onValueChange={(v: string) => setHabitId(v)}
+              >
+                <SelectTrigger className="w-full sm:w-48 bg-card">
+                  <SelectValue placeholder="Select habit" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  {(habitsQ.data ?? [])
+                    .filter((h) => !h.archivedAt)
+                    .map((h) => (
+                      <SelectItem key={h.id} value={h.id}>
+                        {h.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {habitMode === "many" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <div className="pixel-frame px-3 py-2 cursor-pointer bg-card">
+                  {selectedCount} selected
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="pixel-frame w-64 bg-card">
+                <div className="max-h-64 overflow-auto p-2">
+                  {(habitsQ.data ?? [])
+                    .filter((h) => !h.archivedAt)
+                    .map((h) => {
+                      const checked = habitIds.includes(h.id);
+                      return (
+                        <label
+                          key={h.id}
+                          className="flex items-center gap-2 py-1"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(val) => {
+                              setHabitIds((ids) =>
+                                val
+                                  ? [...ids, h.id]
+                                  : ids.filter((x) => x !== h.id)
+                              );
+                            }}
+                          />
+                          <span className="text-sm">{h.title}</span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </header>
