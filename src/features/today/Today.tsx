@@ -142,7 +142,9 @@ export default function Day() {
     // Only react if primarily horizontal
     if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     const w = panelW;
-    const clamped = Math.max(-w, Math.min(w, dx));
+    // Block left swipe when at today (we don't show tomorrow)
+    const intendedDx = !canGoNext && dx < 0 ? 0 : dx;
+    const clamped = Math.max(-w, Math.min(w, intendedDx));
     setDragX(clamped);
   }
   function onTouchEnd() {
@@ -156,7 +158,7 @@ export default function Day() {
       setIsTransitioning(true);
       setDragX(w);
       animateToDay("prev");
-    } else if (dragX < -threshold) {
+    } else if (dragX < -threshold && canGoNext) {
       // Swipe left → next day (if available)
       setIsTransitioning(true);
       setDragX(-w);
