@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type RangePreset =
@@ -20,10 +21,11 @@ type RangePreset =
   | "last-12-months"
   | "last-6-months"
   | "last-90-days"
-  | "last-30-days";
+  | "last-30-days"
+  | "custom";
 
 function calcRange(
-  preset: RangePreset,
+  preset: Exclude<RangePreset, "custom">,
   dayStart: string
 ): { from: string; to: string } {
   const today = new Date();
@@ -62,11 +64,21 @@ export default function Trends() {
   const settings = useSettings();
   const dayStart = settings.data?.dayStart ?? "00:00";
   const [preset, setPreset] = useState<RangePreset>("last-90-days");
+  const [customRange, setCustomRange] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
 
-  const { from, to } = useMemo(
-    () => calcRange(preset, dayStart),
-    [preset, dayStart]
-  );
+  const computed = useMemo(() => {
+    if (preset === "custom") {
+      return customRange ?? calcRange("last-90-days", dayStart);
+    }
+    return calcRange(preset, dayStart);
+  }, [preset, customRange, dayStart]);
+
+  const from = computed.from;
+  const to = computed.to;
+
   const { summaries } = useDailySummariesRange(from, to);
 
   const data = useMemo(
@@ -82,7 +94,12 @@ export default function Trends() {
           <div className="pixel-frame">
             <Select
               value={preset}
-              onValueChange={(v: RangePreset) => setPreset(v)}
+              onValueChange={(v: RangePreset) => {
+                if (v === "custom") {
+                  setCustomRange({ from, to });
+                }
+                setPreset(v);
+              }}
             >
               <SelectTrigger className="w-48 bg-card">
                 <SelectValue placeholder="Range" />
@@ -94,9 +111,38 @@ export default function Trends() {
                 <SelectItem value="last-90-days">Last 90 days</SelectItem>
                 <SelectItem value="last-6-months">Last 6 months</SelectItem>
                 <SelectItem value="last-12-months">Last 12 months</SelectItem>
+                <SelectItem value="custom">Custom…</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          {preset === "custom" && (
+            <div className="flex items-center gap-2">
+              <span className="opacity-70 text-sm">From</span>
+              <Input
+                type="date"
+                className="w-[11rem] bg-card"
+                value={from}
+                onChange={(e) =>
+                  setCustomRange((r) => ({
+                    from: e.target.value,
+                    to: r?.to ?? to,
+                  }))
+                }
+              />
+              <span className="opacity-70 text-sm">To</span>
+              <Input
+                type="date"
+                className="w-[11rem] bg-card"
+                value={to}
+                onChange={(e) =>
+                  setCustomRange((r) => ({
+                    from: r?.from ?? from,
+                    to: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          )}
         </div>
       </header>
 
