@@ -1,10 +1,10 @@
-import { cloneElement, useEffect, useMemo, useRef, useState } from "react";
+import { cloneElement, useMemo, useState } from "react";
 import type { CSSProperties, ReactElement } from "react";
 import CalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css"; // base styles; we'll override with our theme classes
 import { useDailySummariesRange, useSettings } from "@/hooks/useData";
 import { toDayKey } from "@/lib/dates";
-// Button not needed here
+
 import {
   Select,
   SelectContent,
@@ -74,7 +74,6 @@ export default function Trends() {
     [summaries]
   );
 
-  const isSmall = useMediaQuery("(max-width: 480px)");
   return (
     <div className="p-3 flex flex-col gap-4">
       <header className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -98,92 +97,64 @@ export default function Trends() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="opacity-70">Legend:</span>
-            <span
-              className={cn("pixel-frame w-4 h-4 bg-secondary")}
-              style={{ opacity: 0 }}
-            />
-            <span
-              className={cn("pixel-frame w-4 h-4 bg-secondary")}
-              style={{ opacity: 0.25 }}
-            />
-            <span
-              className={cn("pixel-frame w-4 h-4 bg-secondary")}
-              style={{ opacity: 0.5 }}
-            />
-            <span
-              className={cn("pixel-frame w-4 h-4 bg-secondary")}
-              style={{ opacity: 0.75 }}
-            />
-            <span
-              className={cn("pixel-frame w-4 h-4 bg-secondary")}
-              style={{ opacity: 1 }}
-            />
-          </div>
         </div>
       </header>
 
       <div className="pixel-frame bg-card p-3">
-        <div className="w-full overflow-hidden">
-          <div className="min-w-full min-h-max">
-            <CalendarHeatmap
-              startDate={from}
-              endDate={to}
-              values={data}
-              classForValue={() => ""}
-              transformDayElement={(element, v) => {
-                type HeatmapValue = {
-                  date: string | number | Date;
-                  [key: string]: unknown;
-                };
-                const hv = v as HeatmapValue | undefined;
-                const maybe = hv?.["count"];
-                const raw = typeof maybe === "number" ? maybe : 0;
-                const opacity = Math.max(0, Math.min(1, raw / 100));
+        <CalendarHeatmap
+          startDate={from}
+          endDate={to}
+          values={data}
+          classForValue={() => ""}
+          transformDayElement={(element, v) => {
+            type HeatmapValue = {
+              date: string | number | Date;
+              [key: string]: unknown;
+            };
+            const hv = v as HeatmapValue | undefined;
+            const maybe = hv?.["count"];
+            const raw = typeof maybe === "number" ? maybe : 0;
+            const opacity = Math.max(0, Math.min(1, raw / 100));
 
-                type DayElProps = { style?: CSSProperties; className?: string };
-                const el = element as ReactElement<DayElProps>;
-                const nextStyle: CSSProperties = {
-                  ...(el.props?.style ?? {}),
-                  fill: `color-mix(in srgb, var(--secondary) ${
-                    opacity * 100
-                  }%, var(--background))`,
-                };
-                const nextClassName = cn(el.props?.className);
-                return cloneElement(el, {
-                  style: nextStyle,
-                  className: nextClassName,
-                });
-              }}
-              titleForValue={(v) => {
-                type HeatmapValue = {
-                  date: string | number | Date;
-                  [key: string]: unknown;
-                };
-                const hv = v as HeatmapValue | undefined;
-                const dateVal = hv?.date;
-                if (!dateVal) return "";
-                const dateStr =
-                  typeof dateVal === "string"
-                    ? dateVal
-                    : typeof dateVal === "number"
-                    ? new Date(dateVal).toISOString().slice(0, 10)
-                    : dateVal.toISOString().slice(0, 10);
-                const maybe = hv?.["count"];
-                const count = typeof maybe === "number" ? maybe : 0;
-                return `${count} score on ${dateStr}`;
-              }}
-              showWeekdayLabels={!isSmall}
-              gutterSize={isSmall ? 1 : 2}
-            />
-          </div>
-        </div>
+            type DayElProps = { style?: CSSProperties; className?: string };
+            const el = element as ReactElement<DayElProps>;
+            const nextStyle: CSSProperties = {
+              ...(el.props?.style ?? {}),
+              fill: `color-mix(in srgb, var(--secondary) ${
+                opacity * 100
+              }%, var(--background))`,
+            };
+            const nextClassName = cn(el.props?.className);
+            return cloneElement(el, {
+              style: nextStyle,
+              className: nextClassName,
+            });
+          }}
+          titleForValue={(v) => {
+            type HeatmapValue = {
+              date: string | number | Date;
+              [key: string]: unknown;
+            };
+            const hv = v as HeatmapValue | undefined;
+            const dateVal = hv?.date;
+            if (!dateVal) return "";
+            const dateStr =
+              typeof dateVal === "string"
+                ? dateVal
+                : typeof dateVal === "number"
+                ? new Date(dateVal).toISOString().slice(0, 10)
+                : dateVal.toISOString().slice(0, 10);
+            const maybe = hv?.["count"];
+            const count = typeof maybe === "number" ? maybe : 0;
+            return `${count} score on ${dateStr}`;
+          }}
+          showWeekdayLabels
+          gutterSize={3}
+        />
       </div>
 
       <div className="text-sm opacity-70">
-        Scores are daily weighted completion (0–100). Darker = higher
-        completion.
+        Scores are daily weighted completion (0–100).
       </div>
     </div>
   );
