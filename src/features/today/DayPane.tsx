@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import type React from "react";
 import { PixelCard } from "@/components/pixel";
 import {
   useDaySummary,

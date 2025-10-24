@@ -74,7 +74,7 @@ export default function Trends() {
   );
 
   // Map 0..100 score -> 0..4 bucket for color scale
-  function classForValue(v?: number) {
+  function classForScore(v?: number) {
     if (v == null) return "color-empty";
     if (v <= 0) return "color-empty";
     if (v < 25) return "color-scale-1";
@@ -170,12 +170,34 @@ export default function Trends() {
               startDate={from}
               endDate={to}
               values={data}
-              classForValue={(v) =>
-                classForValue(v?.count as number | undefined)
-              }
-              titleForValue={(v) =>
-                v?.date ? `${v.count ?? 0} score on ${v.date}` : undefined
-              }
+              classForValue={(v) => {
+                type HeatmapValue = {
+                  date: string | number | Date;
+                  [key: string]: unknown;
+                };
+                const hv = v as HeatmapValue | undefined;
+                const maybe = hv?.["count"];
+                const count = typeof maybe === "number" ? maybe : undefined;
+                return classForScore(count);
+              }}
+              titleForValue={(v) => {
+                type HeatmapValue = {
+                  date: string | number | Date;
+                  [key: string]: unknown;
+                };
+                const hv = v as HeatmapValue | undefined;
+                const dateVal = hv?.date;
+                if (!dateVal) return "";
+                const dateStr =
+                  typeof dateVal === "string"
+                    ? dateVal
+                    : typeof dateVal === "number"
+                    ? new Date(dateVal).toISOString().slice(0, 10)
+                    : dateVal.toISOString().slice(0, 10);
+                const maybe = hv?.["count"];
+                const count = typeof maybe === "number" ? maybe : 0;
+                return `${count} score on ${dateStr}`;
+              }}
               showWeekdayLabels={!isSmall}
               gutterSize={isSmall ? 1 : 2}
             />

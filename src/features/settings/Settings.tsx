@@ -1,6 +1,5 @@
 import { useSettings } from "@/hooks/useData";
 import { db, type Settings as AppSettings } from "@/lib/db";
-import { seedMockData } from "@/lib/seed";
 import { useQueryClient } from "@tanstack/react-query";
 import { THEME_KEYS, THEME_PRESETS } from "@/lib/utils";
 import { applyTheme } from "@/lib/theme";
@@ -16,6 +15,10 @@ import {
   DialogContent,
   DialogTrigger,
   DialogClose,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useMemo, useState } from "react";
 import { CloseIcon, SaveIcon } from "@/components/pixel/icons";
@@ -461,18 +464,31 @@ export default function Settings() {
 
       <hr className="my-4 w-full border-2" />
 
-      <Button onClick={() => db.delete().then(() => location.reload())}>
-        Reset DB
-      </Button>
-      <Button
-        onClick={async () => {
-          await seedMockData({ days: 120, dayStart: data.dayStart });
-          qc.invalidateQueries({ queryKey: ["habits"] });
-          qc.invalidateQueries({ queryKey: ["entries"] });
-        }}
-      >
-        Seed Mock Data
-      </Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="destructive">Reset DB</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset database?</DialogTitle>
+            <DialogDescription>
+              This will delete all habits and entries stored locally. This
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => db.delete().then(() => location.reload())}
+            >
+              Confirm Reset
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
