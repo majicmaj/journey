@@ -26,13 +26,13 @@ export const THEME_KEYS: Array<{
   { key: "muted-foreground", label: "Muted Foreground", type: "color" },
   { key: "destructive", label: "Destructive", type: "color" },
   { key: "border", label: "Border", type: "color" },
-  { key: "input", label: "Input", type: "color" },
-  { key: "ring", label: "Ring", type: "color" },
+  // { key: "input", label: "Input", type: "color" },
+  // { key: "ring", label: "Ring", type: "color" },
   { key: "chart-1", label: "Chart 1", type: "color" },
   { key: "chart-2", label: "Chart 2", type: "color" },
-  { key: "chart-3", label: "Chart 3", type: "color" },
-  { key: "chart-4", label: "Chart 4", type: "color" },
-  { key: "chart-5", label: "Chart 5", type: "color" },
+  // { key: "chart-3", label: "Chart 3", type: "color" },
+  // { key: "chart-4", label: "Chart 4", type: "color" },
+  // { key: "chart-5", label: "Chart 5", type: "color" },
 ];
 
 export type ThemeVars = Record<string, string>;

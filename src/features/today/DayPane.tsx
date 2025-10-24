@@ -8,7 +8,6 @@ import {
   useEntriesRange,
 } from "@/hooks/useData";
 import { toDayKey } from "@/lib/dates";
-import { contributionRaw } from "@/lib/score";
 import { cn } from "@/lib/utils";
 import { type Habit, type DailyEntry } from "@/types/habit";
 import {
@@ -192,7 +191,7 @@ function DayPane({
       const todayEntry: DailyEntry | undefined = entriesByHabit
         .get(h.id)
         ?.get(dayKey);
-      const todayDone = contributionRaw(todayEntry, h) >= 1;
+      const todayDone = Boolean(todayEntry?.completed);
       const startOffset = todayDone ? 0 : 1;
       // Count backwards starting at dayKey (including today only if done)
       for (let i = startOffset; i < 366; i++) {
@@ -200,8 +199,7 @@ function DayPane({
         const key = toDayKey(d, dayStart);
         if (key < fromKey) break;
         const e: DailyEntry | undefined = entriesByHabit.get(h.id)?.get(key);
-        const raw = contributionRaw(e, h);
-        const done = raw >= 1;
+        const done = Boolean(e?.completed);
         if (done) streak += 1;
         else break;
       }
@@ -230,7 +228,7 @@ function DayPane({
     const out = new Map<string, boolean>();
     for (const h of habits) {
       const arr = entriesByHabit.get(h.id) ?? [];
-      const anyDone = arr.some((e) => contributionRaw(e, h) >= 1);
+      const anyDone = arr.some((e) => Boolean(e.completed));
       out.set(h.id, anyDone);
     }
     return out;
@@ -256,8 +254,7 @@ function DayPane({
         const key = toDayKey(d, dayStart);
         if (key < fromKey) break;
         const e: DailyEntry | undefined = entriesByHabit.get(h.id)?.get(key);
-        const raw = contributionRaw(e, h);
-        const done = raw >= 1;
+        const done = Boolean(e?.completed);
         if (!done) streak += 1;
         else break;
       }
@@ -465,14 +462,14 @@ function HabitRow({
             <div>
               {typeof streak !== "undefined" && streak > 0 ? (
                 <div className="flex items-center gap-1 text-chart-1">
-                  <FireIcon className="size-3" />
+                  <FireIcon className="size-4" />
                   <span className="text-xs">{streak}d</span>
                 </div>
               ) : isNew ? (
                 <span className="text-xs text-primary">new!</span>
               ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
                 <div className="flex items-center gap-1 text-chart-2">
-                  <IceIcon className="size-3" />
+                  <IceIcon className="size-4" />
                   <span className={"text-xs"}>-{coldStreak}d</span>
                 </div>
               ) : null}

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { cloneElement, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import CalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css"; // base styles; we'll override with our theme classes
 import { useDailySummariesRange, useSettings } from "@/hooks/useData";
@@ -73,54 +74,7 @@ export default function Trends() {
     [summaries]
   );
 
-  // Map 0..100 score -> 0..4 bucket for color scale
-  function classForScore(v?: number) {
-    if (v == null) return "color-empty";
-    if (v <= 0) return "color-empty";
-    if (v < 25) return "color-scale-1";
-    if (v < 50) return "color-scale-2";
-    if (v < 75) return "color-scale-3";
-    return "color-scale-4";
-  }
-
-  // Responsive autoscaling for the heatmap SVG
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [containerW, setContainerW] = useState(0);
-  const [scale, setScale] = useState(1);
-  const [svgNaturalHeight, setSvgNaturalHeight] = useState<number | undefined>(
-    undefined
-  );
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const update = () => {
-      setContainerW(el.clientWidth);
-      const svg = el.querySelector("svg") as SVGSVGElement | null;
-      if (!svg) return;
-      const vb = svg.viewBox?.baseVal;
-      const svgWidth = vb?.width || svg.getBoundingClientRect().width || 0;
-      const svgHeight = vb?.height || svg.getBoundingClientRect().height || 0;
-      if (svgWidth > 0 && svgHeight > 0) {
-        const nextScale = Math.min(1, el.clientWidth / svgWidth);
-        setScale(nextScale);
-        setSvgNaturalHeight(svgHeight);
-      }
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    window.addEventListener("resize", update);
-    const id = window.setInterval(update, 250);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", update);
-      window.clearInterval(id);
-    };
-  }, [from, to, data.length]);
-
-  const isSmall = containerW < 480;
-
+  const isSmall = useMediaQuery("(max-width: 480px)");
   return (
     <div className="p-3 flex flex-col gap-4">
       <header className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -146,39 +100,61 @@ export default function Trends() {
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="opacity-70">Legend:</span>
-            <span className={cn("pixel-frame w-4 h-4", "bg-heat-empty")} />
-            <span className={cn("w-4 h-4 pixel-frame", "bg-heat-1")} />
-            <span className={cn("w-4 h-4 pixel-frame", "bg-heat-2")} />
-            <span className={cn("w-4 h-4 pixel-frame", "bg-heat-3")} />
-            <span className={cn("w-4 h-4 pixel-frame", "bg-heat-4")} />
+            <span
+              className={cn("pixel-frame w-4 h-4 bg-secondary")}
+              style={{ opacity: 0 }}
+            />
+            <span
+              className={cn("pixel-frame w-4 h-4 bg-secondary")}
+              style={{ opacity: 0.25 }}
+            />
+            <span
+              className={cn("pixel-frame w-4 h-4 bg-secondary")}
+              style={{ opacity: 0.5 }}
+            />
+            <span
+              className={cn("pixel-frame w-4 h-4 bg-secondary")}
+              style={{ opacity: 0.75 }}
+            />
+            <span
+              className={cn("pixel-frame w-4 h-4 bg-secondary")}
+              style={{ opacity: 1 }}
+            />
           </div>
         </div>
       </header>
 
       <div className="pixel-frame bg-card p-3">
-        <div ref={containerRef} className="w-full overflow-hidden">
-          <div
-            className="min-w-full min-h-max"
-            style={{
-              transform: `scale(${scale})`,
-              transformOrigin: "left top",
-              height: svgNaturalHeight ? svgNaturalHeight * scale : undefined,
-              width: "fit-content",
-            }}
-          >
+        <div className="w-full overflow-hidden">
+          <div className="min-w-full min-h-max">
             <CalendarHeatmap
               startDate={from}
               endDate={to}
               values={data}
-              classForValue={(v) => {
+              classForValue={() => ""}
+              transformDayElement={(element, v) => {
                 type HeatmapValue = {
                   date: string | number | Date;
                   [key: string]: unknown;
                 };
                 const hv = v as HeatmapValue | undefined;
                 const maybe = hv?.["count"];
-                const count = typeof maybe === "number" ? maybe : undefined;
-                return classForScore(count);
+                const raw = typeof maybe === "number" ? maybe : 0;
+                const opacity = Math.max(0, Math.min(1, raw / 100));
+
+                type DayElProps = { style?: CSSProperties; className?: string };
+                const el = element as ReactElement<DayElProps>;
+                const nextStyle: CSSProperties = {
+                  ...(el.props?.style ?? {}),
+                  fill: `color-mix(in srgb, var(--secondary) ${
+                    opacity * 100
+                  }%, var(--background))`,
+                };
+                const nextClassName = cn(el.props?.className);
+                return cloneElement(el, {
+                  style: nextStyle,
+                  className: nextClassName,
+                });
               }}
               titleForValue={(v) => {
                 type HeatmapValue = {
