@@ -259,9 +259,9 @@ export default function Trends() {
                       <SelectItem
                         key={h.id}
                         value={h.id}
-                        className="line-clamp-1"
+                        className="line-clamp-2"
                       >
-                        {h.title}
+                        <span className="line-clamp-2">{h.title}</span>
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -272,12 +272,49 @@ export default function Trends() {
           {habitMode === "many" && (
             <Popover>
               <PopoverTrigger asChild>
-                <div className="pixel-frame px-3 py-2 cursor-pointer bg-card">
+                <div className="pixel-frame px-3 py-1.5 cursor-pointer bg-card">
                   {selectedCount} selected
                 </div>
               </PopoverTrigger>
               <PopoverContent className="pixel-frame w-64 bg-card">
-                <div className="max-h-64 overflow-auto p-2">
+                <div className="flex flex-col gap-1 max-h-64 overflow-auto p-2">
+                  <label
+                    key="all-habits"
+                    className="flex items-center gap-2 py-1"
+                  >
+                    <Checkbox
+                      checked={habitIds.length === 0}
+                      onCheckedChange={(val) => {
+                        setHabitIds(
+                          val
+                            ? []
+                            : (habitsQ.data ?? [])
+                                .filter((h) => !h.archivedAt)
+                                .map((h) => h.id)
+                        );
+                      }}
+                    />
+                    <span className="text-sm">Select None</span>
+                  </label>
+                  <label className="flex items-center gap-2 py-1">
+                    <Checkbox
+                      checked={
+                        habitIds.length ===
+                        (habitsQ.data ?? []).filter((h) => !h.archivedAt).length
+                      }
+                      onCheckedChange={(val) => {
+                        setHabitIds(
+                          val
+                            ? (habitsQ.data ?? [])
+                                .filter((h) => !h.archivedAt)
+                                .map((h) => h.id)
+                            : []
+                        );
+                      }}
+                    />
+                    <span className="text-sm">Select All</span>
+                  </label>
+                  <hr className="my-2 border-2" />
                   {(habitsQ.data ?? [])
                     .filter((h) => !h.archivedAt)
                     .map((h) => {
@@ -297,7 +334,9 @@ export default function Trends() {
                               );
                             }}
                           />
-                          <span className="text-sm">{h.title}</span>
+                          <span className="text-sm line-clamp-2">
+                            {h.title}
+                          </span>
                         </label>
                       );
                     })}
