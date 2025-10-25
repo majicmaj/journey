@@ -39,8 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+// removed unused imports after preserving history on type change
 import { toast } from "sonner";
 
 function DayPane({
@@ -128,21 +127,24 @@ function DayPane({
 
     type Row = {
       habit: Habit;
-      entry?: { completed?: boolean; value?: number | null } | undefined;
+      entry?: DailyEntry | undefined;
       completed: boolean;
-      value: number | null;
+      value: number | boolean | null;
       contribution: number;
+      effectiveKind: Habit["kind"]; // entry.kindAtEntry || habit.kind
     };
 
     let rows: Row[] = habits.map((h) => {
       const entry = entryByHabitId.get(h.id);
       const s = summaryByHabitId.get(h.id);
+      const effectiveKind = (entry?.kindAtEntry ?? h.kind) as Habit["kind"];
       return {
         habit: h,
         entry,
         completed: s?.completed ?? entry?.completed ?? false,
         value: entry?.value ?? null,
         contribution: s?.contribution ?? 0,
+        effectiveKind,
       };
     });
 
@@ -185,8 +187,8 @@ function DayPane({
               ? -1
               : 1;
           case "value": {
-            const av = a.value ?? -Infinity;
-            const bv = b.value ?? -Infinity;
+            const av = typeof a.value === "number" ? a.value : -Infinity;
+            const bv = typeof b.value === "number" ? b.value : -Infinity;
             return av === bv
               ? a.habit.title.localeCompare(b.habit.title)
               : av < bv
@@ -339,30 +341,35 @@ function DayPane({
       />
 
       <section className="flex flex-col gap-3">
-        {processed.map(({ habit: h, entry }) => {
+        {processed.map(({ habit: h, entry, effectiveKind }) => {
           return (
             <HabitRow
               key={`${h.id}-${dayKey}`}
               habit={h}
               entry={entry}
+              effectiveKind={effectiveKind}
               streak={streakByHabitId.get(h.id) ?? 0}
               coldStreak={coldStreakByHabitId.get(h.id) ?? 0}
               isNew={doneEverByHabitId.get(h.id) === false}
               inlineValueInput={true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
-                const isInput = h.kind === "quantified" || h.kind === "time";
+                const isInput =
+                  effectiveKind === "quantified" || effectiveKind === "time";
                 if (nextCompleted && isInput) {
                   const requires = requiresValueForCompletion(h);
                   const currentValue = entry?.value ?? null;
+                  const numericCurrentValue =
+                    typeof currentValue === "number" ? currentValue : null;
                   if (requires) {
                     // Must have a value and meet thresholds to complete
-                    if (meetsCompletionThresholds(h, currentValue)) {
+                    if (meetsCompletionThresholds(h, numericCurrentValue)) {
                       upsert.mutate({
                         habitId: h.id,
                         date: dayKey,
                         completed: true,
-                        value: currentValue,
+                        value: numericCurrentValue,
+                        kindAtEntry: entry?.kindAtEntry ?? h.kind,
                       });
                     } else {
                       const hasValue = currentValue != null;
@@ -387,7 +394,7 @@ function DayPane({
                     return;
                   }
                   // No thresholds: allow convenience set for time kind
-                  if (h.kind === "time" && currentValue == null) {
+                  if (effectiveKind === "time" && currentValue == null) {
                     const now = new Date();
                     const minutes = now.getHours() * 60 + now.getMinutes();
                     upsert.mutate({
@@ -395,6 +402,7 @@ function DayPane({
                       date: dayKey,
                       completed: true,
                       value: minutes,
+                      kindAtEntry: entry?.kindAtEntry ?? h.kind,
                     });
                     return;
                   }
@@ -404,8 +412,14 @@ function DayPane({
                   habitId: h.id,
                   date: dayKey,
                   // Preserve any existing value when toggling completion state
-                  value: entry?.value ?? null,
+                  value:
+                    (effectiveKind === "time" ||
+                      effectiveKind === "quantified") &&
+                    typeof entry?.value === "number"
+                      ? (entry?.value as number)
+                      : null,
                   completed: nextCompleted,
+                  kindAtEntry: entry?.kindAtEntry ?? h.kind,
                 });
               }}
               onSetValue={(v) => {
@@ -418,6 +432,7 @@ function DayPane({
                   date: dayKey,
                   value: v,
                   completed: shouldComplete,
+                  kindAtEntry: entry?.kindAtEntry ?? h.kind,
                 });
               }}
               onEdit={() => setEditingId(editingId === h.id ? null : h.id)}
@@ -496,6 +511,7 @@ function Progress({ className, value }: { className: string; value: number }) {
 function HabitRow({
   habit,
   entry,
+  effectiveKind,
   streak,
   coldStreak,
   isNew,
@@ -508,7 +524,8 @@ function HabitRow({
   onCancelEdit,
 }: {
   habit: Habit;
-  entry: { completed?: boolean; value?: number | null } | undefined;
+  entry: DailyEntry | undefined;
+  effectiveKind: Habit["kind"];
   streak?: number;
   coldStreak?: number;
   isNew?: boolean;
@@ -560,27 +577,33 @@ function HabitRow({
           </div>
         </div>
         <div className="flex items-end gap-3">
-          {(habit.kind === "quantified" || habit.kind === "time") &&
+          {(effectiveKind === "quantified" || effectiveKind === "time") &&
             inlineValueInput && (
               <div className="relative w-32 pixel-frame">
                 <>
                   <Input
                     aria-label={`value-${habit.id}`}
                     className="w-32 pr-12 bg-background"
-                    type={habit.kind === "time" ? "time" : "number"}
-                    defaultValue={
-                      habit.kind === "time"
-                        ? typeof entry?.value === "number"
-                          ? `${String(Math.floor(entry.value / 60)).padStart(
+                    type={effectiveKind === "time" ? "time" : "number"}
+                    defaultValue={(() => {
+                      if (effectiveKind === "time") {
+                        const v =
+                          typeof entry?.value === "number" ? entry.value : null;
+                        return v != null
+                          ? `${String(Math.floor(v / 60)).padStart(
                               2,
                               "0"
-                            )}:${String(entry.value % 60).padStart(2, "0")}`
-                          : ""
-                        : entry?.value ?? ""
-                    }
+                            )}:${String(v % 60).padStart(2, "0")}`
+                          : "";
+                      }
+                      // quantified
+                      return typeof entry?.value === "number"
+                        ? entry.value
+                        : "";
+                    })()}
                     onBlur={(ev) => {
                       const raw = ev.currentTarget.value.trim();
-                      if (habit.kind === "time") {
+                      if (effectiveKind === "time") {
                         // Expect HH:MM, convert to minutes
                         if (raw === "") onSetValue(null);
                         else {
@@ -596,7 +619,7 @@ function HabitRow({
                     }}
                   />
                   <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
-                    {habit.kind === "time" ? "hh:mm" : habit.unit ?? ""}
+                    {effectiveKind === "time" ? "hh:mm" : habit.unit ?? ""}
                   </div>
                 </>
               </div>
@@ -636,7 +659,6 @@ function HabitEditorInline({
   const { remove } = useHabits();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [kindConfirmOpen, setKindConfirmOpen] = useState(false);
-  const qc = useQueryClient();
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-3 col-span-full sm:col-span-2">
@@ -922,14 +944,8 @@ function HabitEditorInline({
           <Button
             onClick={async () => {
               if (draft.kind !== habit.kind) {
-                const count = await db.entries
-                  .where("habitId")
-                  .equals(habit.id)
-                  .count();
-                if (count > 0) {
-                  setKindConfirmOpen(true);
-                  return;
-                }
+                setKindConfirmOpen(true);
+                return;
               }
               onSave(draft);
             }}
@@ -941,10 +957,11 @@ function HabitEditorInline({
           <Dialog open={kindConfirmOpen} onOpenChange={setKindConfirmOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Change type and delete history?</DialogTitle>
+                <DialogTitle>Change type?</DialogTitle>
                 <DialogDescription>
-                  Changing the type of a habit will delete all its existing
-                  daily entries. This cannot be undone.
+                  Changing the type preserves existing history. Old days will
+                  keep their original values and type; new logs will use the new
+                  type.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -958,11 +975,8 @@ function HabitEditorInline({
                   Reset Type
                 </Button>
                 <Button
-                  variant="destructive"
                   onClick={async () => {
-                    await db.entries.where("habitId").equals(habit.id).delete();
-                    qc.invalidateQueries({ queryKey: ["entries"] });
-                    qc.invalidateQueries({ queryKey: ["entries-range"] });
+                    // Preserve history; just save the new kind
                     setKindConfirmOpen(false);
                     onSave(draft);
                   }}

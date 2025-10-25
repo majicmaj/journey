@@ -218,7 +218,7 @@ export default function Day() {
           setFilterTags={setFilterTags}
         />
         <Button
-          variant={headerExpanded ? "secondary" : "ghost"}
+          variant={headerExpanded ? "default" : "ghost"}
           className={cn("w-full", !headerExpanded && "-mt-2")}
           size="icon"
           onClick={() => setHeaderExpanded((prev) => !prev)}

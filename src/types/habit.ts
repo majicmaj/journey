@@ -21,7 +21,11 @@ export interface DailyEntry {
   habitId: HabitId;
   date: string; // YYYY-MM-DD (user TZ, respecting day start)
   completed?: boolean; // compact logging
-  value?: number | null; // detailed logging
+  // value can represent different kinds depending on when it was logged
+  // quantified/time -> number (for time: minutes), boolean -> boolean (optional)
+  value?: number | boolean | null; // detailed logging
+  // snapshot of the habit kind at the time of logging to preserve history
+  kindAtEntry?: Habit["kind"]; // "boolean" | "quantified" | "time"
   note?: string | null;
   editedAt?: string;
 }
@@ -30,7 +34,7 @@ export interface DaySummaryByHabit {
   habitId: HabitId;
   contribution: number; // 0..100 after normalization per habit
   completed: boolean;
-  value?: number | null;
+  value?: number | boolean | null;
 }
 
 export interface DaySummary {

@@ -9,7 +9,8 @@ export function contributionRaw(
   habit: Habit
 ): number {
   if (!entry) return 0;
-  if (habit.kind === "boolean") {
+  const effectiveKind = entry.kindAtEntry ?? habit.kind;
+  if (effectiveKind === "boolean") {
     return entry.completed ? 1 : 0;
   }
   // For quantified and time kinds we both use numeric value scaling
@@ -35,7 +36,7 @@ export function computeDaySummary(
     habitId: string;
     contribution: number;
     completed: boolean;
-    value?: number | null;
+    value?: number | boolean | null;
   }>;
 } {
   const entryByHabit = new Map<string, DailyEntry>();
