@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/db";
+import { toast } from "sonner";
 
 function DayPane({
   dayKey,
@@ -78,13 +79,6 @@ function DayPane({
   const rangeQ = useEntriesRange(fromKey, dayKey);
 
   // Sorting and filtering are controlled by parent (Today.tsx)
-
-  type Habit = {
-    kind: "quantified" | "time" | string;
-    min?: number | null;
-    max?: number | null;
-    target?: number | null;
-  };
 
   function meetsCompletionThresholds(
     h: Habit,
@@ -351,6 +345,24 @@ function DayPane({
                         completed: true,
                         value: currentValue,
                       });
+                    } else {
+                      const hasValue = currentValue != null;
+                      // Build helpful message based on thresholds
+                      const min = h.min ?? h.target ?? null;
+                      const max = h.max ?? null;
+                      let message = "";
+                      if (!hasValue) {
+                        message = "Enter a value first to complete this habit.";
+                      } else if (min != null && max != null) {
+                        message = `Value must be between ${min} and ${max}.`;
+                      } else if (min != null) {
+                        message = `Value must be at least ${min}.`;
+                      } else if (max != null) {
+                        message = `Value must be at most ${max}.`;
+                      } else {
+                        message = "Enter a valid value to complete.";
+                      }
+                      toast.error(message);
                     }
                     // If value is missing or doesn't meet thresholds, do nothing
                     return;

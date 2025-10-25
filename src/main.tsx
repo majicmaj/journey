@@ -12,6 +12,7 @@ import Trends from "@/features/trends/Trends";
 import { useSettings } from "@/hooks/useData";
 import { applyTheme } from "@/lib/theme";
 import { useEffect } from "react";
+import { Toaster } from "sonner";
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeInitializer />
+      <Toaster richColors position="top-center" />
       <RouterProvider router={router} />
     </QueryClientProvider>
   </StrictMode>
