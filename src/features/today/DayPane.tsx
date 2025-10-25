@@ -384,6 +384,8 @@ function DayPane({
                 upsert.mutate({
                   habitId: h.id,
                   date: dayKey,
+                  // Preserve any existing value when toggling completion state
+                  value: entry?.value ?? null,
                   completed: nextCompleted,
                 });
               }}
