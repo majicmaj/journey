@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useHabits } from "@/hooks/useData";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -26,7 +28,8 @@ type DaySortKey =
   | "createdAt"
   | "completed"
   | "value"
-  | "contribution";
+  | "contribution"
+  | "tag";
 
 export default function Day() {
   const settings = useSettings();
@@ -44,6 +47,17 @@ export default function Day() {
   const [filterCompletion, setFilterCompletion] = useState<
     "all" | "completed" | "incomplete"
   >("all");
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const habitsHook = useHabits();
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const h of habitsHook.data ?? []) {
+      for (const t of h.tags ?? []) set.add(t);
+    }
+    return Array.from(set).sort();
+  }, [habitsHook.data]);
+
   // Swipe state
   const swipeContainerRef = useRef<HTMLDivElement | null>(null);
   const [dragX, setDragX] = useState(0);
@@ -183,6 +197,7 @@ export default function Day() {
     >
       <div className="p-2 gap-3 flex flex-col">
         <DayHeader
+          allTags={allTags}
           dayKey={activeKey}
           baseTodayKey={baseTodayKey}
           canGoNext={canGoNext}
@@ -199,6 +214,8 @@ export default function Day() {
           setFilterKind={setFilterKind}
           filterCompletion={filterCompletion}
           setFilterCompletion={setFilterCompletion}
+          filterTags={filterTags}
+          setFilterTags={setFilterTags}
         />
         <Button
           variant={headerExpanded ? "secondary" : "ghost"}
@@ -230,6 +247,7 @@ export default function Day() {
             sortDir={sortDir}
             filterKind={filterKind}
             filterCompletion={filterCompletion}
+            filterTags={filterTags}
           />
         </div>
         <div className="min-w-[100vw] w-[100vw] max-w-none px-3">
@@ -240,6 +258,7 @@ export default function Day() {
             sortDir={sortDir}
             filterKind={filterKind}
             filterCompletion={filterCompletion}
+            filterTags={filterTags}
           />
         </div>
         <div className="min-w-[100vw] w-[100vw] max-w-none px-3">
@@ -250,6 +269,7 @@ export default function Day() {
             sortDir={sortDir}
             filterKind={filterKind}
             filterCompletion={filterCompletion}
+            filterTags={filterTags}
           />
         </div>
       </div>
@@ -274,6 +294,9 @@ function DayHeader({
   setFilterKind,
   filterCompletion,
   setFilterCompletion,
+  filterTags,
+  setFilterTags,
+  allTags,
 }: {
   dayKey: string;
   baseTodayKey: string;
@@ -289,7 +312,8 @@ function DayHeader({
     | "createdAt"
     | "completed"
     | "value"
-    | "contribution";
+    | "contribution"
+    | "tag";
   setSortKey: (
     v: "title" | "weight" | "createdAt" | "completed" | "value" | "contribution"
   ) => void;
@@ -299,12 +323,15 @@ function DayHeader({
   setFilterKind: (v: "all" | "boolean" | "quantified" | "time") => void;
   filterCompletion: "all" | "completed" | "incomplete";
   setFilterCompletion: (v: "all" | "completed" | "incomplete") => void;
+  filterTags: string[];
+  setFilterTags: (v: string[]) => void;
+  allTags: string[];
 }) {
   return (
     <header
       className={cn(
         "h-0 transition-all duration-300 overflow-hidden",
-        headerExpanded && "h-50"
+        headerExpanded && "h-62"
       )}
     >
       <div className="m-1 flex flex-col gap-3">
@@ -357,6 +384,7 @@ function DayHeader({
                 <SelectItem value="completed">Sort: Completed</SelectItem>
                 <SelectItem value="value">Sort: Value</SelectItem>
                 <SelectItem value="contribution">Sort: Contribution</SelectItem>
+                <SelectItem value="tag">Sort: Tag</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -408,6 +436,16 @@ function DayHeader({
                 <SelectItem value="incomplete">Incomplete</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="pixel-frame flex-1 col-span-2 sm:col-span-1">
+            <MultiSelect
+              options={allTags.map((t) => ({ value: t, label: t }))}
+              value={filterTags}
+              onChange={setFilterTags}
+              placeholder="Filter tags"
+              triggerClassName="w-full bg-card"
+              contentClassName="bg-card"
+            />
           </div>
         </div>
       </div>

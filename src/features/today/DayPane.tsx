@@ -31,6 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Select,
   SelectContent,
@@ -49,6 +50,7 @@ function DayPane({
   sortDir,
   filterKind,
   filterCompletion,
+  filterTags,
 }: {
   dayKey: string;
   headerExpanded: boolean;
@@ -58,10 +60,12 @@ function DayPane({
     | "createdAt"
     | "completed"
     | "value"
-    | "contribution";
+    | "contribution"
+    | "tag";
   sortDir: "asc" | "desc";
   filterKind: "all" | "boolean" | "quantified" | "time";
   filterCompletion: "all" | "completed" | "incomplete";
+  filterTags: string[];
 }) {
   const settings = useSettings();
   const { habitsQ, entriesQ, summary } = useDaySummary(dayKey);
@@ -152,6 +156,13 @@ function DayPane({
       );
     }
 
+    // Filter by tags if provided (match any of the selected tags)
+    if (filterTags && filterTags.length > 0) {
+      rows = rows.filter((r) =>
+        (r.habit.tags ?? []).some((t) => filterTags.includes(t))
+      );
+    }
+
     // Sort
     const dir = sortDir === "asc" ? 1 : -1;
     rows.sort((a, b) => {
@@ -188,6 +199,13 @@ function DayPane({
               : a.contribution < b.contribution
               ? -1
               : 1;
+          case "tag": {
+            const at = (a.habit.tags ?? []).join(",");
+            const bt = (b.habit.tags ?? []).join(",");
+            return at === bt
+              ? a.habit.title.localeCompare(b.habit.title)
+              : at.localeCompare(bt);
+          }
           default:
             return 0;
         }
@@ -204,6 +222,7 @@ function DayPane({
     sortDir,
     filterKind,
     filterCompletion,
+    filterTags,
   ]);
 
   const streakByHabitId = useMemo(() => {
@@ -627,6 +646,45 @@ function HabitEditorInline({
           className="bg-background"
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
         />
+      </label>
+      <label className="flex items-start gap-3 col-span-full sm:col-span-2">
+        <span className="w-24 text-sm mt-1">Tags</span>
+        <div className="flex flex-col gap-2 w-full">
+          <MultiSelect
+            options={Array.from(
+              new Set(
+                (useHabits().data ?? [])
+                  .flatMap((h) => h.tags ?? [])
+                  .concat(draft.tags ?? [])
+              )
+            )
+              .sort()
+              .map((t) => ({ value: t, label: t }))}
+            value={(draft.tags ?? []) as string[]}
+            onChange={(next) => setDraft({ ...draft, tags: next })}
+            placeholder="Select tags"
+            triggerClassName="bg-background"
+            contentClassName="bg-background"
+          />
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Add new tag"
+              className="bg-background flex-1"
+              onKeyDown={(e) => {
+                const el = e.currentTarget as HTMLInputElement;
+                if (e.key === "Enter") {
+                  const t = el.value.trim();
+                  if (!t) return;
+                  const existing = new Set(draft.tags ?? []);
+                  if (!existing.has(t)) {
+                    setDraft({ ...draft, tags: [...(draft.tags ?? []), t] });
+                  }
+                  el.value = "";
+                }
+              }}
+            />
+          </div>
+        </div>
       </label>
       <label className="flex items-center gap-3">
         <span className="w-24 text-sm">Kind</span>
