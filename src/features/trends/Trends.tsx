@@ -13,12 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
+import MultiSelect from "@/components/ui/multi-select";
 import { cn } from "@/lib/utils";
 import { computeDaySummary } from "@/lib/score";
 import type { DailyEntry } from "@/types/habit";
@@ -140,14 +135,7 @@ export default function Trends() {
     [summaries]
   );
 
-  const selectedCount =
-    habitMode === "many"
-      ? habitIds.length
-      : habitMode === "one"
-      ? habitId
-        ? 1
-        : 0
-      : habitsQ.data?.length ?? 0;
+  // selectedCount no longer needed; MultiSelect renders its own label
 
   return (
     <div className="p-3 flex flex-col gap-4">
@@ -269,79 +257,17 @@ export default function Trends() {
           )}
 
           {habitMode === "many" && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <div className="pixel-frame px-3 py-1.5 cursor-pointer bg-card">
-                  {selectedCount} selected
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="pixel-frame w-64 bg-card">
-                <div className="flex flex-col gap-1 max-h-64 overflow-auto p-2">
-                  <label
-                    key="all-habits"
-                    className="flex items-center gap-2 py-1"
-                  >
-                    <Checkbox
-                      checked={habitIds.length === 0}
-                      onCheckedChange={(val) => {
-                        setHabitIds(
-                          val
-                            ? []
-                            : (habitsQ.data ?? [])
-                                .filter((h) => !h.archivedAt)
-                                .map((h) => h.id)
-                        );
-                      }}
-                    />
-                    <span className="text-sm">Select None</span>
-                  </label>
-                  <label className="flex items-center gap-2 py-1">
-                    <Checkbox
-                      checked={
-                        habitIds.length ===
-                        (habitsQ.data ?? []).filter((h) => !h.archivedAt).length
-                      }
-                      onCheckedChange={(val) => {
-                        setHabitIds(
-                          val
-                            ? (habitsQ.data ?? [])
-                                .filter((h) => !h.archivedAt)
-                                .map((h) => h.id)
-                            : []
-                        );
-                      }}
-                    />
-                    <span className="text-sm">Select All</span>
-                  </label>
-                  <hr className="my-2 border-2" />
-                  {(habitsQ.data ?? [])
-                    .filter((h) => !h.archivedAt)
-                    .map((h) => {
-                      const checked = habitIds.includes(h.id);
-                      return (
-                        <label
-                          key={h.id}
-                          className="flex items-center gap-2 py-1"
-                        >
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(val) => {
-                              setHabitIds((ids) =>
-                                val
-                                  ? [...ids, h.id]
-                                  : ids.filter((x) => x !== h.id)
-                              );
-                            }}
-                          />
-                          <span className="text-sm line-clamp-2">
-                            {h.title}
-                          </span>
-                        </label>
-                      );
-                    })}
-                </div>
-              </PopoverContent>
-            </Popover>
+            <MultiSelect
+              options={(habitsQ.data ?? [])
+                .filter((h) => !h.archivedAt)
+                .map((h) => ({ value: h.id, label: h.title }))}
+              value={habitIds}
+              onChange={(next) => setHabitIds(next)}
+              placeholder="Select habits"
+              renderTriggerLabel={(count) =>
+                count === 0 ? "Select habits" : `${count} selected`
+              }
+            />
           )}
         </div>
       </header>
