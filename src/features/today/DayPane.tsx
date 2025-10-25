@@ -601,6 +601,40 @@ function HabitRow({
                         ? entry.value
                         : "";
                     })()}
+                    onChange={(ev) => {
+                      const raw = ev.currentTarget.value.trim();
+                      if (effectiveKind === "time") {
+                        if (raw === "") {
+                          onSetValue(null);
+                          return;
+                        }
+                        // Save only when valid HH:MM
+                        const m = raw.match(/^\d{1,2}:\d{2}$/);
+                        if (m) {
+                          const [hhStr, mmStr] = raw.split(":");
+                          const hh = Number(hhStr);
+                          const mm = Number(mmStr);
+                          if (
+                            Number.isFinite(hh) &&
+                            Number.isFinite(mm) &&
+                            mm >= 0 &&
+                            mm <= 59
+                          ) {
+                            onSetValue(hh * 60 + mm);
+                          }
+                        }
+                      } else {
+                        // quantified number
+                        if (raw === "") {
+                          onSetValue(null);
+                          return;
+                        }
+                        const parsed = Number(raw);
+                        if (Number.isFinite(parsed)) {
+                          onSetValue(parsed);
+                        }
+                      }
+                    }}
                     onBlur={(ev) => {
                       const raw = ev.currentTarget.value.trim();
                       if (effectiveKind === "time") {
