@@ -12,7 +12,7 @@ import Trends from "@/features/trends/Trends";
 import { useSettings } from "@/hooks/useData";
 import { applyTheme } from "@/lib/theme";
 import { useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const router = createBrowserRouter([
   {
@@ -28,7 +28,7 @@ const router = createBrowserRouter([
 
 const queryClient = new QueryClient();
 
-function ThemeInitializer() {
+export function ThemeInitializer() {
   const { data } = useSettings();
   useEffect(() => {
     if (data) applyTheme(data);

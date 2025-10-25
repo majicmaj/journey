@@ -267,3 +267,48 @@ export const FireIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <rect width="24" height="24" fill="currentColor" mask="url(#fire-mask)" />
   </svg>
 );
+
+export const InfoIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <path
+      d="M3 3h2v18H3V3zm16 0H5v2h14v14H5v2h16V3h-2zm-8 6h2V7h-2v2zm2 8h-2v-6h2v6z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const WarningIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <path
+      d="M3 3h16v2H5v14h14v2H3V3zm18 0h-2v18h2V3zM11 15h2v2h-2v-2zm2-8h-2v6h2V7z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const ErrorIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={cn("pixelart-icons-font", props.className)}
+  >
+    <path
+      d="M3 3h16v2H5v14h14v2H3V3zm18 0h-2v18h2V3zM11 15h2v2h-2v-2zm2-8h-2v6h2V7z"
+      fill="currentColor"
+    />
+  </svg>
+);

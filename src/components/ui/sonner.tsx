@@ -1,26 +1,20 @@
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
-import { useTheme } from "next-themes";
+import { Loader2Icon } from "lucide-react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { CheckIcon, ErrorIcon, WarningIcon, InfoIcon } from "../pixel/icons";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
-
   return (
     <Sonner
-      theme={theme as "system" | "light" | "dark"}
-      className="toaster group pixel-frame font-display"
+      className="toaster group font-display"
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
+        success: <CheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
+        warning: <WarningIcon className="size-4" />,
+        error: <ErrorIcon className="size-4" />,
         loading: <Loader2Icon className="size-4 animate-spin" />,
+      }}
+      toastOptions={{
+        className: "pixel-frame bg-card text-card-foreground font-display",
       }}
       style={
         {
