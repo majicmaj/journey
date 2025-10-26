@@ -133,6 +133,7 @@ export default function PanZoom({
       onTouchEnd={onTouchEnd}
     >
       <div
+        className="w-full h-full"
         style={{
           transform: `translate(${state.x}px, ${state.y}px) scale(${state.scale})`,
           transformOrigin: "0 0",

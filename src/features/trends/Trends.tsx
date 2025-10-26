@@ -299,6 +299,16 @@ export default function Trends() {
 
   return (
     <div className="p-3 flex flex-col gap-4">
+      <Tabs value={view} onValueChange={(v: string) => setView(v as ViewMode)}>
+        <div className="pixel-frame bg-card">
+          <TabsList className="bg-transparent">
+            <TabsTrigger value="trend">Trend</TabsTrigger>
+            <TabsTrigger value="cadence">Cadence</TabsTrigger>
+            <TabsTrigger value="weekday">Weekday</TabsTrigger>
+            <TabsTrigger value="streaks">Streaks</TabsTrigger>
+          </TabsList>
+        </div>
+      </Tabs>
       <header className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="grid w-full sm:flex gap-3 items-center flex-wrap">
           <span className="opacity-70 text-sm">Range</span>
@@ -446,22 +456,6 @@ export default function Trends() {
               }
             />
           )}
-
-          {/* View selector via Tabs */}
-          <span className="opacity-70 text-sm">View</span>
-          <Tabs
-            value={view}
-            onValueChange={(v: string) => setView(v as ViewMode)}
-          >
-            <div className="pixel-frame">
-              <TabsList className="bg-card">
-                <TabsTrigger value="trend">Trend</TabsTrigger>
-                <TabsTrigger value="cadence">Cadence</TabsTrigger>
-                <TabsTrigger value="weekday">Weekday</TabsTrigger>
-                <TabsTrigger value="streaks">Streaks</TabsTrigger>
-              </TabsList>
-            </div>
-          </Tabs>
         </div>
       </header>
 
@@ -472,9 +466,7 @@ export default function Trends() {
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer
-                  height={(vw) => Math.max(300, Math.floor(vw * 0.5))}
-                >
+                <ResponsiveContainer height="fill" className="h-full">
                   {(vw, vh) => (
                     <LineChart
                       width={vw}
@@ -505,7 +497,7 @@ export default function Trends() {
             )}
           </Fullscreen>
           <ResponsiveContainer
-            height={(w) => Math.max(180, Math.min(280, Math.floor(w * 0.4)))}
+            height={(w) => Math.max(300, Math.min(280, Math.floor(w * 0.4)))}
           >
             {(w, h) => (
               <LineChart
@@ -541,9 +533,7 @@ export default function Trends() {
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer
-                  height={(vw) => Math.max(260, Math.floor(vw * 0.4))}
-                >
+                <ResponsiveContainer height="fill" className="h-full">
                   {(vw, vh) => (
                     <BarChart width={vw} height={vh} bars={weeklyBars} />
                   )}
@@ -584,9 +574,7 @@ export default function Trends() {
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer
-                  height={() => Math.max(240, streakRows.labels.length * 32)}
-                >
+                <ResponsiveContainer height="fill" className="h-full">
                   {(vw, vh) => (
                     <StreakTimeline
                       width={vw}
@@ -633,9 +621,7 @@ export default function Trends() {
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer
-                  height={(vw) => Math.max(260, Math.floor(vw * 0.5))}
-                >
+                <ResponsiveContainer height="fill" className="h-full">
                   {(vw, vh) => {
                     const days = enumKeys(from, to);
                     const weeks = Array.from(

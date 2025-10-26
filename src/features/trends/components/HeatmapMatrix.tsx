@@ -156,36 +156,6 @@ export default function HeatmapMatrix({
             </text>
           ))}
 
-          {/* Optional grid lines */}
-          {showGrid && (
-            <>
-              {Array.from({ length: rows + 1 }).map((_, i) => (
-                <line
-                  key={`h${i}`}
-                  x1={0}
-                  x2={innerW}
-                  y1={i * cellH}
-                  y2={i * cellH}
-                  stroke="var(--border)"
-                  opacity={0.7}
-                  {...crisp}
-                />
-              ))}
-              {Array.from({ length: cols + 1 }).map((_, i) => (
-                <line
-                  key={`v${i}`}
-                  x1={i * cellW}
-                  x2={i * cellW}
-                  y1={0}
-                  y2={innerH}
-                  stroke="var(--border)"
-                  opacity={0.4}
-                  {...crisp}
-                />
-              ))}
-            </>
-          )}
-
           {/* Cells */}
           {Array.from({ length: rows }).map((_, r) =>
             Array.from({ length: cols }).map((_, c) => {
