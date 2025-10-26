@@ -196,6 +196,14 @@ export default function Trends() {
     [totalScoreSeries]
   );
 
+  // Determine if X axis should be compact based on range length and device
+  const trendCompact = useMemo(() => {
+    const days = enumKeys(from, to);
+    const threshold =
+      typeof window !== "undefined" && window.innerWidth <= 640 ? 30 : 90;
+    return days.length >= threshold;
+  }, [from, to]);
+
   // Map entries by date for other aggregations
   const entriesByDate = useMemo(() => {
     const map = new Map<string, DailyEntry[]>();
@@ -481,7 +489,7 @@ export default function Trends() {
                         { name: "MA28", color: "var(--chart-2)", points: ma28 },
                       ]}
                       goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-                      compactXAxis
+                      compactXAxis={trendCompact}
                     />
                   )}
                 </ResponsiveContainer>
@@ -519,12 +527,7 @@ export default function Trends() {
                   setPreset("custom");
                   setCustomRange({ from: fromX, to: toX });
                 }}
-                compactXAxis={
-                  preset === "last-90-days" ||
-                  preset === "last-6-months" ||
-                  preset === "last-12-months" ||
-                  preset === "all-time"
-                }
+                compactXAxis={trendCompact}
               />
             )}
           </ResponsiveContainer>

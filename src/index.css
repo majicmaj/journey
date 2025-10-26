@@ -291,5 +291,79 @@
     stroke: color-mix(in oklch, var(--border) 50%, transparent);
     stroke-width: 1;
   }
+
+  /* Pixel-frame for active tabs trigger (Radix Tabs) */
+  [data-slot="tabs-trigger"][data-state="active"] {
+    --p: 3px;
+    --outer: var(--border);
+    position: relative;
+    text-shadow: 2px 2px 0px color-mix(in srgb, var(--border) 10%, transparent);
+  }
+  [data-slot="tabs-trigger"][data-state="active"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--p));
+    background: linear-gradient(var(--outer), var(--outer)) left var(--p) top /
+        calc(100% - 2 * var(--p)) var(--p) no-repeat,
+      linear-gradient(var(--outer), var(--outer)) left var(--p) bottom /
+        calc(100% - 2 * var(--p)) var(--p) no-repeat,
+      linear-gradient(var(--outer), var(--outer)) left top var(--p) / var(--p)
+        calc(100% - 2 * var(--p)) no-repeat,
+      linear-gradient(var(--outer), var(--outer)) right top var(--p) / var(--p)
+        calc(100% - 2 * var(--p)) no-repeat;
+    pointer-events: none;
+  }
+  [data-slot="tabs-trigger"][data-state="active"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+          color-mix(in srgb, var(--light) 20%, transparent),
+          color-mix(in srgb, var(--light) 20%, transparent)
+        )
+        left var(--p) top / 100% var(--p) no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        left 0 bottom / 100% var(--p) no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--light) 20%, transparent),
+          color-mix(in srgb, var(--light) 20%, transparent)
+        )
+        left 0 top / var(--p) 100% no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        right 0 top / var(--p) 100% no-repeat;
+    pointer-events: none;
+  }
+  .dark [data-slot="tabs-trigger"][data-state="active"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        left var(--p) top / 100% var(--p) no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--light) 30%, transparent),
+          color-mix(in srgb, var(--light) 30%, transparent)
+        )
+        left 0 bottom / 100% var(--p) no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--dark) 20%, transparent),
+          color-mix(in srgb, var(--dark) 20%, transparent)
+        )
+        left 0 top / var(--p) 100% no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--light) 30%, transparent),
+          color-mix(in srgb, var(--light) 30%, transparent)
+        )
+        right 0 top / var(--p) 100% no-repeat;
+    pointer-events: none;
+  }
 }
 /* stylelint-enable */

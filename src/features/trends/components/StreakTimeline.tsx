@@ -1,20 +1,36 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import { cn } from "@/lib/utils";
+import { FireIcon } from "@/components/pixel/icons";
 
 type Segment = { start: string; end: string };
+
+type TipState = {
+  // screen-space for fixed tooltip (robust under relative/transform parents)
+  screenX: number;
+  screenY: number;
+  // container-local (for date mapping)
+  localX: number;
+  localY: number;
+  row: number;
+  segIndex: number;
+  seg: Segment;
+  len: number;
+  hoveredDate: string | null;
+  hoveredIndex: number | null;
+  dayIndexInStreak: number | null; // 0-based within this segment, if inside
+} | null;
 
 export default function StreakTimeline({
   width,
   height,
   rows,
-  dates, // ordered date keys (YYYY-MM-DD)
-  segmentsByRow, // Array of rows → segments [{start,end}]
+  dates, // ordered YYYY-MM-DD
+  segmentsByRow, // Array<row -> Segment[]>
   labelForRow,
-  // new optional knobs
-  todayKey, // defaults to last item in `dates`
+  todayKey, // defaults to last date
   showMonthBands = true,
   showGrid = true,
-  onSegmentClick, // (rowIdx, segIdx, seg) => void
+  onSegmentClick,
 }: {
   width: number;
   height: number;
@@ -27,71 +43,154 @@ export default function StreakTimeline({
   showGrid?: boolean;
   onSegmentClick?: (rowIndex: number, segIndex: number, seg: Segment) => void;
 }) {
-  const padding = { top: 16, right: 8, bottom: 24, left: 100 };
+  const padding = { top: 16, right: 36, bottom: 24, left: 100 };
   const innerW = Math.max(1, width - padding.left - padding.right);
   const innerH = Math.max(1, height - padding.top - padding.bottom);
   const rowH = innerH / Math.max(1, rows);
 
-  // Map date -> index (memoized)
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Map date -> index
   const idxByDate = useMemo(() => {
     const m = new Map<string, number>();
     dates.forEach((d, i) => m.set(d, i));
     return m;
   }, [dates]);
 
-  // helper: convert a dateKey to x-coord
   const denom = Math.max(1, dates.length - 1);
   const dateToX = (dateKey: string): number => {
     const i = idxByDate.get(dateKey) ?? 0;
     return (i / denom) * innerW;
   };
 
-  // helper: inclusive streak length in "days" by index distance (not real time)
+  // index distance + 1 (visual day count)
   const segLength = (s: Segment) =>
     Math.abs((idxByDate.get(s.end) ?? 0) - (idxByDate.get(s.start) ?? 0)) + 1;
 
-  // map length → color token index 1..5 (tweak buckets as you like)
-  const colorIndexForLength = (len: number) => {
-    if (len >= 2) return 1;
-    return 2;
-  };
+  const colorIndexForLength = (len: number) => (len >= 2 ? 1 : 2);
 
   const today =
     todayKey ?? (dates.length ? dates[dates.length - 1] : undefined);
   const todayX = today ? dateToX(today) : undefined;
 
+  // month starts (YYYY-MM-01)
+  const monthStarts = useMemo(
+    () => dates.map((d, i) => ({ d, i })).filter(({ d }) => d.endsWith("-01")),
+    [dates]
+  );
+
   // Tooltip state
-  const [tip, setTip] = useState<{
-    x: number;
-    y: number;
-    row: number;
-    segIndex: number;
-    seg: Segment;
-    len: number;
+  const [tip, setTip] = useState<TipState>(null);
+
+  // rAF throttle for pointermove
+  const pendingRef = useRef<number | null>(null);
+  const queuedRef = useRef<{
+    e: PointerEvent;
+    r: number;
+    i: number;
+    s: Segment;
   } | null>(null);
+
+  const computeLocal = (clientX: number, clientY: number) => {
+    const gLeft =
+      (wrapperRef.current?.getBoundingClientRect().left ?? 0) + padding.left;
+    const gTop =
+      (wrapperRef.current?.getBoundingClientRect().top ?? 0) + padding.top;
+    // local coords inside inner chart area
+    const x = Math.max(0, Math.min(innerW, clientX - gLeft));
+    const y = Math.max(0, Math.min(innerH, clientY - gTop));
+    return { x, y };
+  };
+
+  const xToDateIndex = (x: number) => {
+    const t = innerW <= 0 ? 0 : x / innerW;
+    const idx = Math.round(t * denom);
+    return Math.max(0, Math.min(dates.length - 1, idx));
+  };
+
+  const updateTipFromEvent = (
+    e: PointerEvent,
+    r: number,
+    i: number,
+    s: Segment
+  ) => {
+    const { x: localX, y: localY } = computeLocal(e.clientX, e.clientY);
+    const hoveredIndex = xToDateIndex(localX);
+    const hoveredDate = dates[hoveredIndex] ?? null;
+
+    const startIdx = idxByDate.get(s.start) ?? null;
+    const endIdx = idxByDate.get(s.end) ?? null;
+    let dayIndexInStreak: number | null = null;
+    if (
+      startIdx != null &&
+      endIdx != null &&
+      hoveredIndex != null &&
+      hoveredDate != null
+    ) {
+      const lo = Math.min(startIdx, endIdx);
+      const hi = Math.max(startIdx, endIdx);
+      if (hoveredIndex >= lo && hoveredIndex <= hi) {
+        dayIndexInStreak = hoveredIndex - lo; // 0-based within streak
+      }
+    }
+
+    setTip({
+      screenX: e.clientX,
+      screenY: e.clientY,
+      localX,
+      localY,
+      row: r,
+      segIndex: i,
+      seg: s,
+      len: segLength(s),
+      hoveredDate,
+      hoveredIndex,
+      dayIndexInStreak,
+    });
+  };
+
+  const onPointerMoveThrottled = (
+    e: React.PointerEvent,
+    r: number,
+    i: number,
+    s: Segment
+  ) => {
+    const native = e.nativeEvent as PointerEvent;
+    queuedRef.current = { e: native, r, i, s };
+    if (pendingRef.current == null) {
+      pendingRef.current = requestAnimationFrame(() => {
+        pendingRef.current = null;
+        const q = queuedRef.current;
+        if (q) updateTipFromEvent(q.e, q.r, q.i, q.s);
+      });
+    }
+  };
+
+  useLayoutEffect(() => {
+    return () => {
+      if (pendingRef.current != null) cancelAnimationFrame(pendingRef.current);
+    };
+  }, []);
 
   const hideTip = () => setTip(null);
 
-  // Month boundaries for bands & ticks
-  const monthStarts = useMemo(() => {
-    return dates.map((d, i) => ({ d, i })).filter(({ d }) => d.endsWith("-01"));
-  }, [dates]);
-
   return (
-    <div className="relative w-full">
+    <div ref={wrapperRef} className="relative w-full">
       <svg
+        ref={svgRef}
         width={width}
         height={height}
         role="img"
         aria-label="Habit streak timeline"
-        className={cn("bg-card w-full h-auto")} // no rounded corners
+        className={cn("bg-card w-full h-auto")}
       >
         <g transform={`translate(${padding.left},${padding.top})`}>
-          {/* Month bands (alternating) */}
+          {/* Month bands */}
           {showMonthBands &&
             monthStarts.map(({ d, i }, idx) => {
               const x = (i / denom) * innerW;
-              const nextI = monthStarts[idx + 1]?.i ?? dates.length - 1; // end of month or last day
+              const nextI = monthStarts[idx + 1]?.i ?? dates.length - 1;
               const x2 = (nextI / denom) * innerW;
               return (
                 <rect
@@ -120,13 +219,13 @@ export default function StreakTimeline({
             </text>
           ))}
 
-          {/* Optional horizontal grid lines */}
+          {/* Grid */}
           {showGrid &&
             Array.from({ length: rows + 1 }).map((_, i) => (
               <line
                 key={`grid-${i}`}
                 x1={0}
-                x2={innerW}
+                x2={innerW + 16}
                 y1={i * rowH}
                 y2={i * rowH}
                 shapeRendering="crispEdges"
@@ -135,13 +234,13 @@ export default function StreakTimeline({
               />
             ))}
 
-          {/* Streak segments */}
+          {/* Segments */}
           {segmentsByRow.map((segs, r) =>
             segs.map((s, i) => {
               const x1 = dateToX(s.start);
               const x2 = dateToX(s.end);
               const x = Math.min(x1, x2);
-              const w = Math.max(10, Math.abs(x2 - x1) + 10); // ensure minimum visible width
+              const w = Math.max(10, Math.abs(x2 - x1) + 10);
               const y = r * rowH + rowH * 0.25;
               const h = rowH * 0.5;
 
@@ -151,7 +250,6 @@ export default function StreakTimeline({
 
               return (
                 <g key={`${r}-${i}`}>
-                  {/* Hover/focus outline (kept square) */}
                   <rect
                     x={x - 1}
                     y={y - 1}
@@ -173,38 +271,38 @@ export default function StreakTimeline({
                     width={w}
                     height={h}
                     fill={fill}
-                    shapeRendering="crispEdges" // keeps sharp corners
+                    shapeRendering="crispEdges"
                     tabIndex={0}
                     aria-label={`Row ${r + 1} streak: ${s.start} to ${
                       s.end
                     }, length ${len} days`}
                     onClick={() => onSegmentClick?.(r, i, s)}
-                    onMouseEnter={(e) =>
-                      setTip({
-                        x: e.clientX,
-                        y: e.clientY,
-                        row: r,
-                        segIndex: i,
-                        seg: s,
-                        len,
-                      })
-                    }
-                    onMouseMove={(e) =>
-                      setTip((t) =>
-                        t ? { ...t, x: e.clientX, y: e.clientY } : t
-                      )
-                    }
-                    onMouseLeave={hideTip}
-                    onFocus={(e) =>
-                      setTip({
-                        x: e.currentTarget.getBoundingClientRect().x + w / 2,
-                        y: e.currentTarget.getBoundingClientRect().y,
-                        row: r,
-                        segIndex: i,
-                        seg: s,
-                        len,
-                      })
-                    }
+                    onPointerEnter={(e) => {
+                      (e.currentTarget as Element).setPointerCapture?.(
+                        e.pointerId
+                      );
+                      updateTipFromEvent(e.nativeEvent, r, i, s);
+                    }}
+                    onPointerMove={(e) => onPointerMoveThrottled(e, r, i, s)}
+                    onPointerLeave={(e) => {
+                      (e.currentTarget as Element).releasePointerCapture?.(
+                        e.pointerId
+                      );
+                      hideTip();
+                    }}
+                    onFocus={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      // center-top of segment for keyboard
+                      const cx = rect.left + rect.width / 2;
+                      const cy = rect.top + 2;
+                      updateTipFromEvent(
+                        // synthesize a PointerEvent-like bag
+                        { clientX: cx, clientY: cy } as PointerEvent,
+                        r,
+                        i,
+                        s
+                      );
+                    }}
                     onBlur={hideTip}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -228,7 +326,7 @@ export default function StreakTimeline({
             shapeRendering="crispEdges"
           />
 
-          {/* Month ticks + labels */}
+          {/* Month ticks/labels */}
           {monthStarts.map(({ d }) => {
             const x = dateToX(d);
             const mm = Number(d.slice(5, 7));
@@ -246,7 +344,6 @@ export default function StreakTimeline({
               "Nov",
               "Dec",
             ][Math.max(0, Math.min(11, mm - 1))];
-            const showYear = d.endsWith("-01"); // we already know it does; add year label every Jan
             const year = d.slice(0, 4);
             return (
               <g key={`tick-${d}`}>
@@ -290,7 +387,7 @@ export default function StreakTimeline({
             );
           })}
 
-          {/* Today marker (last date by default) */}
+          {/* Today marker */}
           {todayX != null && (
             <g>
               <line
@@ -304,8 +401,8 @@ export default function StreakTimeline({
                 opacity={0.7}
               />
               <text
-                x={todayX + 4}
-                y={10}
+                x={todayX - 12}
+                y={-8}
                 fontSize={10}
                 className="fill-foreground select-none"
               >
@@ -316,24 +413,31 @@ export default function StreakTimeline({
         </g>
       </svg>
 
-      {/* Tooltip (HTML overlay for clarity & wrapping) */}
+      {/* Tooltip — FIXED so clientX/Y is correct even under relative parents */}
       {tip && (
         <div
-          className="pointer-events-none absolute z-10 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border"
+          className="pointer-events-none fixed z-50 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
           style={{
-            left: tip.x + 8,
-            top: tip.y + 8,
+            // keep on-screen with simple flip logic
+            left: Math.min(tip.screenX + 16, window.innerWidth - 220),
+            top: Math.min(tip.screenY + 16, window.innerHeight - 80),
             whiteSpace: "nowrap",
           }}
           role="status"
           aria-live="polite"
         >
           <div className="font-medium mb-0.5">{labelForRow(tip.row)}</div>
-          <div>
-            {tip.seg.start} → {tip.seg.end}
+          <div className="opacity-90">
+            {tip.hoveredDate ? `Date: ${tip.hoveredDate}` : `Date: —`}
+          </div>
+          <div className="flex items-center gap-1">
+            <FireIcon className="size-4 text-chart-1" />
+            Streak: {tip.seg.start} → {tip.seg.end}
           </div>
           <div className="opacity-80">
             {tip.len} day{tip.len === 1 ? "" : "s"}
+            {tip.dayIndexInStreak != null &&
+              ` • Day ${tip.dayIndexInStreak + 1} in this streak`}
           </div>
         </div>
       )}
