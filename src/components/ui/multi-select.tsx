@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export type MultiSelectOption<Value extends string | number> = {
@@ -24,6 +26,11 @@ type MultiSelectProps<Value extends string | number> = {
   showSelectAllNone?: boolean;
   renderTriggerLabel?: (selectedCount: number, totalCount: number) => string;
   modal?: boolean;
+  // Allow creating a new option inline. When provided, an input row will appear.
+  creatable?: boolean;
+  createPlaceholder?: string;
+  // Return the created option value to be selected (and optionally added to options upstream)
+  onCreate?: (input: string) => Value | null | undefined;
 };
 
 export function MultiSelect<Value extends string | number>({
@@ -37,6 +44,9 @@ export function MultiSelect<Value extends string | number>({
   showSelectAllNone = true,
   modal = false,
   renderTriggerLabel,
+  creatable = false,
+  createPlaceholder = "Add new",
+  onCreate,
 }: MultiSelectProps<Value>) {
   const enabledOptions = useMemo(
     () => options.filter((o) => !o.disabled),
@@ -66,6 +76,33 @@ export function MultiSelect<Value extends string | number>({
     ? placeholder
     : `${selectedCount} selected`;
 
+  const [createInput, setCreateInput] = useState("");
+
+  function handleCreate() {
+    const raw = createInput.trim();
+    if (!creatable || !raw) return;
+    // Prevent duplicates by value string match
+    const exists = options.some(
+      (o) => String(o.value) === raw || o.label === raw
+    );
+    const alreadySelected = value.some((v) => String(v) === raw);
+    let createdValue: Value | null | undefined = undefined;
+    if (!exists && onCreate) {
+      createdValue = onCreate(raw);
+    } else if (exists) {
+      // If it already exists, find its value
+      const found = options.find(
+        (o) => o.label === raw || String(o.value) === raw
+      );
+      createdValue = found?.value as Value | undefined;
+    }
+    // If we have a value to select, add it
+    if (createdValue != null && !alreadySelected) {
+      onChange([...value, createdValue]);
+    }
+    setCreateInput("");
+  }
+
   return (
     <Popover modal={modal}>
       <PopoverTrigger asChild>
@@ -87,6 +124,28 @@ export function MultiSelect<Value extends string | number>({
             className
           )}
         >
+          {creatable && (
+            <div className="flex gap-2 mb-2">
+              <div className="pixel-frame flex-1">
+                <Input
+                  placeholder={createPlaceholder}
+                  value={createInput}
+                  className="bg-background flex-1"
+                  onChange={(e) => setCreateInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreate();
+                  }}
+                />
+              </div>
+              <Button
+                size="icon"
+                disabled={!createInput.trim()}
+                onClick={handleCreate}
+              >
+                +
+              </Button>
+            </div>
+          )}
           {showSelectAllNone && (
             <>
               <label className="flex items-center gap-2 py-1">

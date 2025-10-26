@@ -711,12 +711,9 @@ function HabitEditorInline({
             placeholder="Select tags"
             triggerClassName="bg-background"
             contentClassName="bg-background"
-          />
-          <AddTagRow
-            tags={draft.tags ?? []}
-            onAdd={(t) =>
-              setDraft({ ...draft, tags: [...(draft.tags ?? []), t] })
-            }
+            creatable={true}
+            createPlaceholder="Add new tag"
+            onCreate={(input) => input as string}
           />
         </div>
       </label>
@@ -1014,46 +1011,4 @@ function HabitEditorInline({
   );
 }
 
-function AddTagRow({
-  tags,
-  onAdd,
-}: {
-  tags: string[];
-  onAdd: (t: string) => void;
-}) {
-  const [value, setValue] = useState("");
-  return (
-    <div className="flex gap-3">
-      <div className="pixel-frame flex-1">
-        <Input
-          placeholder="Add new tag"
-          className="bg-background flex-1"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const t = value.trim();
-              if (!t) return;
-              const existing = new Set(tags ?? []);
-              if (!existing.has(t)) onAdd(t);
-              setValue("");
-            }
-          }}
-        />
-      </div>
-      <Button
-        size="icon"
-        disabled={!value.trim()}
-        onClick={() => {
-          const t = value.trim();
-          if (!t) return;
-          const existing = new Set(tags ?? []);
-          if (!existing.has(t)) onAdd(t);
-          setValue("");
-        }}
-      >
-        <PlusIcon className="size-8" />
-      </Button>
-    </div>
-  );
-}
+// AddTagRow has been inlined into MultiSelect via creatable props.
