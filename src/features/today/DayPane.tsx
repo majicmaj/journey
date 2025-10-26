@@ -683,7 +683,7 @@ function HabitEditorInline({
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-3 col-span-full sm:col-span-2">
-        <span className="w-24 sm:w-18 text-sm">Title</span>
+        <span className="w-24 sm:w-19 text-sm">Title</span>
         <div className="pixel-frame w-full">
           <Input
             value={draft.title}
@@ -693,7 +693,7 @@ function HabitEditorInline({
         </div>
       </label>
       <label className="flex items-start gap-3 col-span-full sm:col-span-2">
-        <span className="w-24 sm:w-18 text-sm mt-1">Tags</span>
+        <span className="w-24 sm:w-19 text-sm mt-1">Tags</span>
         <div className="flex flex-col gap-3 w-full">
           <MultiSelect
             modal={true}
@@ -761,12 +761,14 @@ function HabitEditorInline({
         >
           Unit
         </span>
-        <Input
-          value={draft.unit ?? ""}
-          className="bg-background"
-          disabled={draft.kind === "boolean" || draft.kind === "time"}
-          onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
-        />
+        <div className="pixel-frame w-full">
+          <Input
+            value={draft.unit ?? ""}
+            className="bg-background"
+            disabled={draft.kind === "boolean" || draft.kind === "time"}
+            onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
+          />
+        </div>
       </label>
       <label className="flex items-center gap-3">
         <span
@@ -777,43 +779,45 @@ function HabitEditorInline({
         >
           Target
         </span>
-        {draft.kind === "time" ? (
-          <Input
-            type="time"
-            className="bg-background"
-            value={
-              typeof draft.target === "number"
-                ? `${String(Math.floor(draft.target / 60)).padStart(
-                    2,
-                    "0"
-                  )}:${String(draft.target % 60).padStart(2, "0")}`
-                : ""
-            }
-            disabled={false}
-            onChange={(e) => {
-              const raw = e.target.value.trim();
-              if (raw === "") setDraft({ ...draft, target: null });
-              else {
-                const [hh, mm] = raw.split(":").map((s) => Number(s));
-                const minutes =
-                  (Number.isFinite(hh) ? hh : 0) * 60 +
-                  (Number.isFinite(mm) ? mm : 0);
-                setDraft({ ...draft, target: minutes });
+        <div className="pixel-frame w-full">
+          {draft.kind === "time" ? (
+            <Input
+              type="time"
+              className="bg-background"
+              value={
+                typeof draft.target === "number"
+                  ? `${String(Math.floor(draft.target / 60)).padStart(
+                      2,
+                      "0"
+                    )}:${String(draft.target % 60).padStart(2, "0")}`
+                  : ""
               }
-            }}
-          />
-        ) : (
-          <Input
-            type="number"
-            className="bg-background"
-            value={draft.target ?? ""}
-            disabled={draft.kind === "boolean"}
-            onChange={(e) => {
-              const v = e.target.value;
-              setDraft({ ...draft, target: v === "" ? null : Number(v) });
-            }}
-          />
-        )}
+              disabled={false}
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                if (raw === "") setDraft({ ...draft, target: null });
+                else {
+                  const [hh, mm] = raw.split(":").map((s) => Number(s));
+                  const minutes =
+                    (Number.isFinite(hh) ? hh : 0) * 60 +
+                    (Number.isFinite(mm) ? mm : 0);
+                  setDraft({ ...draft, target: minutes });
+                }
+              }}
+            />
+          ) : (
+            <Input
+              type="number"
+              className="bg-background"
+              value={draft.target ?? ""}
+              disabled={draft.kind === "boolean"}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDraft({ ...draft, target: v === "" ? null : Number(v) });
+              }}
+            />
+          )}
+        </div>
       </label>
       <label className="flex items-center gap-3">
         <span
@@ -824,43 +828,45 @@ function HabitEditorInline({
         >
           Min
         </span>
-        {draft.kind === "time" ? (
-          <Input
-            type="time"
-            className="bg-background"
-            value={
-              typeof draft.min === "number"
-                ? `${String(Math.floor(draft.min / 60)).padStart(
-                    2,
-                    "0"
-                  )}:${String(draft.min % 60).padStart(2, "0")}`
-                : ""
-            }
-            disabled={false}
-            onChange={(e) => {
-              const raw = e.target.value.trim();
-              if (raw === "") setDraft({ ...draft, min: null });
-              else {
-                const [hh, mm] = raw.split(":").map((s) => Number(s));
-                const minutes =
-                  (Number.isFinite(hh) ? hh : 0) * 60 +
-                  (Number.isFinite(mm) ? mm : 0);
-                setDraft({ ...draft, min: minutes });
+        <div className="pixel-frame w-full">
+          {draft.kind === "time" ? (
+            <Input
+              type="time"
+              className="bg-background"
+              value={
+                typeof draft.min === "number"
+                  ? `${String(Math.floor(draft.min / 60)).padStart(
+                      2,
+                      "0"
+                    )}:${String(draft.min % 60).padStart(2, "0")}`
+                  : ""
               }
-            }}
-          />
-        ) : (
-          <Input
-            type="number"
-            className="bg-background"
-            value={draft.min ?? ""}
-            disabled={draft.kind === "boolean"}
-            onChange={(e) => {
-              const v = e.target.value;
-              setDraft({ ...draft, min: v === "" ? null : Number(v) });
-            }}
-          />
-        )}
+              disabled={false}
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                if (raw === "") setDraft({ ...draft, min: null });
+                else {
+                  const [hh, mm] = raw.split(":").map((s) => Number(s));
+                  const minutes =
+                    (Number.isFinite(hh) ? hh : 0) * 60 +
+                    (Number.isFinite(mm) ? mm : 0);
+                  setDraft({ ...draft, min: minutes });
+                }
+              }}
+            />
+          ) : (
+            <Input
+              type="number"
+              className="bg-background"
+              value={draft.min ?? ""}
+              disabled={draft.kind === "boolean"}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDraft({ ...draft, min: v === "" ? null : Number(v) });
+              }}
+            />
+          )}
+        </div>
       </label>
       <label className="flex items-center gap-3">
         <span
@@ -871,62 +877,66 @@ function HabitEditorInline({
         >
           Max
         </span>
-        {draft.kind === "time" ? (
-          <Input
-            type="time"
-            className="bg-background"
-            value={
-              typeof draft.max === "number"
-                ? `${String(Math.floor(draft.max / 60)).padStart(
-                    2,
-                    "0"
-                  )}:${String(draft.max % 60).padStart(2, "0")}`
-                : ""
-            }
-            disabled={false}
-            onChange={(e) => {
-              const raw = e.target.value.trim();
-              if (raw === "") setDraft({ ...draft, max: null });
-              else {
-                const [hh, mm] = raw.split(":").map((s) => Number(s));
-                const minutes =
-                  (Number.isFinite(hh) ? hh : 0) * 60 +
-                  (Number.isFinite(mm) ? mm : 0);
-                setDraft({ ...draft, max: minutes });
+        <div className="pixel-frame w-full">
+          {draft.kind === "time" ? (
+            <Input
+              type="time"
+              className="bg-background"
+              value={
+                typeof draft.max === "number"
+                  ? `${String(Math.floor(draft.max / 60)).padStart(
+                      2,
+                      "0"
+                    )}:${String(draft.max % 60).padStart(2, "0")}`
+                  : ""
               }
-            }}
-          />
-        ) : (
-          <Input
-            type="number"
-            className="bg-background"
-            value={draft.max ?? ""}
-            disabled={draft.kind === "boolean"}
-            onChange={(e) => {
-              const v = e.target.value;
-              setDraft({ ...draft, max: v === "" ? null : Number(v) });
-            }}
-          />
-        )}
+              disabled={false}
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                if (raw === "") setDraft({ ...draft, max: null });
+                else {
+                  const [hh, mm] = raw.split(":").map((s) => Number(s));
+                  const minutes =
+                    (Number.isFinite(hh) ? hh : 0) * 60 +
+                    (Number.isFinite(mm) ? mm : 0);
+                  setDraft({ ...draft, max: minutes });
+                }
+              }}
+            />
+          ) : (
+            <Input
+              type="number"
+              className="bg-background"
+              value={draft.max ?? ""}
+              disabled={draft.kind === "boolean"}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDraft({ ...draft, max: v === "" ? null : Number(v) });
+              }}
+            />
+          )}
+        </div>
       </label>
 
       <label className="flex items-center gap-3">
         <span className="w-24 text-sm">Weight</span>
-        <Input
-          type="number"
-          className="bg-background"
-          value={weightInput}
-          onChange={(e) => setWeightInput(e.target.value)}
-          onBlur={(e) => {
-            const raw = e.currentTarget.value.trim();
-            const parsed = raw === "" ? 0 : Number(raw);
-            setWeightInput(String(parsed));
-            setDraft({
-              ...draft,
-              weight: Number.isFinite(parsed) ? parsed : 0,
-            });
-          }}
-        />
+        <div className="pixel-frame w-full">
+          <Input
+            type="number"
+            className="bg-background"
+            value={weightInput}
+            onChange={(e) => setWeightInput(e.target.value)}
+            onBlur={(e) => {
+              const raw = e.currentTarget.value.trim();
+              const parsed = raw === "" ? 0 : Number(raw);
+              setWeightInput(String(parsed));
+              setDraft({
+                ...draft,
+                weight: Number.isFinite(parsed) ? parsed : 0,
+              });
+            }}
+          />
+        </div>
       </label>
       <div className="col-span-full flex gap-3 justify-between">
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
