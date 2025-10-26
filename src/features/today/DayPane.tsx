@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/select";
 // removed unused imports after preserving history on type change
 import { toast } from "sonner";
+import type { DaySortKey } from "./Today";
 
 function DayPane({
   dayKey,
@@ -52,14 +53,7 @@ function DayPane({
 }: {
   dayKey: string;
   headerExpanded: boolean;
-  sortKey:
-    | "title"
-    | "weight"
-    | "createdAt"
-    | "completed"
-    | "value"
-    | "contribution"
-    | "tag";
+  sortKey: DaySortKey;
   sortDir: "asc" | "desc";
   filterKind: "all" | "boolean" | "quantified" | "time";
   filterCompletion: "all" | "completed" | "incomplete";

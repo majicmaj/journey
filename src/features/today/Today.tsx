@@ -22,7 +22,7 @@ import {
   ChevronUpIcon,
 } from "@/components/pixel/icons";
 
-type DaySortKey =
+export type DaySortKey =
   | "title"
   | "weight"
   | "createdAt"
@@ -306,17 +306,8 @@ function DayHeader({
   onSetDayKey: (k: string) => void;
   dayStart: string;
   headerExpanded: boolean;
-  sortKey:
-    | "title"
-    | "weight"
-    | "createdAt"
-    | "completed"
-    | "value"
-    | "contribution"
-    | "tag";
-  setSortKey: (
-    v: "title" | "weight" | "createdAt" | "completed" | "value" | "contribution"
-  ) => void;
+  sortKey: DaySortKey;
+  setSortKey: (v: DaySortKey) => void;
   sortDir: "asc" | "desc";
   setSortDir: (v: "asc" | "desc") => void;
   filterKind: "all" | "boolean" | "quantified" | "time";
