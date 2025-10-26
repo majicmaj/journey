@@ -48,9 +48,11 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  noPadding = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  noPadding?: boolean;
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
@@ -63,7 +65,7 @@ function DialogContent({
         )}
         {...props}
       >
-        <div className="grid gap-4">
+        <div className={cn("pixel-frame p-6 grid gap-4", noPadding && "p-0")}>
           {children}
           {showCloseButton && (
             <DialogPrimitive.Close

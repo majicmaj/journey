@@ -14,8 +14,10 @@ export default function Fullscreen({
       {affordance({ open: () => setOpen(true) })}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
+          noPadding={true}
           showCloseButton={true}
-          className="max-w-none w-screen h-screen p-0"
+          className="h-[calc(100vh-1rem)] max-w-none w-[calc(100vw-1rem)]"
+          // className="max-w-none w-screen h-screen p-0"
         >
           {children({ close: () => setOpen(false) })}
         </DialogContent>

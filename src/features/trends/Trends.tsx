@@ -648,7 +648,7 @@ export default function Trends() {
             )}
           >
             {({ close }) => (
-              <PanZoom className="w-screen h-screen bg-card">
+              <PanZoom className="w-full h-full bg-background">
                 <ResponsiveContainer
                   height={(vw) => Math.max(300, Math.floor(vw * 0.5))}
                 >
@@ -709,7 +709,7 @@ export default function Trends() {
             )}
           >
             {({ close }) => (
-              <PanZoom className="w-screen h-screen bg-card">
+              <PanZoom className="w-full h-full bg-background">
                 <ResponsiveContainer
                   height={(vw) => Math.max(260, Math.floor(vw * 0.4))}
                 >
@@ -755,7 +755,7 @@ export default function Trends() {
             )}
           >
             {({ close }) => (
-              <PanZoom className="w-screen h-screen bg-card">
+              <PanZoom className="w-full h-full bg-background">
                 <ResponsiveContainer
                   height={() => Math.max(240, streakRows.labels.length * 32)}
                 >
@@ -868,7 +868,7 @@ export default function Trends() {
             )}
           >
             {({ close }) => (
-              <PanZoom className="w-screen h-screen bg-card">
+              <PanZoom className="w-full h-full bg-background">
                 <ResponsiveContainer
                   height={(vw) => Math.max(260, Math.floor(vw * 0.5))}
                 >
@@ -999,7 +999,7 @@ export default function Trends() {
             )}
           >
             {({ close }) => (
-              <PanZoom className="w-screen h-screen bg-card">
+              <PanZoom className="w-full h-full bg-background">
                 <ResponsiveContainer
                   height={(vw) => Math.max(300, Math.floor(vw * 0.5))}
                 >
