@@ -63,9 +63,11 @@ export default function HeatmapMatrix({
                 key={`${r}-${c}`}
                 x={c * cellW + 2}
                 y={r * cellH + 2}
-                width={cellW - 4}
-                height={cellH - 4}
+                width={cellW - 8}
+                height={cellH - 8}
                 fill={`color-mix(in srgb, var(--secondary) ${v}%, var(--background))`}
+                stroke="var(--border)"
+                strokeWidth={3}
               />
             );
           })

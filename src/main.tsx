@@ -13,15 +13,18 @@ import { useSettings } from "@/hooks/useData";
 import { applyTheme } from "@/lib/theme";
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import ErrorPage from "@/features/error/ErrorPage";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Day /> },
       { path: "trends", element: <Trends /> },
       { path: "settings", element: <Settings /> },
+      { path: "*", element: <ErrorPage /> },
     ],
   },
 ]);
