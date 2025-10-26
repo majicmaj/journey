@@ -65,11 +65,11 @@ export default function HeatmapMatrix({
                 key={`${r}-${c}`}
                 x={c * cellW + 2}
                 y={r * cellH + 2}
-                width={cellW - 8}
-                height={cellH - 8}
+                width={cellW - 6}
+                height={cellH - 6}
                 fill={`color-mix(in srgb, var(--secondary) ${v}%, var(--background))`}
                 stroke="var(--border)"
-                strokeWidth={3}
+                strokeWidth={2}
                 onMouseEnter={() => setHover({ r, c })}
                 onMouseLeave={() => setHover(null)}
               />

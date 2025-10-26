@@ -105,7 +105,7 @@ export default function Trends() {
   const settings = useSettings();
   const dayStart = settings.data?.dayStart ?? "00:00";
   const habitsQ = useHabits();
-  const [preset, setPreset] = useState<RangePreset>("all-time");
+  const [preset, setPreset] = useState<RangePreset>("last-90-days");
   const [customRange, setCustomRange] = useState<{
     from: string;
     to: string;
@@ -302,6 +302,31 @@ export default function Trends() {
   const weeklyBars = useMemo(() => {
     const days = enumKeys(from, to);
     const byWeek = groupByISOWeek(days);
+    const compact = days.length >= 90;
+    function weekMonthAbbr(weekStartStr: string): string | null {
+      const ws = new Date(weekStartStr + "T00:00:00");
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(ws.getTime() + i * 24 * 60 * 60 * 1000);
+        if (d.getDate() === 1) {
+          const mm = d.getMonth();
+          return [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ][mm];
+        }
+      }
+      return null;
+    }
     const out: Array<{
       key: string;
       label: string;
@@ -324,7 +349,7 @@ export default function Trends() {
           : Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
       out.push({
         key: weekStart,
-        label: weekStart.slice(5),
+        label: compact ? weekMonthAbbr(weekStart) ?? "" : weekStart.slice(5),
         value: avg,
         range: { from: weekStart, to: endOfISOWeek(weekStart) },
       });
