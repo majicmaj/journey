@@ -670,7 +670,7 @@ export default function Trends() {
                     />
                   )}
                 </ResponsiveContainer>
-                <div className="absolute top-2 right-2">
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
                   <button
                     className="pixel-frame px-2 py-1 bg-card"
                     onClick={close}
@@ -717,7 +717,7 @@ export default function Trends() {
                     <BarChart width={vw} height={vh} bars={weeklyBars} />
                   )}
                 </ResponsiveContainer>
-                <div className="absolute top-2 right-2">
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
                   <button
                     className="pixel-frame px-2 py-1 bg-card"
                     onClick={close}
@@ -770,7 +770,7 @@ export default function Trends() {
                     />
                   )}
                 </ResponsiveContainer>
-                <div className="absolute top-2 right-2">
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
                   <button
                     className="pixel-frame px-2 py-1 bg-card"
                     onClick={close}
@@ -952,7 +952,7 @@ export default function Trends() {
                     );
                   }}
                 </ResponsiveContainer>
-                <div className="absolute top-2 right-2">
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
                   <button
                     className="pixel-frame px-2 py-1 bg-card"
                     onClick={close}
@@ -1013,7 +1013,7 @@ export default function Trends() {
                     />
                   )}
                 </ResponsiveContainer>
-                <div className="absolute top-2 right-2">
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
                   <button
                     className="pixel-frame px-2 py-1 bg-card"
                     onClick={close}
