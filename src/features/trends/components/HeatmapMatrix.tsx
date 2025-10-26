@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export default function HeatmapMatrix({
   width,
@@ -23,6 +24,7 @@ export default function HeatmapMatrix({
 
   const cellW = innerW / Math.max(1, cols);
   const cellH = innerH / Math.max(1, rows);
+  const [hover, setHover] = useState<{ r: number; c: number } | null>(null);
 
   return (
     <svg
@@ -68,10 +70,51 @@ export default function HeatmapMatrix({
                 fill={`color-mix(in srgb, var(--secondary) ${v}%, var(--background))`}
                 stroke="var(--border)"
                 strokeWidth={3}
+                onMouseEnter={() => setHover({ r, c })}
+                onMouseLeave={() => setHover(null)}
               />
             );
           })
         )}
+
+        {hover &&
+          (() => {
+            const { r, c } = hover;
+            const v = Math.max(0, Math.min(100, valueAt(r, c)));
+            const boxW = 160;
+            const boxH = 44;
+            const px = c * cellW + cellW + 8;
+            const py = r * cellH + 8;
+            const boxX = Math.max(0, Math.min(innerW - boxW, px));
+            const boxY = Math.max(0, Math.min(innerH - boxH, py));
+            return (
+              <g>
+                <rect
+                  x={c * cellW + 2}
+                  y={r * cellH + 2}
+                  width={cellW - 8}
+                  height={cellH - 8}
+                  fill="transparent"
+                  stroke="var(--border)"
+                />
+                <g transform={`translate(${boxX},${boxY})`}>
+                  <rect
+                    width={boxW}
+                    height={boxH}
+                    rx={4}
+                    fill="var(--popover)"
+                    stroke="var(--border)"
+                  />
+                  <text x={8} y={18} fontSize={12} className="fill-foreground">
+                    {labelForRow(r)} • {labelForCol(c)}
+                  </text>
+                  <text x={8} y={34} fontSize={12} className="fill-foreground">
+                    {Math.round(v)}%
+                  </text>
+                </g>
+              </g>
+            );
+          })()}
       </g>
     </svg>
   );

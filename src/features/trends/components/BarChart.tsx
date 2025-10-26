@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export default function BarChart({
@@ -16,6 +17,7 @@ export default function BarChart({
   }>;
   onBarClick?: (range: { from: string; to: string }) => void;
 }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const padding = { top: 12, right: 12, bottom: 28, left: 28 };
   const innerW = Math.max(1, width - padding.left - padding.right);
   const innerH = Math.max(1, height - padding.top - padding.bottom);
@@ -55,6 +57,8 @@ export default function BarChart({
                 fill="var(--secondary)"
                 onClick={() => b.range && onBarClick?.(b.range)}
                 style={{ cursor: b.range ? "pointer" : undefined }}
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx(null)}
               />
               <text
                 x={x + (bw - 8) / 2}
@@ -68,6 +72,56 @@ export default function BarChart({
             </g>
           );
         })}
+
+        {hoverIdx != null &&
+          bars[hoverIdx] &&
+          (() => {
+            const b = bars[hoverIdx];
+            const x = hoverIdx * bw + 4 + (bw - 8) / 2;
+            const h = valToH(b.value);
+            const y = innerH - h;
+            const boxW = 200;
+            const lines = [
+              b.label,
+              `Avg: ${Math.round(b.value)}%`,
+              ...(b.range ? [`${b.range.from} → ${b.range.to}`] : []),
+            ];
+            const boxH = 18 * lines.length + 10;
+            const boxX = Math.max(0, Math.min(innerW - boxW, x + 8));
+            const boxY = Math.max(0, y - boxH - 8);
+            return (
+              <g>
+                <rect
+                  x={x - (bw - 8) / 2}
+                  y={y}
+                  width={bw - 8}
+                  height={h}
+                  fill="transparent"
+                  stroke="var(--border)"
+                />
+                <g transform={`translate(${boxX},${boxY})`}>
+                  <rect
+                    width={boxW}
+                    height={boxH}
+                    rx={4}
+                    fill="var(--popover)"
+                    stroke="var(--border)"
+                  />
+                  {lines.map((t, ti) => (
+                    <text
+                      key={ti}
+                      x={8}
+                      y={16 + ti * 18}
+                      fontSize={12}
+                      className="fill-foreground"
+                    >
+                      {t}
+                    </text>
+                  ))}
+                </g>
+              </g>
+            );
+          })()}
       </g>
     </svg>
   );

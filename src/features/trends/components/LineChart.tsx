@@ -50,6 +50,7 @@ export default function LineChart({
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [drag, setDrag] = useState<{ x0: number; x1: number } | null>(null);
+  const [hoverX, setHoverX] = useState<number | null>(null);
 
   function onMouseDown(e: React.MouseEvent) {
     const bounds = svgRef.current?.getBoundingClientRect();
@@ -60,10 +61,13 @@ export default function LineChart({
     });
   }
   function onMouseMove(e: React.MouseEvent) {
-    if (!drag) return;
     const bounds = svgRef.current?.getBoundingClientRect();
     const x = e.clientX - (bounds?.left ?? 0) - padding.left;
-    setDrag((d) => (d ? { ...d, x1: Math.max(0, Math.min(innerW, x)) } : d));
+    const clamped = Math.max(0, Math.min(innerW, x));
+    setHoverX(clamped);
+    if (drag) {
+      setDrag((d) => (d ? { ...d, x1: clamped } : d));
+    }
   }
   function onMouseUp() {
     if (!drag) return;
@@ -77,6 +81,10 @@ export default function LineChart({
     }
     setDrag(null);
   }
+  function onMouseLeave() {
+    setHoverX(null);
+    if (drag) setDrag(null);
+  }
 
   return (
     <svg
@@ -87,6 +95,7 @@ export default function LineChart({
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
     >
       <g transform={`translate(${padding.left},${padding.top})`}>
         {goalBands?.map((b, i) => (
@@ -170,6 +179,73 @@ export default function LineChart({
             fill="color-mix(in srgb, var(--secondary) 16%, transparent)"
           />
         )}
+
+        {/* Hover crosshair and tooltip */}
+        {hoverX != null &&
+          xDomain.length > 0 &&
+          (() => {
+            const i = Math.round((hoverX / innerW) * (xDomain.length - 1));
+            const idx = Math.max(0, Math.min(xDomain.length - 1, i));
+            const xKey = xDomain[idx];
+            const xPx = xToPx(xKey);
+            const seriesAtX = series.map((s) => {
+              const pt = s.points.find((p) => p.x === xKey);
+              return { name: s.name, color: s.color, y: pt ? pt.y : NaN };
+            });
+            const markers = seriesAtX.filter((v) => Number.isFinite(v.y));
+            const tooltipLines = [
+              xKey,
+              ...seriesAtX.map((v) => `${v.name}: ${Math.round(v.y)}%`),
+            ];
+            const boxW = 180;
+            const boxH = 18 * tooltipLines.length + 10;
+            const boxX = Math.max(0, Math.min(innerW - boxW, xPx + 8));
+            const boxY = 8;
+            return (
+              <g>
+                {/* vertical line */}
+                <line
+                  x1={xPx}
+                  x2={xPx}
+                  y1={0}
+                  y2={innerH}
+                  stroke="var(--border)"
+                  strokeDasharray="4 4"
+                />
+                {/* markers */}
+                {markers.map((m, mi) => (
+                  <circle
+                    key={mi}
+                    cx={xPx}
+                    cy={yToPx(m.y)}
+                    r={3}
+                    fill={m.color}
+                  />
+                ))}
+                {/* tooltip */}
+                <g transform={`translate(${boxX},${boxY})`}>
+                  <rect
+                    width={boxW}
+                    height={boxH}
+                    rx={4}
+                    fill="var(--popover)"
+                    stroke="var(--border)"
+                  />
+                  {tooltipLines.map((t, ti) => (
+                    <text
+                      key={ti}
+                      x={8}
+                      y={16 + ti * 18}
+                      fontSize={12}
+                      fill="var(--foreground)"
+                    >
+                      {t}
+                    </text>
+                  ))}
+                </g>
+              </g>
+            );
+          })()}
       </g>
     </svg>
   );
