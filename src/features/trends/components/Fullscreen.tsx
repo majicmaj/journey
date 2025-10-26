@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { FullScreenIcon } from "@/components/pixel/icons";
+import { Button } from "@/components/ui/button";
 
 export default function Fullscreen({
   children,
@@ -16,12 +18,19 @@ export default function Fullscreen({
         <DialogContent
           noPadding={true}
           showCloseButton={true}
-          className="h-[calc(100vh-1rem)] max-w-none w-[calc(100vw-1rem)]"
-          // className="max-w-none w-screen h-screen p-0"
+          className="h-[calc(100vh-1rem)] sm:max-w-none max-w-none w-[calc(100vw-1rem)]"
         >
           {children({ close: () => setOpen(false) })}
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+export function FullScreenButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button size="icon" onClick={onClick}>
+      <FullScreenIcon className="size-8" />
+    </Button>
   );
 }

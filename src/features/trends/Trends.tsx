@@ -1,7 +1,4 @@
-import { cloneElement, useMemo, useState } from "react";
-import type { CSSProperties, ReactElement } from "react";
-import CalendarHeatmap from "react-calendar-heatmap";
-import "react-calendar-heatmap/dist/styles.css"; // base styles; we'll override with our theme classes
+import { useMemo, useState } from "react";
 import { useEntriesRange, useHabits, useSettings } from "@/hooks/useData";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/db";
@@ -16,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import MultiSelect from "@/components/ui/multi-select";
-import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { computeDaySummary } from "@/lib/score";
 import type { DailyEntry } from "@/types/habit";
 import LineChart, { type LineSeries } from "./components/LineChart";
@@ -25,7 +22,7 @@ import HeatmapMatrix from "./components/HeatmapMatrix";
 import StreakTimeline from "./components/StreakTimeline";
 import ResponsiveContainer from "./components/ResponsiveContainer";
 import PanZoom from "./components/PanZoom";
-import Fullscreen from "./components/Fullscreen";
+import Fullscreen, { FullScreenButton } from "./components/Fullscreen";
 import {
   enumerateDateKeys as enumKeys,
   rollingAverage,
@@ -95,13 +92,7 @@ function enumerateDateKeys(fromKey: string, toKey: string): string[] {
   return out;
 }
 
-type ViewMode =
-  | "heatmap"
-  | "trend"
-  | "adherence"
-  | "streaks"
-  | "cadence"
-  | "weekday";
+type ViewMode = "trend" | "streaks" | "cadence" | "weekday";
 
 export default function Trends() {
   const settings = useSettings();
@@ -140,7 +131,6 @@ export default function Trends() {
 
   const from = computed.from;
   const to = computed.to;
-  const isMobile = typeof window !== "undefined" && window.innerWidth <= 640;
 
   // Habit filtering state
   const [habitMode, setHabitMode] = useState<HabitFilterMode>("all");
@@ -187,11 +177,6 @@ export default function Trends() {
     return out;
   }, [entriesQ.data, activeHabits, from, to]);
 
-  const data = useMemo(
-    () => (summaries ?? []).map((s) => ({ date: s.date, count: s.totalScore })),
-    [summaries]
-  );
-
   // selectedCount no longer needed; MultiSelect renders its own label
 
   // New view selection
@@ -222,84 +207,7 @@ export default function Trends() {
     return map;
   }, [entriesQ.data]);
 
-  // Adherence series (rolling 7-day)
-  const adherenceSeries = useMemo(() => {
-    const days = enumKeys(from, to);
-    const chartColors = [
-      "var(--chart-1)",
-      "var(--chart-2)",
-      "var(--chart-3)",
-      "var(--chart-4)",
-      "var(--chart-5)",
-    ];
-
-    function habitDayCompleted(habitId: string, day: string): number {
-      const list = entriesByDate.get(day) ?? [];
-      const e = list.find((x) => x.habitId === habitId);
-      return e?.completed ? 100 : 0;
-    }
-
-    if (habitMode === "one") {
-      const h = activeHabits[0];
-      if (!h) return [] as LineSeries[];
-      const raw = days.map((d) => ({ x: d, y: habitDayCompleted(h.id, d) }));
-      return [
-        {
-          name: h.title,
-          color: chartColors[0 % chartColors.length],
-          points: rollingAverage(raw, 7),
-        },
-      ] as LineSeries[];
-    }
-
-    if (habitMode === "many") {
-      return activeHabits.map((h, i) => {
-        const raw = days.map((d) => ({ x: d, y: habitDayCompleted(h.id, d) }));
-        return {
-          name: h.title,
-          color: chartColors[i % chartColors.length],
-          points: rollingAverage(raw, 7),
-        } as LineSeries;
-      });
-    }
-
-    if (habitMode === "tags") {
-      // For each selected tag, average completion across habits with that tag
-      return selectedTags.map((tag, i) => {
-        const habitsWithTag = activeHabits.filter((h) =>
-          (h.tags ?? []).includes(tag)
-        );
-        const raw = days.map((d) => {
-          const vals = habitsWithTag.map((h) => habitDayCompleted(h.id, d));
-          const avg =
-            vals.length === 0
-              ? 0
-              : vals.reduce((a, b) => a + b, 0) / vals.length;
-          return { x: d, y: avg };
-        });
-        return {
-          name: `#${tag}`,
-          color: chartColors[i % chartColors.length],
-          points: rollingAverage(raw, 7),
-        } as LineSeries;
-      });
-    }
-
-    // habitMode === "all": average across all active habits
-    if (activeHabits.length === 0) return [] as LineSeries[];
-    const raw = days.map((d) => {
-      const vals = activeHabits.map((h) => habitDayCompleted(h.id, d));
-      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-      return { x: d, y: avg };
-    });
-    return [
-      {
-        name: "All habits",
-        color: chartColors[0],
-        points: rollingAverage(raw, 7),
-      },
-    ] as LineSeries[];
-  }, [from, to, entriesByDate, habitMode, activeHabits, selectedTags]);
+  // Adherence view removed
 
   // Weekly cadence bars
   const weeklyBars = useMemo(() => {
@@ -531,121 +439,28 @@ export default function Trends() {
             />
           )}
 
-          {/* View selector */}
+          {/* View selector via Tabs */}
           <span className="opacity-70 text-sm">View</span>
-          <div className="pixel-frame">
-            <Select value={view} onValueChange={(v: ViewMode) => setView(v)}>
-              <SelectTrigger className="w-full sm:w-48 bg-card">
-                <SelectValue placeholder="View" />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                <SelectItem value="heatmap">Calendar heatmap</SelectItem>
-                <SelectItem value="trend">Trend line</SelectItem>
-                <SelectItem value="adherence">Adherence</SelectItem>
-                <SelectItem value="streaks">Streak timeline</SelectItem>
-                <SelectItem value="cadence">Cadence</SelectItem>
-                <SelectItem value="weekday">Weekday heatmap</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Tabs
+            value={view}
+            onValueChange={(v: string) => setView(v as ViewMode)}
+          >
+            <div className="pixel-frame">
+              <TabsList className="bg-card">
+                <TabsTrigger value="trend">Trend</TabsTrigger>
+                <TabsTrigger value="cadence">Cadence</TabsTrigger>
+                <TabsTrigger value="weekday">Weekday</TabsTrigger>
+                <TabsTrigger value="streaks">Streaks</TabsTrigger>
+              </TabsList>
+            </div>
+          </Tabs>
         </div>
       </header>
 
-      {view === "heatmap" && (
-        <div className="pixel-frame bg-card p-3">
-          <CalendarHeatmap
-            startDate={from}
-            endDate={to}
-            values={data}
-            classForValue={() => ""}
-            transformDayElement={(element, v) => {
-              type HeatmapValue = {
-                date: string | number | Date;
-                [key: string]: unknown;
-              };
-              const hv = v as HeatmapValue | undefined;
-              const maybe = hv?.["count"];
-              const raw = typeof maybe === "number" ? maybe : 0;
-              const opacity = Math.max(0, Math.min(1, raw / 100));
-
-              type DayElProps = { style?: CSSProperties; className?: string };
-              const el = element as ReactElement<DayElProps>;
-              const nextStyle: CSSProperties = {
-                ...(el.props?.style ?? {}),
-                fill: `color-mix(in srgb, var(--secondary) ${
-                  opacity * 100
-                }%, var(--background))`,
-              };
-              const nextClassName = cn(el.props?.className);
-              return cloneElement(el, {
-                style: nextStyle,
-                className: nextClassName,
-              });
-            }}
-            titleForValue={(v) => {
-              type HeatmapValue = {
-                date: string | number | Date;
-                [key: string]: unknown;
-              };
-              const hv = v as HeatmapValue | undefined;
-              const dateVal = hv?.date;
-              if (!dateVal) return "";
-              const dateStr =
-                typeof dateVal === "string"
-                  ? dateVal
-                  : typeof dateVal === "number"
-                  ? new Date(dateVal).toISOString().slice(0, 10)
-                  : dateVal.toISOString().slice(0, 10);
-              const maybe = hv?.["count"];
-              const count = typeof maybe === "number" ? maybe : 0;
-              return `${count} score on ${dateStr}`;
-            }}
-            showWeekdayLabels
-            gutterSize={3}
-          />
-        </div>
-      )}
-
       {view === "trend" && (
         <div className="pixel-frame bg-card p-3">
-          <ResponsiveContainer
-            height={(w) => Math.max(180, Math.min(280, Math.floor(w * 0.4)))}
-          >
-            {(w, h) => (
-              <LineChart
-                width={w}
-                height={h}
-                series={
-                  [
-                    {
-                      name: "Total",
-                      color: "var(--secondary)",
-                      points: totalScoreSeries,
-                    },
-                    { name: "MA7", color: "var(--chart-1)", points: ma7 },
-                    { name: "MA28", color: "var(--chart-2)", points: ma28 },
-                  ] as LineSeries[]
-                }
-                goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-                onBrush={(fromX, toX) => {
-                  setPreset("custom");
-                  setCustomRange({ from: fromX, to: toX });
-                }}
-                compactXAxis={
-                  preset === "last-90-days" ||
-                  preset === "last-6-months" ||
-                  preset === "last-12-months" ||
-                  preset === "all-time"
-                }
-              />
-            )}
-          </ResponsiveContainer>
           <Fullscreen
-            affordance={({ open }) => (
-              <button className="mt-2 text-xs underline" onClick={open}>
-                Full screen
-              </button>
-            )}
+            affordance={({ open }) => <FullScreenButton onClick={open} />}
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
@@ -681,32 +496,45 @@ export default function Trends() {
               </PanZoom>
             )}
           </Fullscreen>
+          <ResponsiveContainer
+            height={(w) => Math.max(180, Math.min(280, Math.floor(w * 0.4)))}
+          >
+            {(w, h) => (
+              <LineChart
+                width={w}
+                height={h}
+                series={
+                  [
+                    {
+                      name: "Total",
+                      color: "var(--secondary)",
+                      points: totalScoreSeries,
+                    },
+                    { name: "MA7", color: "var(--chart-1)", points: ma7 },
+                    { name: "MA28", color: "var(--chart-2)", points: ma28 },
+                  ] as LineSeries[]
+                }
+                goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+                onBrush={(fromX, toX) => {
+                  setPreset("custom");
+                  setCustomRange({ from: fromX, to: toX });
+                }}
+                compactXAxis={
+                  preset === "last-90-days" ||
+                  preset === "last-6-months" ||
+                  preset === "last-12-months" ||
+                  preset === "all-time"
+                }
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "cadence" && (
         <div className="pixel-frame bg-card p-3">
-          <ResponsiveContainer
-            height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
-          >
-            {(w, h) => (
-              <BarChart
-                width={w}
-                height={h}
-                bars={weeklyBars}
-                onBarClick={(range) => {
-                  setPreset("custom");
-                  setCustomRange(range);
-                }}
-              />
-            )}
-          </ResponsiveContainer>
           <Fullscreen
-            affordance={({ open }) => (
-              <button className="mt-2 text-xs underline" onClick={open}>
-                Full screen
-              </button>
-            )}
+            affordance={({ open }) => <FullScreenButton onClick={open} />}
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
@@ -728,31 +556,28 @@ export default function Trends() {
               </PanZoom>
             )}
           </Fullscreen>
+          <ResponsiveContainer
+            height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
+          >
+            {(w, h) => (
+              <BarChart
+                width={w}
+                height={h}
+                bars={weeklyBars}
+                onBarClick={(range) => {
+                  setPreset("custom");
+                  setCustomRange(range);
+                }}
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "streaks" && (
         <div className="pixel-frame bg-card p-3">
-          <ResponsiveContainer
-            height={() => Math.max(160, streakRows.labels.length * 28)}
-          >
-            {(w, h) => (
-              <StreakTimeline
-                width={w}
-                height={h}
-                rows={streakRows.labels.length}
-                dates={streakRows.dates}
-                segmentsByRow={streakRows.segs}
-                labelForRow={(r) => streakRows.labels[r] ?? ""}
-              />
-            )}
-          </ResponsiveContainer>
           <Fullscreen
-            affordance={({ open }) => (
-              <button className="mt-2 text-xs underline" onClick={open}>
-                Full screen
-              </button>
-            )}
+            affordance={({ open }) => <FullScreenButton onClick={open} />}
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
@@ -781,91 +606,27 @@ export default function Trends() {
               </PanZoom>
             )}
           </Fullscreen>
+          <ResponsiveContainer
+            height={() => Math.max(160, streakRows.labels.length * 28)}
+          >
+            {(w, h) => (
+              <StreakTimeline
+                width={w}
+                height={h}
+                rows={streakRows.labels.length}
+                dates={streakRows.dates}
+                segmentsByRow={streakRows.segs}
+                labelForRow={(r) => streakRows.labels[r] ?? ""}
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "weekday" && (
         <div className="pixel-frame bg-card p-3">
-          <ResponsiveContainer
-            height={(w) => Math.max(180, Math.min(260, Math.floor(w * 0.35)))}
-          >
-            {(w, h) => {
-              const days = enumKeys(from, to);
-              const weeks = Array.from(groupByISOWeek(days).keys()).sort();
-              const rowLabels = [
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-                "Sun",
-              ];
-              const threshold =
-                typeof window !== "undefined" && window.innerWidth <= 640
-                  ? 30
-                  : 90;
-              const compact = days.length >= threshold;
-              function weekMonthAbbr(weekStartStr: string): string | null {
-                const ws = new Date(weekStartStr + "T00:00:00");
-                for (let i = 0; i < 7; i++) {
-                  const d = new Date(ws.getTime() + i * 24 * 60 * 60 * 1000);
-                  if (d.getDate() === 1) {
-                    const mm = d.getMonth();
-                    return [
-                      "Jan",
-                      "Feb",
-                      "Mar",
-                      "Apr",
-                      "May",
-                      "Jun",
-                      "Jul",
-                      "Aug",
-                      "Sep",
-                      "Oct",
-                      "Nov",
-                      "Dec",
-                    ][mm];
-                  }
-                }
-                return null;
-              }
-              function valueAt(r: number, c: number): number {
-                const weekStart = weeks[c];
-                if (!weekStart) return 0;
-                const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
-                const dk = weekDays[(r + 0) % 7];
-                if (!dk) return 0;
-                const { totalScore } = computeDaySummary(
-                  dk,
-                  activeHabits,
-                  entriesByDate.get(dk) ?? []
-                );
-                return totalScore;
-              }
-              return (
-                <HeatmapMatrix
-                  width={w}
-                  height={h}
-                  rows={7}
-                  cols={weeks.length}
-                  valueAt={valueAt}
-                  labelForCol={(c) =>
-                    compact
-                      ? weekMonthAbbr(weeks[c] ?? "") ?? ""
-                      : (weeks[c] ?? "").slice(5)
-                  }
-                  labelForRow={(r) => rowLabels[r]}
-                />
-              );
-            }}
-          </ResponsiveContainer>
           <Fullscreen
-            affordance={({ open }) => (
-              <button className="mt-2 text-xs underline" onClick={open}>
-                Full screen
-              </button>
-            )}
+            affordance={({ open }) => <FullScreenButton onClick={open} />}
           >
             {({ close }) => (
               <PanZoom className="w-full h-full bg-background">
@@ -963,67 +724,80 @@ export default function Trends() {
               </PanZoom>
             )}
           </Fullscreen>
-        </div>
-      )}
-
-      {view === "adherence" && (
-        <div className="pixel-frame bg-card p-3">
           <ResponsiveContainer
-            height={(w) => Math.max(180, Math.min(280, Math.floor(w * 0.4)))}
+            height={(w) => Math.max(180, Math.min(260, Math.floor(w * 0.35)))}
           >
-            {(w, h) => (
-              <LineChart
-                width={w}
-                height={h}
-                series={adherenceSeries}
-                goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-                onBrush={(fromX, toX) => {
-                  setPreset("custom");
-                  setCustomRange({ from: fromX, to: toX });
-                }}
-                compactXAxis={
-                  preset === "last-90-days" ||
-                  preset === "last-6-months" ||
-                  preset === "last-12-months" ||
-                  preset === "all-time" ||
-                  (isMobile && preset === "last-30-days")
+            {(w, h) => {
+              const days = enumKeys(from, to);
+              const weeks = Array.from(groupByISOWeek(days).keys()).sort();
+              const rowLabels = [
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+                "Sun",
+              ];
+              const threshold =
+                typeof window !== "undefined" && window.innerWidth <= 640
+                  ? 30
+                  : 90;
+              const compact = days.length >= threshold;
+              function weekMonthAbbr(weekStartStr: string): string | null {
+                const ws = new Date(weekStartStr + "T00:00:00");
+                for (let i = 0; i < 7; i++) {
+                  const d = new Date(ws.getTime() + i * 24 * 60 * 60 * 1000);
+                  if (d.getDate() === 1) {
+                    const mm = d.getMonth();
+                    return [
+                      "Jan",
+                      "Feb",
+                      "Mar",
+                      "Apr",
+                      "May",
+                      "Jun",
+                      "Jul",
+                      "Aug",
+                      "Sep",
+                      "Oct",
+                      "Nov",
+                      "Dec",
+                    ][mm];
+                  }
                 }
-              />
-            )}
+                return null;
+              }
+              function valueAt(r: number, c: number): number {
+                const weekStart = weeks[c];
+                if (!weekStart) return 0;
+                const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
+                const dk = weekDays[(r + 0) % 7];
+                if (!dk) return 0;
+                const { totalScore } = computeDaySummary(
+                  dk,
+                  activeHabits,
+                  entriesByDate.get(dk) ?? []
+                );
+                return totalScore;
+              }
+              return (
+                <HeatmapMatrix
+                  width={w}
+                  height={h}
+                  rows={7}
+                  cols={weeks.length}
+                  valueAt={valueAt}
+                  labelForCol={(c) =>
+                    compact
+                      ? weekMonthAbbr(weeks[c] ?? "") ?? ""
+                      : (weeks[c] ?? "").slice(5)
+                  }
+                  labelForRow={(r) => rowLabels[r]}
+                />
+              );
+            }}
           </ResponsiveContainer>
-          <Fullscreen
-            affordance={({ open }) => (
-              <button className="mt-2 text-xs underline" onClick={open}>
-                Full screen
-              </button>
-            )}
-          >
-            {({ close }) => (
-              <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer
-                  height={(vw) => Math.max(300, Math.floor(vw * 0.5))}
-                >
-                  {(vw, vh) => (
-                    <LineChart
-                      width={vw}
-                      height={vh}
-                      series={adherenceSeries}
-                      goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-                      compactXAxis
-                    />
-                  )}
-                </ResponsiveContainer>
-                <div className="absolute -top-6 -right-6 translate-x-1/2">
-                  <button
-                    className="pixel-frame px-2 py-1 bg-card"
-                    onClick={close}
-                  >
-                    Close
-                  </button>
-                </div>
-              </PanZoom>
-            )}
-          </Fullscreen>
         </div>
       )}
     </div>
