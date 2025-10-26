@@ -38,6 +38,7 @@ export default function HeatmapMatrix({
             y={r * cellH + cellH / 2 + 3}
             fontSize={10}
             textAnchor="end"
+            className="fill-muted-foreground"
           >
             {labelForRow(r)}
           </text>
@@ -49,6 +50,7 @@ export default function HeatmapMatrix({
             y={innerH + 16}
             fontSize={10}
             textAnchor="middle"
+            className="fill-muted-foreground"
           >
             {labelForCol(c)}
           </text>

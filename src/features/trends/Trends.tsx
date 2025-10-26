@@ -94,7 +94,7 @@ type ViewMode =
   | "trend"
   | "adherence"
   | "streaks"
-  | "weekly"
+  | "cadence"
   | "weekday";
 
 export default function Trends() {
@@ -409,9 +409,9 @@ export default function Trends() {
               <SelectContent className="pixel-frame">
                 <SelectItem value="heatmap">Calendar heatmap</SelectItem>
                 <SelectItem value="trend">Trend line</SelectItem>
-                <SelectItem value="adherence">Adherence (7d)</SelectItem>
+                <SelectItem value="adherence">Adherence</SelectItem>
                 <SelectItem value="streaks">Streak timeline</SelectItem>
-                <SelectItem value="weekly">Weekly cadence</SelectItem>
+                <SelectItem value="cadence">Cadence</SelectItem>
                 <SelectItem value="weekday">Weekday heatmap</SelectItem>
               </SelectContent>
             </Select>
@@ -499,7 +499,7 @@ export default function Trends() {
         </div>
       )}
 
-      {view === "weekly" && (
+      {view === "cadence" && (
         <div className="pixel-frame bg-card p-3">
           <BarChart
             width={960}
@@ -557,6 +557,12 @@ export default function Trends() {
               />
             );
           })()}
+        </div>
+      )}
+
+      {view === "adherence" && (
+        <div className="pixel-frame bg-card p-3">
+          <AdherenceChart width={960} height={220} />
         </div>
       )}
 
