@@ -27,7 +27,7 @@ type RangePreset =
   | "last-30-days"
   | "custom";
 
-type HabitFilterMode = "all" | "one" | "many";
+type HabitFilterMode = "all" | "one" | "many" | "tags";
 
 function calcRange(
   preset: Exclude<RangePreset, "custom">,
@@ -102,14 +102,27 @@ export default function Trends() {
   const [habitMode, setHabitMode] = useState<HabitFilterMode>("all");
   const [habitId, setHabitId] = useState<string | null>(null);
   const [habitIds, setHabitIds] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const h of habitsQ.data ?? []) {
+      if (h.archivedAt) continue;
+      for (const t of h.tags ?? []) set.add(t);
+    }
+    return Array.from(set).sort();
+  }, [habitsQ.data]);
 
   const activeHabits = useMemo(() => {
     const all = (habitsQ.data ?? []).filter((h) => !h.archivedAt);
     if (habitMode === "all") return all;
     if (habitMode === "one")
       return habitId ? all.filter((h) => h.id === habitId) : [];
-    return all.filter((h) => habitIds.includes(h.id));
-  }, [habitsQ.data, habitMode, habitId, habitIds]);
+    if (habitMode === "many") return all.filter((h) => habitIds.includes(h.id));
+    // tags mode: include habits that have ANY of the selected tags
+    const tagSet = new Set(selectedTags);
+    return all.filter((h) => (h.tags ?? []).some((t) => tagSet.has(t)));
+  }, [habitsQ.data, habitMode, habitId, habitIds, selectedTags]);
 
   // Compute summaries for filtered habits from entries
   const entriesQ = useEntriesRange(from, to);
@@ -217,6 +230,9 @@ export default function Trends() {
                       .map((h) => h.id)
                   );
                 }
+                if (v === "tags") {
+                  setSelectedTags(allTags);
+                }
               }}
             >
               <SelectTrigger className="w-full sm:w-48 bg-card">
@@ -226,6 +242,7 @@ export default function Trends() {
                 <SelectItem value="all">All habits</SelectItem>
                 <SelectItem value="one">Just one</SelectItem>
                 <SelectItem value="many">Certain habits</SelectItem>
+                <SelectItem value="tags">By tag(s)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -266,6 +283,18 @@ export default function Trends() {
               placeholder="Select habits"
               renderTriggerLabel={(count) =>
                 count === 0 ? "Select habits" : `${count} selected`
+              }
+            />
+          )}
+
+          {habitMode === "tags" && (
+            <MultiSelect
+              options={allTags.map((t) => ({ value: t, label: t }))}
+              value={selectedTags}
+              onChange={(next) => setSelectedTags(next)}
+              placeholder="Select tags"
+              renderTriggerLabel={(count) =>
+                count === 0 ? "Select tags" : `${count} selected`
               }
             />
           )}

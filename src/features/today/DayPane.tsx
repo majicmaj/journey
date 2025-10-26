@@ -689,16 +689,18 @@ function HabitEditorInline({
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-3 col-span-full sm:col-span-2">
-        <span className="w-24 text-sm">Title</span>
-        <Input
-          value={draft.title}
-          className="bg-background"
-          onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-        />
+        <span className="w-24 sm:w-18 text-sm">Title</span>
+        <div className="pixel-frame w-full">
+          <Input
+            value={draft.title}
+            className="bg-background"
+            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+          />
+        </div>
       </label>
       <label className="flex items-start gap-3 col-span-full sm:col-span-2">
-        <span className="w-24 text-sm mt-1">Tags</span>
-        <div className="flex flex-col gap-2 w-full">
+        <span className="w-24 sm:w-18 text-sm mt-1">Tags</span>
+        <div className="flex flex-col gap-3 w-full">
           <MultiSelect
             options={Array.from(
               new Set(
@@ -715,7 +717,7 @@ function HabitEditorInline({
             triggerClassName="bg-background"
             contentClassName="bg-background"
           />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pixel-frame">
             <Input
               placeholder="Add new tag"
               className="bg-background flex-1"
