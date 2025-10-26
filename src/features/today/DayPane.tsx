@@ -696,6 +696,7 @@ function HabitEditorInline({
         <span className="w-24 sm:w-18 text-sm mt-1">Tags</span>
         <div className="flex flex-col gap-3 w-full">
           <MultiSelect
+            modal={true}
             options={Array.from(
               new Set(
                 (useHabits().data ?? [])

@@ -23,6 +23,7 @@ type MultiSelectProps<Value extends string | number> = {
   placeholder?: string;
   showSelectAllNone?: boolean;
   renderTriggerLabel?: (selectedCount: number, totalCount: number) => string;
+  modal?: boolean;
 };
 
 export function MultiSelect<Value extends string | number>({
@@ -34,6 +35,7 @@ export function MultiSelect<Value extends string | number>({
   contentClassName,
   placeholder = "Select",
   showSelectAllNone = true,
+  modal = false,
   renderTriggerLabel,
 }: MultiSelectProps<Value>) {
   const enabledOptions = useMemo(
@@ -65,7 +67,7 @@ export function MultiSelect<Value extends string | number>({
     : `${selectedCount} selected`;
 
   return (
-    <Popover>
+    <Popover modal={modal}>
       <PopoverTrigger asChild>
         <div
           className={cn(
