@@ -41,7 +41,6 @@ import {
 // removed unused imports after preserving history on type change
 import { toast } from "sonner";
 import type { DaySortKey } from "./Today";
-import { Plus } from "lucide-react";
 
 function DayPane({
   dayKey,
