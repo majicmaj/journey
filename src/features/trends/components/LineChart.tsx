@@ -10,12 +10,14 @@ export default function LineChart({
   series,
   goalBands,
   onBrush,
+  compactXAxis,
 }: {
   width: number;
   height: number;
   series: LineSeries[];
   goalBands?: Array<{ from: number; to: number; colorVar?: string }>;
   onBrush?: (fromX: string, toX: string) => void;
+  compactXAxis?: boolean;
 }) {
   const padding = { top: 12, right: 12, bottom: 22, left: 28 };
   const innerW = Math.max(1, width - padding.left - padding.right);
@@ -137,18 +139,44 @@ export default function LineChart({
         />
         <line x1={0} x2={0} y1={0} y2={innerH} stroke="var(--border)" />
 
-        {xDomain.map((x) => (
-          <text
-            key={x}
-            x={xToPx(x)}
-            y={innerH + 16}
-            fontSize={10}
-            textAnchor="middle"
-            className="fill-muted-foreground"
-          >
-            {x.slice(5)}
-          </text>
-        ))}
+        {xDomain.map((x) => {
+          let label: string | null = x.slice(5);
+          if (compactXAxis) {
+            if (x.endsWith("-01")) {
+              const mm = Number(x.slice(5, 7));
+              const abbr = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ][Math.max(0, Math.min(11, mm - 1))];
+              label = abbr;
+            } else {
+              label = null;
+            }
+          }
+          if (!label) return null;
+          return (
+            <text
+              key={x}
+              x={xToPx(x)}
+              y={innerH + 16}
+              fontSize={10}
+              textAnchor="middle"
+              className="fill-muted-foreground"
+            >
+              {label}
+            </text>
+          );
+        })}
         {[0, 25, 50, 75, 100].map((v) => (
           <g key={v}>
             <line

@@ -574,6 +574,11 @@ export default function Trends() {
               setPreset("custom");
               setCustomRange({ from: fromX, to: toX });
             }}
+            compactXAxis={
+              preset === "last-90-days" ||
+              preset === "last-6-months" ||
+              preset === "last-12-months"
+            }
           />
         </div>
       )}
@@ -650,6 +655,11 @@ export default function Trends() {
               setPreset("custom");
               setCustomRange({ from: fromX, to: toX });
             }}
+            compactXAxis={
+              preset === "last-90-days" ||
+              preset === "last-6-months" ||
+              preset === "last-12-months"
+            }
           />
         </div>
       )}
