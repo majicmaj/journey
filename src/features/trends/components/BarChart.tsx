@@ -61,6 +61,7 @@ export default function BarChart({
                 y={innerH + 16}
                 fontSize={10}
                 textAnchor="middle"
+                className="fill-muted-foreground"
               >
                 {b.label}
               </text>

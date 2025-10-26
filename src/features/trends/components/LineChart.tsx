@@ -135,6 +135,7 @@ export default function LineChart({
             y={innerH + 16}
             fontSize={10}
             textAnchor="middle"
+            className="fill-muted-foreground"
           >
             {x.slice(5)}
           </text>
@@ -148,7 +149,13 @@ export default function LineChart({
               y2={yToPx(v)}
               stroke="var(--border)"
             />
-            <text x={-8} y={yToPx(v) + 3} fontSize={10} textAnchor="end">
+            <text
+              x={-8}
+              y={yToPx(v) + 3}
+              fontSize={10}
+              textAnchor="end"
+              className="fill-muted-foreground"
+            >
               {v}
             </text>
           </g>

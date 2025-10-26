@@ -560,11 +560,7 @@ export default function Trends() {
         </div>
       )}
 
-      {view === "adherence" && (
-        <div className="pixel-frame bg-card p-3">
-          <AdherenceChart width={960} height={220} />
-        </div>
-      )}
+      {view === "adherence" && <div className="pixel-frame bg-card p-3"></div>}
 
       <div className="text-sm opacity-70">
         Scores are daily weighted completion (0–100).
