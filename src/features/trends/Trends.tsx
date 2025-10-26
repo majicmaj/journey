@@ -694,6 +694,31 @@ export default function Trends() {
                 "Sat",
                 "Sun",
               ];
+              const compact = days.length >= 90;
+              function weekMonthAbbr(weekStartStr: string): string | null {
+                const ws = new Date(weekStartStr + "T00:00:00");
+                for (let i = 0; i < 7; i++) {
+                  const d = new Date(ws.getTime() + i * 24 * 60 * 60 * 1000);
+                  if (d.getDate() === 1) {
+                    const mm = d.getMonth();
+                    return [
+                      "Jan",
+                      "Feb",
+                      "Mar",
+                      "Apr",
+                      "May",
+                      "Jun",
+                      "Jul",
+                      "Aug",
+                      "Sep",
+                      "Oct",
+                      "Nov",
+                      "Dec",
+                    ][mm];
+                  }
+                }
+                return null;
+              }
               function valueAt(r: number, c: number): number {
                 const weekStart = weeks[c];
                 if (!weekStart) return 0;
@@ -714,7 +739,11 @@ export default function Trends() {
                   rows={7}
                   cols={weeks.length}
                   valueAt={valueAt}
-                  labelForCol={(c) => (weeks[c] ?? "").slice(5)}
+                  labelForCol={(c) =>
+                    compact
+                      ? weekMonthAbbr(weeks[c] ?? "") ?? ""
+                      : (weeks[c] ?? "").slice(5)
+                  }
                   labelForRow={(r) => rowLabels[r]}
                 />
               );
