@@ -28,9 +28,7 @@ export default function LineChart({
       ).sort(),
     [series]
   );
-  const [xMinIdx, setXMinIdx] = useState(0);
-  const [xMaxIdx, setXMaxIdx] = useState(Math.max(0, allX.length - 1));
-  const xDomain = allX.slice(xMinIdx, xMaxIdx + 1);
+  const xDomain = allX;
 
   const allY = useMemo(
     () => series.flatMap((s) => s.points.map((p) => p.y)),
@@ -130,7 +128,7 @@ export default function LineChart({
         />
         <line x1={0} x2={0} y1={0} y2={innerH} stroke="var(--border)" />
 
-        {xDomain.map((x, i) => (
+        {xDomain.map((x) => (
           <text
             key={x}
             x={xToPx(x)}

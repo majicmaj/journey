@@ -15,7 +15,7 @@ export default function StreakTimeline({
   segmentsByRow: Array<Array<{ start: string; end: string }>>;
   labelForRow: (r: number) => string;
 }) {
-  const padding = { top: 16, right: 12, bottom: 28, left: 100 };
+  const padding = { top: 16, right: 0, bottom: 0, left: 100 };
   const innerW = Math.max(1, width - padding.left - padding.right);
   const innerH = Math.max(1, height - padding.top - padding.bottom);
   const rowH = innerH / Math.max(1, rows);
@@ -42,6 +42,7 @@ export default function StreakTimeline({
             y={r * rowH + rowH / 2 + 3}
             fontSize={11}
             textAnchor="end"
+            className="fill-muted-foreground"
           >
             {labelForRow(r)}
           </text>
@@ -58,10 +59,10 @@ export default function StreakTimeline({
                 key={`${r}-${i}`}
                 x={Math.min(x1, x2)}
                 y={y}
-                width={Math.max(2, Math.abs(x2 - x1))}
+                width={Math.max(10, Math.abs(x2 - x1))}
                 height={h}
                 rx={2}
-                fill="var(--secondary)"
+                fill="var(--chart-1)"
               />
             );
           })
