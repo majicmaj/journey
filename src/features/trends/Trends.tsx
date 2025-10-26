@@ -24,6 +24,8 @@ import BarChart from "./components/BarChart";
 import HeatmapMatrix from "./components/HeatmapMatrix";
 import StreakTimeline from "./components/StreakTimeline";
 import ResponsiveContainer from "./components/ResponsiveContainer";
+import PanZoom from "./components/PanZoom";
+import Fullscreen from "./components/Fullscreen";
 import {
   enumerateDateKeys as enumKeys,
   rollingAverage,
@@ -105,7 +107,7 @@ export default function Trends() {
   const settings = useSettings();
   const dayStart = settings.data?.dayStart ?? "00:00";
   const habitsQ = useHabits();
-  const [preset, setPreset] = useState<RangePreset>("last-90-days");
+  const [preset, setPreset] = useState<RangePreset>("all-time");
   const [customRange, setCustomRange] = useState<{
     from: string;
     to: string;
@@ -138,6 +140,7 @@ export default function Trends() {
 
   const from = computed.from;
   const to = computed.to;
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 640;
 
   // Habit filtering state
   const [habitMode, setHabitMode] = useState<HabitFilterMode>("all");
@@ -192,7 +195,7 @@ export default function Trends() {
   // selectedCount no longer needed; MultiSelect renders its own label
 
   // New view selection
-  const [view, setView] = useState<ViewMode>("heatmap");
+  const [view, setView] = useState<ViewMode>("weekday");
 
   // Derived series for visualizations
   const totalScoreSeries: Array<{ x: string; y: number }> = useMemo(
@@ -302,7 +305,9 @@ export default function Trends() {
   const weeklyBars = useMemo(() => {
     const days = enumKeys(from, to);
     const byWeek = groupByISOWeek(days);
-    const compact = days.length >= 90;
+    const threshold =
+      typeof window !== "undefined" && window.innerWidth <= 640 ? 30 : 90;
+    const compact = days.length >= threshold;
     function weekMonthAbbr(weekStartStr: string): string | null {
       const ws = new Date(weekStartStr + "T00:00:00");
       for (let i = 0; i < 7; i++) {
@@ -635,6 +640,47 @@ export default function Trends() {
               />
             )}
           </ResponsiveContainer>
+          <Fullscreen
+            affordance={({ open }) => (
+              <button className="mt-2 text-xs underline" onClick={open}>
+                Full screen
+              </button>
+            )}
+          >
+            {({ close }) => (
+              <PanZoom className="w-screen h-screen bg-card">
+                <ResponsiveContainer
+                  height={(vw) => Math.max(300, Math.floor(vw * 0.5))}
+                >
+                  {(vw, vh) => (
+                    <LineChart
+                      width={vw}
+                      height={vh}
+                      series={[
+                        {
+                          name: "Total",
+                          color: "var(--secondary)",
+                          points: totalScoreSeries,
+                        },
+                        { name: "MA7", color: "var(--chart-1)", points: ma7 },
+                        { name: "MA28", color: "var(--chart-2)", points: ma28 },
+                      ]}
+                      goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+                      compactXAxis
+                    />
+                  )}
+                </ResponsiveContainer>
+                <div className="absolute top-2 right-2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
         </div>
       )}
 
@@ -655,6 +701,33 @@ export default function Trends() {
               />
             )}
           </ResponsiveContainer>
+          <Fullscreen
+            affordance={({ open }) => (
+              <button className="mt-2 text-xs underline" onClick={open}>
+                Full screen
+              </button>
+            )}
+          >
+            {({ close }) => (
+              <PanZoom className="w-screen h-screen bg-card">
+                <ResponsiveContainer
+                  height={(vw) => Math.max(260, Math.floor(vw * 0.4))}
+                >
+                  {(vw, vh) => (
+                    <BarChart width={vw} height={vh} bars={weeklyBars} />
+                  )}
+                </ResponsiveContainer>
+                <div className="absolute top-2 right-2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
         </div>
       )}
 
@@ -674,6 +747,40 @@ export default function Trends() {
               />
             )}
           </ResponsiveContainer>
+          <Fullscreen
+            affordance={({ open }) => (
+              <button className="mt-2 text-xs underline" onClick={open}>
+                Full screen
+              </button>
+            )}
+          >
+            {({ close }) => (
+              <PanZoom className="w-screen h-screen bg-card">
+                <ResponsiveContainer
+                  height={() => Math.max(240, streakRows.labels.length * 32)}
+                >
+                  {(vw, vh) => (
+                    <StreakTimeline
+                      width={vw}
+                      height={vh}
+                      rows={streakRows.labels.length}
+                      dates={streakRows.dates}
+                      segmentsByRow={streakRows.segs}
+                      labelForRow={(r) => streakRows.labels[r] ?? ""}
+                    />
+                  )}
+                </ResponsiveContainer>
+                <div className="absolute top-2 right-2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
         </div>
       )}
 
@@ -694,7 +801,11 @@ export default function Trends() {
                 "Sat",
                 "Sun",
               ];
-              const compact = days.length >= 90;
+              const threshold =
+                typeof window !== "undefined" && window.innerWidth <= 640
+                  ? 30
+                  : 90;
+              const compact = days.length >= threshold;
               function weekMonthAbbr(weekStartStr: string): string | null {
                 const ws = new Date(weekStartStr + "T00:00:00");
                 for (let i = 0; i < 7; i++) {
@@ -749,6 +860,109 @@ export default function Trends() {
               );
             }}
           </ResponsiveContainer>
+          <Fullscreen
+            affordance={({ open }) => (
+              <button className="mt-2 text-xs underline" onClick={open}>
+                Full screen
+              </button>
+            )}
+          >
+            {({ close }) => (
+              <PanZoom className="w-screen h-screen bg-card">
+                <ResponsiveContainer
+                  height={(vw) => Math.max(260, Math.floor(vw * 0.5))}
+                >
+                  {(vw, vh) => {
+                    const days = enumKeys(from, to);
+                    const weeks = Array.from(
+                      groupByISOWeek(days).keys()
+                    ).sort();
+                    const rowLabels = [
+                      "Mon",
+                      "Tue",
+                      "Wed",
+                      "Thu",
+                      "Fri",
+                      "Sat",
+                      "Sun",
+                    ];
+                    const threshold =
+                      typeof window !== "undefined" && window.innerWidth <= 640
+                        ? 30
+                        : 90;
+                    const compact = days.length >= threshold;
+                    function weekMonthAbbr(
+                      weekStartStr: string
+                    ): string | null {
+                      const ws = new Date(weekStartStr + "T00:00:00");
+                      for (let i = 0; i < 7; i++) {
+                        const d = new Date(
+                          ws.getTime() + i * 24 * 60 * 60 * 1000
+                        );
+                        if (d.getDate() === 1) {
+                          const mm = d.getMonth();
+                          return [
+                            "Jan",
+                            "Feb",
+                            "Mar",
+                            "Apr",
+                            "May",
+                            "Jun",
+                            "Jul",
+                            "Aug",
+                            "Sep",
+                            "Oct",
+                            "Nov",
+                            "Dec",
+                          ][mm];
+                        }
+                      }
+                      return null;
+                    }
+                    function valueAt(r: number, c: number): number {
+                      const weekStart = weeks[c];
+                      if (!weekStart) return 0;
+                      const weekDays = enumKeys(
+                        weekStart,
+                        endOfISOWeek(weekStart)
+                      );
+                      const dk = weekDays[(r + 0) % 7];
+                      if (!dk) return 0;
+                      const { totalScore } = computeDaySummary(
+                        dk,
+                        activeHabits,
+                        entriesByDate.get(dk) ?? []
+                      );
+                      return totalScore;
+                    }
+                    return (
+                      <HeatmapMatrix
+                        width={vw}
+                        height={vh}
+                        rows={7}
+                        cols={weeks.length}
+                        valueAt={valueAt}
+                        labelForCol={(c) =>
+                          compact
+                            ? weekMonthAbbr(weeks[c] ?? "") ?? ""
+                            : (weeks[c] ?? "").slice(5)
+                        }
+                        labelForRow={(r) => rowLabels[r]}
+                      />
+                    );
+                  }}
+                </ResponsiveContainer>
+                <div className="absolute top-2 right-2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
         </div>
       )}
 
@@ -771,11 +985,45 @@ export default function Trends() {
                   preset === "last-90-days" ||
                   preset === "last-6-months" ||
                   preset === "last-12-months" ||
-                  preset === "all-time"
+                  preset === "all-time" ||
+                  (isMobile && preset === "last-30-days")
                 }
               />
             )}
           </ResponsiveContainer>
+          <Fullscreen
+            affordance={({ open }) => (
+              <button className="mt-2 text-xs underline" onClick={open}>
+                Full screen
+              </button>
+            )}
+          >
+            {({ close }) => (
+              <PanZoom className="w-screen h-screen bg-card">
+                <ResponsiveContainer
+                  height={(vw) => Math.max(300, Math.floor(vw * 0.5))}
+                >
+                  {(vw, vh) => (
+                    <LineChart
+                      width={vw}
+                      height={vh}
+                      series={adherenceSeries}
+                      goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+                      compactXAxis
+                    />
+                  )}
+                </ResponsiveContainer>
+                <div className="absolute top-2 right-2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
         </div>
       )}
     </div>
