@@ -197,6 +197,85 @@ export default function Trends() {
     return map;
   }, [entriesQ.data]);
 
+  // Adherence series (rolling 7-day)
+  const adherenceSeries = useMemo(() => {
+    const days = enumKeys(from, to);
+    const chartColors = [
+      "var(--chart-1)",
+      "var(--chart-2)",
+      "var(--chart-3)",
+      "var(--chart-4)",
+      "var(--chart-5)",
+    ];
+
+    function habitDayCompleted(habitId: string, day: string): number {
+      const list = entriesByDate.get(day) ?? [];
+      const e = list.find((x) => x.habitId === habitId);
+      return e?.completed ? 100 : 0;
+    }
+
+    if (habitMode === "one") {
+      const h = activeHabits[0];
+      if (!h) return [] as LineSeries[];
+      const raw = days.map((d) => ({ x: d, y: habitDayCompleted(h.id, d) }));
+      return [
+        {
+          name: h.title,
+          color: chartColors[0 % chartColors.length],
+          points: rollingAverage(raw, 7),
+        },
+      ] as LineSeries[];
+    }
+
+    if (habitMode === "many") {
+      return activeHabits.map((h, i) => {
+        const raw = days.map((d) => ({ x: d, y: habitDayCompleted(h.id, d) }));
+        return {
+          name: h.title,
+          color: chartColors[i % chartColors.length],
+          points: rollingAverage(raw, 7),
+        } as LineSeries;
+      });
+    }
+
+    if (habitMode === "tags") {
+      // For each selected tag, average completion across habits with that tag
+      return selectedTags.map((tag, i) => {
+        const habitsWithTag = activeHabits.filter((h) =>
+          (h.tags ?? []).includes(tag)
+        );
+        const raw = days.map((d) => {
+          const vals = habitsWithTag.map((h) => habitDayCompleted(h.id, d));
+          const avg =
+            vals.length === 0
+              ? 0
+              : vals.reduce((a, b) => a + b, 0) / vals.length;
+          return { x: d, y: avg };
+        });
+        return {
+          name: `#${tag}`,
+          color: chartColors[i % chartColors.length],
+          points: rollingAverage(raw, 7),
+        } as LineSeries;
+      });
+    }
+
+    // habitMode === "all": average across all active habits
+    if (activeHabits.length === 0) return [] as LineSeries[];
+    const raw = days.map((d) => {
+      const vals = activeHabits.map((h) => habitDayCompleted(h.id, d));
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      return { x: d, y: avg };
+    });
+    return [
+      {
+        name: "All habits",
+        color: chartColors[0],
+        points: rollingAverage(raw, 7),
+      },
+    ] as LineSeries[];
+  }, [from, to, entriesByDate, habitMode, activeHabits, selectedTags]);
+
   // Weekly cadence bars
   const weeklyBars = useMemo(() => {
     const days = enumKeys(from, to);
@@ -560,7 +639,20 @@ export default function Trends() {
         </div>
       )}
 
-      {view === "adherence" && <div className="pixel-frame bg-card p-3"></div>}
+      {view === "adherence" && (
+        <div className="pixel-frame bg-card p-3">
+          <LineChart
+            width={960}
+            height={240}
+            series={adherenceSeries}
+            goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+            onBrush={(fromX, toX) => {
+              setPreset("custom");
+              setCustomRange({ from: fromX, to: toX });
+            }}
+          />
+        </div>
+      )}
 
       <div className="text-sm opacity-70">
         Scores are daily weighted completion (0–100).
