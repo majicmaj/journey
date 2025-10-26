@@ -24,7 +24,7 @@ type HeatmapProps = {
   showWeekBands?: boolean;
 
   /** Show grid lines (default true) */
-  showGrid?: boolean;
+  // showGrid?: boolean;
 
   /** Optional click */
   onCellClick?: (r: number, c: number) => void;
@@ -45,7 +45,7 @@ export default function HeatmapMatrix({
   startOfWeekForCol,
   weekdayIndexStartsAt = 0,
   showWeekBands = true,
-  showGrid = true,
+  // showGrid = true,
   onCellClick,
   todayKey,
 }: HeatmapProps) {
