@@ -3,6 +3,8 @@ import type { CSSProperties, ReactElement } from "react";
 import CalendarHeatmap from "react-calendar-heatmap";
 import "react-calendar-heatmap/dist/styles.css"; // base styles; we'll override with our theme classes
 import { useEntriesRange, useHabits, useSettings } from "@/hooks/useData";
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/db";
 import { toDayKey } from "@/lib/dates";
 
 import {
@@ -37,12 +39,13 @@ type RangePreset =
   | "last-6-months"
   | "last-90-days"
   | "last-30-days"
+  | "all-time"
   | "custom";
 
 type HabitFilterMode = "all" | "one" | "many" | "tags";
 
 function calcRange(
-  preset: Exclude<RangePreset, "custom">,
+  preset: Exclude<RangePreset, "custom" | "all-time">,
   dayStart: string
 ): { from: string; to: string } {
   const today = new Date();
@@ -102,18 +105,36 @@ export default function Trends() {
   const settings = useSettings();
   const dayStart = settings.data?.dayStart ?? "00:00";
   const habitsQ = useHabits();
-  const [preset, setPreset] = useState<RangePreset>("last-90-days");
+  const [preset, setPreset] = useState<RangePreset>("all-time");
   const [customRange, setCustomRange] = useState<{
     from: string;
     to: string;
   } | null>(null);
 
+  // Earliest entry date for "all-time" preset
+  const earliestQ = useQuery({
+    queryKey: ["entries-first-date"],
+    queryFn: async () => {
+      const first = await db.entries.orderBy("date").first();
+      return first?.date as string | undefined;
+    },
+  });
+  const earliestDate = earliestQ.data;
+
   const computed = useMemo(() => {
     if (preset === "custom") {
       return customRange ?? calcRange("last-90-days", dayStart);
     }
-    return calcRange(preset, dayStart);
-  }, [preset, customRange, dayStart]);
+    if (preset === "all-time") {
+      const today = toDayKey(new Date(), dayStart);
+      const from = earliestDate ?? today;
+      return { from, to: today };
+    }
+    return calcRange(
+      preset as Exclude<RangePreset, "custom" | "all-time">,
+      dayStart
+    );
+  }, [preset, customRange, dayStart, earliestDate]);
 
   const from = computed.from;
   const to = computed.to;
@@ -355,6 +376,7 @@ export default function Trends() {
                 <SelectItem value="last-90-days">Last 90 days</SelectItem>
                 <SelectItem value="last-6-months">Last 6 months</SelectItem>
                 <SelectItem value="last-12-months">Last 12 months</SelectItem>
+                <SelectItem value="all-time">All time</SelectItem>
                 <SelectItem value="custom">Custom…</SelectItem>
               </SelectContent>
             </Select>
@@ -582,7 +604,8 @@ export default function Trends() {
                 compactXAxis={
                   preset === "last-90-days" ||
                   preset === "last-6-months" ||
-                  preset === "last-12-months"
+                  preset === "last-12-months" ||
+                  preset === "all-time"
                 }
               />
             )}
@@ -693,7 +716,8 @@ export default function Trends() {
                 compactXAxis={
                   preset === "last-90-days" ||
                   preset === "last-6-months" ||
-                  preset === "last-12-months"
+                  preset === "last-12-months" ||
+                  preset === "all-time"
                 }
               />
             )}
