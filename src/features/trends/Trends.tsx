@@ -21,6 +21,7 @@ import LineChart, { type LineSeries } from "./components/LineChart";
 import BarChart from "./components/BarChart";
 import HeatmapMatrix from "./components/HeatmapMatrix";
 import StreakTimeline from "./components/StreakTimeline";
+import ResponsiveContainer from "./components/ResponsiveContainer";
 import {
   enumerateDateKeys as enumKeys,
   rollingAverage,
@@ -555,112 +556,148 @@ export default function Trends() {
 
       {view === "trend" && (
         <div className="pixel-frame bg-card p-3">
-          <LineChart
-            width={960}
-            height={240}
-            series={
-              [
-                {
-                  name: "Total",
-                  color: "var(--secondary)",
-                  points: totalScoreSeries,
-                },
-                { name: "MA7", color: "var(--chart-1)", points: ma7 },
-                { name: "MA28", color: "var(--chart-2)", points: ma28 },
-              ] as LineSeries[]
-            }
-            goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-            onBrush={(fromX, toX) => {
-              setPreset("custom");
-              setCustomRange({ from: fromX, to: toX });
-            }}
-            compactXAxis={
-              preset === "last-90-days" ||
-              preset === "last-6-months" ||
-              preset === "last-12-months"
-            }
-          />
+          <ResponsiveContainer
+            height={(w) => Math.max(180, Math.min(280, Math.floor(w * 0.4)))}
+          >
+            {(w, h) => (
+              <LineChart
+                width={w}
+                height={h}
+                series={
+                  [
+                    {
+                      name: "Total",
+                      color: "var(--secondary)",
+                      points: totalScoreSeries,
+                    },
+                    { name: "MA7", color: "var(--chart-1)", points: ma7 },
+                    { name: "MA28", color: "var(--chart-2)", points: ma28 },
+                  ] as LineSeries[]
+                }
+                goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+                onBrush={(fromX, toX) => {
+                  setPreset("custom");
+                  setCustomRange({ from: fromX, to: toX });
+                }}
+                compactXAxis={
+                  preset === "last-90-days" ||
+                  preset === "last-6-months" ||
+                  preset === "last-12-months"
+                }
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "cadence" && (
         <div className="pixel-frame bg-card p-3">
-          <BarChart
-            width={960}
-            height={220}
-            bars={weeklyBars}
-            onBarClick={(range) => {
-              setPreset("custom");
-              setCustomRange(range);
-            }}
-          />
+          <ResponsiveContainer
+            height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
+          >
+            {(w, h) => (
+              <BarChart
+                width={w}
+                height={h}
+                bars={weeklyBars}
+                onBarClick={(range) => {
+                  setPreset("custom");
+                  setCustomRange(range);
+                }}
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "streaks" && (
         <div className="pixel-frame bg-card p-3">
-          <StreakTimeline
-            width={960}
-            height={Math.max(140, streakRows.labels.length * 24)}
-            rows={streakRows.labels.length}
-            dates={streakRows.dates}
-            segmentsByRow={streakRows.segs}
-            labelForRow={(r) => streakRows.labels[r] ?? ""}
-          />
+          <ResponsiveContainer
+            height={() => Math.max(160, streakRows.labels.length * 28)}
+          >
+            {(w, h) => (
+              <StreakTimeline
+                width={w}
+                height={h}
+                rows={streakRows.labels.length}
+                dates={streakRows.dates}
+                segmentsByRow={streakRows.segs}
+                labelForRow={(r) => streakRows.labels[r] ?? ""}
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "weekday" && (
         <div className="pixel-frame bg-card p-3">
-          {(() => {
-            const days = enumKeys(from, to);
-            const weeks = Array.from(groupByISOWeek(days).keys()).sort();
-            const rowLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-            function valueAt(r: number, c: number): number {
-              const weekStart = weeks[c];
-              if (!weekStart) return 0;
-              const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
-              const dk = weekDays[(r + 0) % 7];
-              if (!dk) return 0;
-              const { totalScore } = computeDaySummary(
-                dk,
-                activeHabits,
-                entriesByDate.get(dk) ?? []
+          <ResponsiveContainer
+            height={(w) => Math.max(180, Math.min(260, Math.floor(w * 0.35)))}
+          >
+            {(w, h) => {
+              const days = enumKeys(from, to);
+              const weeks = Array.from(groupByISOWeek(days).keys()).sort();
+              const rowLabels = [
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+                "Sun",
+              ];
+              function valueAt(r: number, c: number): number {
+                const weekStart = weeks[c];
+                if (!weekStart) return 0;
+                const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
+                const dk = weekDays[(r + 0) % 7];
+                if (!dk) return 0;
+                const { totalScore } = computeDaySummary(
+                  dk,
+                  activeHabits,
+                  entriesByDate.get(dk) ?? []
+                );
+                return totalScore;
+              }
+              return (
+                <HeatmapMatrix
+                  width={w}
+                  height={h}
+                  rows={7}
+                  cols={weeks.length}
+                  valueAt={valueAt}
+                  labelForCol={(c) => (weeks[c] ?? "").slice(5)}
+                  labelForRow={(r) => rowLabels[r]}
+                />
               );
-              return totalScore;
-            }
-            return (
-              <HeatmapMatrix
-                width={960}
-                height={220}
-                rows={7}
-                cols={weeks.length}
-                valueAt={valueAt}
-                labelForCol={(c) => (weeks[c] ?? "").slice(5)}
-                labelForRow={(r) => rowLabels[r]}
-              />
-            );
-          })()}
+            }}
+          </ResponsiveContainer>
         </div>
       )}
 
       {view === "adherence" && (
         <div className="pixel-frame bg-card p-3">
-          <LineChart
-            width={960}
-            height={240}
-            series={adherenceSeries}
-            goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-            onBrush={(fromX, toX) => {
-              setPreset("custom");
-              setCustomRange({ from: fromX, to: toX });
-            }}
-            compactXAxis={
-              preset === "last-90-days" ||
-              preset === "last-6-months" ||
-              preset === "last-12-months"
-            }
-          />
+          <ResponsiveContainer
+            height={(w) => Math.max(180, Math.min(280, Math.floor(w * 0.4)))}
+          >
+            {(w, h) => (
+              <LineChart
+                width={w}
+                height={h}
+                series={adherenceSeries}
+                goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+                onBrush={(fromX, toX) => {
+                  setPreset("custom");
+                  setCustomRange({ from: fromX, to: toX });
+                }}
+                compactXAxis={
+                  preset === "last-90-days" ||
+                  preset === "last-6-months" ||
+                  preset === "last-12-months"
+                }
+              />
+            )}
+          </ResponsiveContainer>
         </div>
       )}
 
