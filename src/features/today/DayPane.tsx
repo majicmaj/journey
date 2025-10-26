@@ -41,6 +41,7 @@ import {
 // removed unused imports after preserving history on type change
 import { toast } from "sonner";
 import type { DaySortKey } from "./Today";
+import { Plus } from "lucide-react";
 
 function DayPane({
   dayKey,
@@ -712,24 +713,12 @@ function HabitEditorInline({
             triggerClassName="bg-background"
             contentClassName="bg-background"
           />
-          <div className="flex items-center gap-2 pixel-frame">
-            <Input
-              placeholder="Add new tag"
-              className="bg-background flex-1"
-              onKeyDown={(e) => {
-                const el = e.currentTarget as HTMLInputElement;
-                if (e.key === "Enter") {
-                  const t = el.value.trim();
-                  if (!t) return;
-                  const existing = new Set(draft.tags ?? []);
-                  if (!existing.has(t)) {
-                    setDraft({ ...draft, tags: [...(draft.tags ?? []), t] });
-                  }
-                  el.value = "";
-                }
-              }}
-            />
-          </div>
+          <AddTagRow
+            tags={draft.tags ?? []}
+            onAdd={(t) =>
+              setDraft({ ...draft, tags: [...(draft.tags ?? []), t] })
+            }
+          />
         </div>
       </label>
       <label className="flex items-center gap-3">
@@ -1022,6 +1011,50 @@ function HabitEditorInline({
           </Dialog>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AddTagRow({
+  tags,
+  onAdd,
+}: {
+  tags: string[];
+  onAdd: (t: string) => void;
+}) {
+  const [value, setValue] = useState("");
+  return (
+    <div className="flex gap-3">
+      <div className="pixel-frame flex-1">
+        <Input
+          placeholder="Add new tag"
+          className="bg-background flex-1"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const t = value.trim();
+              if (!t) return;
+              const existing = new Set(tags ?? []);
+              if (!existing.has(t)) onAdd(t);
+              setValue("");
+            }
+          }}
+        />
+      </div>
+      <Button
+        size="icon"
+        disabled={!value.trim()}
+        onClick={() => {
+          const t = value.trim();
+          if (!t) return;
+          const existing = new Set(tags ?? []);
+          if (!existing.has(t)) onAdd(t);
+          setValue("");
+        }}
+      >
+        <PlusIcon className="size-8" />
+      </Button>
     </div>
   );
 }

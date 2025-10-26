@@ -27,7 +27,7 @@ export default function ErrorPage() {
           <div className="flex gap-3 pt-2">
             <Button asChild>
               <Link to="/">
-                <Home className="mr-2 size-5" /> Go to Day
+                <Home className="mr-2 size-5" /> Go Home
               </Link>
             </Button>
             <Button variant="outline" onClick={() => location.reload()}>
