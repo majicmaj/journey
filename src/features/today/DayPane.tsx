@@ -11,7 +11,6 @@ import { toDayKey } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { type Habit, type DailyEntry } from "@/types/habit";
 import {
-  CloseIcon,
   EditIcon,
   SaveIcon,
   CheckIcon,
@@ -435,17 +434,35 @@ function DayPane({
                   kindAtEntry: entry?.kindAtEntry ?? h.kind,
                 });
               }}
-              onEdit={() => setEditingId(editingId === h.id ? null : h.id)}
-              isEditing={editingId === h.id}
-              onSaveHabit={(next) => {
-                update.mutate(next);
-                setEditingId(null);
-              }}
-              onCancelEdit={() => setEditingId(null)}
+              onEdit={() => setEditingId(h.id)}
             />
           );
         })}
       </section>
+
+      {/* Edit dialog */}
+      {editingId ? (
+        <Dialog open={true} onOpenChange={(o) => !o && setEditingId(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit habit</DialogTitle>
+            </DialogHeader>
+            {(() => {
+              const h = (habitsQ.data ?? []).find((x) => x.id === editingId);
+              return h ? (
+                <HabitEditorInline
+                  habit={h}
+                  onSave={(next) => {
+                    update.mutate(next);
+                    setEditingId(null);
+                  }}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : null;
+            })()}
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <div className="border-2 border-border w-full h-px my-2" />
 
@@ -519,9 +536,6 @@ function HabitRow({
   onToggle,
   onSetValue,
   onEdit,
-  isEditing,
-  onSaveHabit,
-  onCancelEdit,
 }: {
   habit: Habit;
   entry: DailyEntry | undefined;
@@ -533,9 +547,6 @@ function HabitRow({
   onToggle: () => void;
   onSetValue: (v: number | null) => void;
   onEdit: () => void;
-  isEditing: boolean;
-  onSaveHabit: (next: Habit) => void;
-  onCancelEdit: () => void;
 }) {
   return (
     <PixelCard className="flex flex-col gap-3">
@@ -552,13 +563,7 @@ function HabitRow({
             )}
           </Button>
           <div className="flex flex-col">
-            <span
-              className={cn(
-                !isEditing ? "text-sm line-clamp-1" : "line-clamp-5"
-              )}
-            >
-              {habit.title}
-            </span>
+            <span className={cn("text-sm line-clamp-1")}>{habit.title}</span>
             <div>
               {typeof streak !== "undefined" && streak > 0 ? (
                 <div className="flex items-center gap-1 text-chart-1">
@@ -659,22 +664,10 @@ function HabitRow({
               </div>
             )}
           <Button aria-label="Edit habit" onClick={onEdit} size="icon-sm">
-            {isEditing ? (
-              <CloseIcon className="size-6" />
-            ) : (
-              <EditIcon className="size-6" />
-            )}
+            <EditIcon className="size-6" />
           </Button>
         </div>
       </div>
-
-      {isEditing ? (
-        <HabitEditorInline
-          habit={habit}
-          onSave={onSaveHabit}
-          onCancel={onCancelEdit}
-        />
-      ) : null}
     </PixelCard>
   );
 }
