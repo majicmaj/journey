@@ -60,18 +60,20 @@ export default function PanZoom({
     };
   }
   function onPointerMove(e: React.PointerEvent) {
-    if (panRef.current?.active) {
-      const dx = e.clientX - panRef.current.startX;
-      const dy = e.clientY - panRef.current.startY;
-      setState((s) => ({
-        ...s,
-        x: panRef.current!.origX + dx,
-        y: panRef.current!.origY + dy,
-      }));
+    const p = panRef.current;
+    if (p?.active) {
+      const dx = e.clientX - p.startX;
+      const dy = e.clientY - p.startY;
+      const targetX = p.origX + dx;
+      const targetY = p.origY + dy;
+      setState((s) => ({ ...s, x: targetX, y: targetY }));
     }
   }
   function onPointerUp(e: React.PointerEvent) {
     (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    panRef.current = null;
+  }
+  function onPointerCancel() {
     panRef.current = null;
   }
 
@@ -99,16 +101,17 @@ export default function PanZoom({
     }
   }
   function onTouchMove(e: React.TouchEvent) {
-    if (pinchRef.current?.active && e.touches.length === 2) {
+    const pinch = pinchRef.current;
+    if (pinch?.active && e.touches.length === 2) {
       e.preventDefault();
       const d1 = touchDist(e.touches[0], e.touches[1]);
-      const factor = d1 / pinchRef.current.d0;
-      const nextScale = clampScale(pinchRef.current.s0 * factor);
+      const factor = d1 / pinch.d0;
+      const nextScale = clampScale(pinch.s0 * factor);
       const k = nextScale / state.scale;
       setState((s) => ({
         scale: nextScale,
-        x: s.x - pinchRef.current!.cx * (k - 1),
-        y: s.y - pinchRef.current!.cy * (k - 1),
+        x: s.x - pinch.cx * (k - 1),
+        y: s.y - pinch.cy * (k - 1),
       }));
     }
   }
@@ -124,6 +127,7 @@ export default function PanZoom({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

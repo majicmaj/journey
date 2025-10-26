@@ -61,7 +61,7 @@ export default function StreakTimeline({
                 y={y}
                 width={Math.max(10, Math.abs(x2 - x1) + 10)}
                 height={h}
-                rx={2}
+                // rx={2}
                 fill="var(--chart-1)"
               />
             );
