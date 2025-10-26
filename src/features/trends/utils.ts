@@ -56,7 +56,7 @@ export function rollingAverage(
 }
 
 export function computeStreakSegments(
-  habit: Habit,
+  _habit: Habit,
   entriesByDay: Map<string, DailyEntry>,
   orderedDates: string[]
 ): Array<{ start: string; end: string }> {

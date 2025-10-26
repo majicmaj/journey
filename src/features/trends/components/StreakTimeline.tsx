@@ -15,7 +15,7 @@ export default function StreakTimeline({
   segmentsByRow: Array<Array<{ start: string; end: string }>>;
   labelForRow: (r: number) => string;
 }) {
-  const padding = { top: 16, right: 0, bottom: 0, left: 100 };
+  const padding = { top: 16, right: 0, bottom: 24, left: 100 };
   const innerW = Math.max(1, width - padding.left - padding.right);
   const innerH = Math.max(1, height - padding.top - padding.bottom);
   const rowH = innerH / Math.max(1, rows);
@@ -67,6 +67,54 @@ export default function StreakTimeline({
             );
           })
         )}
+
+        {/* X axis ticks and labels */}
+        <line
+          x1={0}
+          x2={innerW}
+          y1={innerH}
+          y2={innerH}
+          stroke="var(--border)"
+        />
+        {dates.map((d) => {
+          if (!d.endsWith("-01")) return null;
+          const x = dateToX(d);
+          const mm = Number(d.slice(5, 7));
+          const label = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ][Math.max(0, Math.min(11, mm - 1))];
+          return (
+            <g key={d}>
+              <line
+                x1={x}
+                x2={x}
+                y1={innerH}
+                y2={innerH + 4}
+                stroke="var(--border)"
+              />
+              <text
+                x={x}
+                y={innerH + 16}
+                fontSize={10}
+                textAnchor="middle"
+                className="fill-muted-foreground"
+              >
+                {label}
+              </text>
+            </g>
+          );
+        })}
       </g>
     </svg>
   );

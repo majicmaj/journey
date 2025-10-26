@@ -1,21 +1,6 @@
 {
+  "extends": ["stylelint-config-tailwindcss"],
   "rules": {
-    "at-rule-no-unknown": [
-      true,
-      {
-        "ignoreAtRules": [
-          "tailwind",
-          "layer",
-          "apply",
-          "variants",
-          "responsive",
-          "screen",
-          "theme",
-          "custom-variant"
-        ]
-      }
-    ]
+    "at-rule-no-unknown": null
   }
 }
-
-
