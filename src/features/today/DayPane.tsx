@@ -335,7 +335,7 @@ function DayPane({
       {/* Header toggle moved to Today.tsx */}
       <Progress
         key={dayKey}
-        className="w-full my-2 sm:w-64 p"
+        className="w-full my-2 p"
         value={summary?.totalScore ?? 0}
       />
 
