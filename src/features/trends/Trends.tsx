@@ -778,10 +778,6 @@ export default function Trends() {
           </ResponsiveContainer>
         </div>
       )}
-
-      <div className="text-sm opacity-70">
-        Scores are daily weighted completion (0–100).
-      </div>
     </div>
   );
 }
