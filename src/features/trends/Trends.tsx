@@ -156,6 +156,10 @@ export default function Trends() {
   const [quantityScope, setQuantityScope] =
     useState<QuantityScope>("per-habit");
   const [blocksLayout, setBlocksLayout] = useState<BlocksLayout>("by-day");
+  const [quantityChartType, setQuantityChartType] = useState<
+    "line" | "stacked"
+  >("line");
+  const [hourView, setHourView] = useState<"flat" | "clock">("flat");
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -674,57 +678,118 @@ export default function Trends() {
                 </SelectContent>
               </Select>
             </div>
+            <span className="opacity-70 text-sm">Type</span>
+            <div className="pixel-frame">
+              <Select
+                value={quantityChartType}
+                onValueChange={(v: "line" | "stacked") =>
+                  setQuantityChartType(v)
+                }
+              >
+                <SelectTrigger className="w-[160px] bg-card">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="line">Line</SelectItem>
+                  <SelectItem value="stacked">Stacked bars</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <Fullscreen
-            affordance={({ open }) => <FullScreenButton onClick={open} />}
-          >
-            {({ close }) => (
-              <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer height="fill" className="h-full">
-                  {(vw, vh) => (
-                    <LineChart
-                      width={vw}
-                      height={vh}
-                      series={
-                        quantityScope === "aggregated"
-                          ? quantityAggregatedSeries
-                          : quantityOverlaySeries
-                      }
-                      compactXAxis={true}
-                    />
-                  )}
-                </ResponsiveContainer>
-                <div className="absolute -top-6 -right-6 translate-x-1/2">
-                  <button
-                    className="pixel-frame px-2 py-1 bg-card"
-                    onClick={close}
-                  >
-                    Close
-                  </button>
-                </div>
-              </PanZoom>
-            )}
-          </Fullscreen>
+          {quantityChartType === "line" ? (
+            <>
+              <Fullscreen
+                affordance={({ open }) => <FullScreenButton onClick={open} />}
+              >
+                {({ close }) => (
+                  <PanZoom className="w-full h-full bg-background">
+                    <ResponsiveContainer height="fill" className="h-full">
+                      {(vw, vh) => (
+                        <LineChart
+                          width={vw}
+                          height={vh}
+                          series={
+                            quantityScope === "aggregated"
+                              ? quantityAggregatedSeries
+                              : quantityOverlaySeries
+                          }
+                          compactXAxis={true}
+                        />
+                      )}
+                    </ResponsiveContainer>
+                    <div className="absolute -top-6 -right-6 translate-x-1/2">
+                      <button
+                        className="pixel-frame px-2 py-1 bg-card"
+                        onClick={close}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </PanZoom>
+                )}
+              </Fullscreen>
 
-          <ResponsiveContainer
-            height={(w) => Math.max(260, Math.floor(w * 0.4))}
-          >
-            {(vw, vh) => (
-              <LineChart
-                width={vw}
-                height={vh}
-                series={
-                  quantityScope === "aggregated"
-                    ? quantityAggregatedSeries
-                    : quantityOverlaySeries
-                }
-                compactXAxis={true}
-              />
-            )}
-          </ResponsiveContainer>
+              <ResponsiveContainer
+                height={(w) => Math.max(260, Math.floor(w * 0.4))}
+              >
+                {(vw, vh) => (
+                  <LineChart
+                    width={vw}
+                    height={vh}
+                    series={
+                      quantityScope === "aggregated"
+                        ? quantityAggregatedSeries
+                        : quantityOverlaySeries
+                    }
+                    compactXAxis={true}
+                  />
+                )}
+              </ResponsiveContainer>
+            </>
+          ) : (
+            <>
+              <Fullscreen
+                affordance={({ open }) => <FullScreenButton onClick={open} />}
+              >
+                {({ close }) => (
+                  <PanZoom className="w-full h-full bg-background">
+                    <ResponsiveContainer height="fill" className="h-full">
+                      {(vw, vh) => (
+                        <StackedBarChart
+                          width={vw}
+                          height={vh}
+                          data={quantityStacked}
+                        />
+                      )}
+                    </ResponsiveContainer>
+                    <div className="absolute -top-6 -right-6 translate-x-1/2">
+                      <button
+                        className="pixel-frame px-2 py-1 bg-card"
+                        onClick={close}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </PanZoom>
+                )}
+              </Fullscreen>
 
-          <div className="mt-4">
+              <ResponsiveContainer
+                height={(w) => Math.max(200, Math.floor(w * 0.3))}
+              >
+                {(vw, vh) => (
+                  <StackedBarChart
+                    width={vw}
+                    height={vh}
+                    data={quantityStacked}
+                  />
+                )}
+              </ResponsiveContainer>
+            </>
+          )}
+
+          {/* <div className="mt-4">
             <Fullscreen
               affordance={({ open }) => <FullScreenButton onClick={open} />}
             >
@@ -762,7 +827,7 @@ export default function Trends() {
                 />
               )}
             </ResponsiveContainer>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -836,13 +901,26 @@ export default function Trends() {
       {/* Hourly heat view */}
       {view === "hours" && (
         <div className="pixel-frame bg-card p-3">
-          <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-start">
-            <span className="opacity-70 text-sm">Hourly visuals</span>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="opacity-70 text-sm">Display</span>
+            <div className="pixel-frame">
+              <Select
+                value={hourView}
+                onValueChange={(v: "flat" | "clock") => setHourView(v)}
+              >
+                <SelectTrigger className="w-[160px] bg-card">
+                  <SelectValue placeholder="Display" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="flat">Flat heatmap</SelectItem>
+                  <SelectItem value="clock">Clock heatmap</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Row: matrix + clock side-by-side on large screens */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
+          {hourView === "flat" ? (
+            <>
               <Fullscreen
                 affordance={({ open }) => <FullScreenButton onClick={open} />}
               >
@@ -890,9 +968,9 @@ export default function Trends() {
                   />
                 )}
               </ResponsiveContainer>
-            </div>
-
-            <div>
+            </>
+          ) : (
+            <>
               <Fullscreen
                 affordance={({ open }) => <FullScreenButton onClick={open} />}
               >
@@ -926,8 +1004,8 @@ export default function Trends() {
                   <ClockHeatmap width={vw} height={vh} values={hourlyBinsPct} />
                 )}
               </ResponsiveContainer>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       )}
 

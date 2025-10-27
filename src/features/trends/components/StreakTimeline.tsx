@@ -432,7 +432,7 @@ export default function StreakTimeline({
           </div>
           <div className="flex items-center gap-1">
             <FireIcon className="size-4 text-chart-1" />
-            Streak: {tip.seg.start} → {tip.seg.end}
+            {tip.seg.start} → {tip.seg.end}
           </div>
           <div className="opacity-80">
             {tip.len} day{tip.len === 1 ? "" : "s"}
