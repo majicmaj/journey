@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 function polarToCartesian(cx: number, cy: number, r: number, angleRad: number) {
   return {
@@ -59,10 +59,7 @@ export default function ClockHeatmap({
   const gap = (2 * Math.PI) / 360; // ~1 degree
 
   const hour = pinnedHour ?? hoverHour;
-  const pctAtHour =
-    hour != null
-      ? Math.round(Math.max(0, Math.min(100, values[hour] ?? 0)))
-      : null;
+  const maxVal = useMemo(() => Math.max(0, ...values), [values]);
 
   return (
     <svg
@@ -86,7 +83,9 @@ export default function ClockHeatmap({
         const rawEnd = rawStart + step;
         const start = rawStart + gap / 2;
         const end = rawEnd - gap / 2;
-        const fill = colorForValue("--chart-1", values[h] ?? 0);
+        const v = values[h] ?? 0;
+        const t = maxVal <= 0 ? 0 : (v / maxVal) * 100;
+        const fill = colorForValue("--chart-1", t);
         const d = arcPath(cx, cy, innerR, outerR, start, end);
         const isActive = (pinnedHour ?? hoverHour) === h;
         return (
@@ -158,7 +157,9 @@ export default function ClockHeatmap({
           fill="var(--muted-foreground)"
           fontSize={12}
         >
-          {hour != null ? `${pctAtHour}%` : "avg per hour"}
+          {hour != null && maxVal > 0
+            ? `${values[hour].toFixed(0) ?? 0} (max ${maxVal})`
+            : "avg per hour"}
         </text>
       </g>
 

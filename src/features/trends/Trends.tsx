@@ -1004,36 +1004,40 @@ export default function Trends() {
       {/* Hourly heat view */}
       {view === "hours" && (
         <div className="pixel-frame bg-card p-3">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="opacity-70 text-sm">Display</span>
-            <div className="pixel-frame">
-              <Select
-                value={hourView}
-                onValueChange={(v: "flat" | "clock") => setHourView(v)}
-              >
-                <SelectTrigger className="w-[160px] bg-card">
-                  <SelectValue placeholder="Display" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="flat">Flat heatmap</SelectItem>
-                  <SelectItem value="clock">Clock heatmap</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="mb-3 flex sm:items-center gap-2 flex-col sm:flex-row">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="opacity-70 text-sm">Display</span>
+              <div className="pixel-frame">
+                <Select
+                  value={hourView}
+                  onValueChange={(v: "flat" | "clock") => setHourView(v)}
+                >
+                  <SelectTrigger className="w-[160px] bg-card">
+                    <SelectValue placeholder="Display" />
+                  </SelectTrigger>
+                  <SelectContent className="pixel-frame">
+                    <SelectItem value="flat">Flat heatmap</SelectItem>
+                    <SelectItem value="clock">Clock heatmap</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <span className="opacity-70 text-sm">Metric</span>
-            <div className="pixel-frame">
-              <Select
-                value={hourMetric}
-                onValueChange={(v: "time" | "quantity") => setHourMetric(v)}
-              >
-                <SelectTrigger className="w-[160px] bg-card">
-                  <SelectValue placeholder="Metric" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="time">Time coverage</SelectItem>
-                  <SelectItem value="quantity">Quantity</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="opacity-70 text-sm">Metric</span>
+              <div className="pixel-frame">
+                <Select
+                  value={hourMetric}
+                  onValueChange={(v: "time" | "quantity") => setHourMetric(v)}
+                >
+                  <SelectTrigger className="w-[160px] bg-card">
+                    <SelectValue placeholder="Metric" />
+                  </SelectTrigger>
+                  <SelectContent className="pixel-frame">
+                    <SelectItem value="time">Time coverage</SelectItem>
+                    <SelectItem value="quantity">Quantity</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

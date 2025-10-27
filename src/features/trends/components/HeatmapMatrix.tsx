@@ -31,6 +31,9 @@ type HeatmapProps = {
 
   /** For “today” marker/highlight; default: auto-detect via today’s ISO date if available */
   todayKey?: string;
+
+  /** Optional formatter for tooltip numeric value (default shows percentage) */
+  formatValue?: (pct: number) => string;
 };
 
 export default function HeatmapMatrix({
@@ -48,6 +51,7 @@ export default function HeatmapMatrix({
   // showGrid = true,
   onCellClick,
   todayKey,
+  formatValue,
 }: HeatmapProps) {
   const padding = { top: 16, right: 12, bottom: 28, left: 28 };
   const innerW = Math.max(1, width - padding.left - padding.right);
@@ -240,7 +244,9 @@ export default function HeatmapMatrix({
                 {iso && (
                   <div className="opacity-80 mb-0.5">{labelForCol(c)}</div>
                 )}
-                <div className="opacity-90">{v}%</div>
+                <div className="opacity-90">
+                  {formatValue ? formatValue(v) : `${v}%`}
+                </div>
               </>
             );
           })()}

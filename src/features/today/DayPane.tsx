@@ -312,7 +312,7 @@ function DayPane({
       {/* Edit dialog */}
       {editingId ? (
         <Dialog open={true} onOpenChange={(o) => !o && setEditingId(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit habit</DialogTitle>
             </DialogHeader>
@@ -336,7 +336,7 @@ function DayPane({
       {/* Log dialog */}
       {loggingId ? (
         <Dialog open={true} onOpenChange={(o) => !o && setLoggingId(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>Log entry</DialogTitle>
               <DialogDescription>
