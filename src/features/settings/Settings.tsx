@@ -36,6 +36,30 @@ export default function Settings() {
   const qc = useQueryClient();
   if (!data) return null;
 
+  function parseOklch(
+    input: string
+  ): { l: number; c: number; h: number } | null {
+    const s = (input || "").trim();
+    if (!s.toLowerCase().startsWith("oklch(")) return null;
+    const inner = s.slice(s.indexOf("(") + 1, s.lastIndexOf(")"));
+    const parts = inner
+      .split(/[\s,]+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    if (parts.length < 3) return null;
+    const l = Number(parts[0]);
+    const c = Number(parts[1]);
+    // hue may include deg, turn, rad; we only expect numbers here
+    const hRaw = parts[2].replace(/deg|grad|rad|turn/i, "");
+    const h = Number(hRaw);
+    if ([l, c, h].some((n) => Number.isNaN(n))) return null;
+    return {
+      l: Math.max(0, Math.min(1, l)),
+      c: Math.max(0, Math.min(1, c)),
+      h: ((h % 360) + 360) % 360,
+    };
+  }
+
   function generateOKLCHGrid(): string[] {
     const lightness = [0.95, 0.85, 0.75]; // 3 rows
     const hues = [0, 30, 60, 120, 180, 220, 260, 300]; // 8 cols
@@ -95,12 +119,27 @@ export default function Settings() {
     const [h, setH] = useState(220);
     const oklchValue = `oklch(${l} ${c} ${h})`;
 
+    const [open, setOpen] = useState(false);
     return (
       <div className="flex sm:items-center flex-col sm:flex-row gap-3">
         <label className="w-40 text-sm" htmlFor={`theme-edit-${keyName}`}>
           {label}
         </label>
-        <Dialog>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (o) {
+              const src = (value || computed || "").toString();
+              const parsed = parseOklch(src);
+              if (parsed) {
+                setL(parsed.l);
+                setC(parsed.c);
+                setH(parsed.h);
+              }
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <button
               id={`theme-edit-${keyName}`}
@@ -360,12 +399,27 @@ export default function Settings() {
     const [h, setH] = useState(220);
     const oklchValue = `oklch(${l} ${c} ${h})`;
 
+    const [open, setOpen] = useState(false);
     return (
       <div className="flex sm:items-center flex-col sm:flex-row gap-3">
         <label className="w-40 text-sm" htmlFor={`theme-${keyName}`}>
           {label}
         </label>
-        <Dialog>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (o) {
+              const src = (value || computed || "").toString();
+              const parsed = parseOklch(src);
+              if (parsed) {
+                setL(parsed.l);
+                setC(parsed.c);
+                setH(parsed.h);
+              }
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <button
               id={`theme-${keyName}`}
