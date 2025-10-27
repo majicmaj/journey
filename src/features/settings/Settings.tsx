@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 
 export default function Settings() {
   const { data } = useSettings();
@@ -70,6 +71,9 @@ export default function Settings() {
 
     const baseGrid = useMemo(() => generateOKLCHGrid(), []);
     const preset = THEME_PRESETS.find((p) => p.id === (presetId ?? "default"));
+    const baseline = dark
+      ? preset?.varsDark[keyName]
+      : preset?.varsLight[keyName];
     const presetValues = useMemo(
       () =>
         Array.from(
@@ -120,7 +124,9 @@ export default function Settings() {
                     className="pixel-frame size-8"
                     style={{ background: v }}
                     title={v}
-                    onClick={() => onChange(v)}
+                    onClick={() =>
+                      onChange(baseline && v === baseline ? undefined : v)
+                    }
                   />
                 </DialogClose>
               ))}
@@ -178,10 +184,23 @@ export default function Settings() {
                   placeholder={computed || `CSS color, oklch(...) or #hex`}
                   onBlur={(e) => {
                     const v = e.target.value.trim();
-                    onChange(v || undefined);
+                    const next = v || undefined;
+                    if (next && baseline && next === baseline)
+                      onChange(undefined);
+                    else onChange(next);
                   }}
                 />
-                <Button onClick={() => onChange(oklchValue)}>Use color</Button>
+                <Button
+                  onClick={() =>
+                    onChange(
+                      baseline && oklchValue === baseline
+                        ? undefined
+                        : oklchValue
+                    )
+                  }
+                >
+                  Use color
+                </Button>
                 <Button onClick={() => onChange(undefined)}>Reset</Button>
               </div>
             </div>
@@ -372,7 +391,16 @@ export default function Settings() {
                     title={v}
                     onClick={async () => {
                       const nextVars = { ...(settings.themeVars ?? {}) };
-                      nextVars[keyName] = v;
+                      const preset = THEME_PRESETS.find(
+                        (p) => p.id === (settings.themePreset ?? "default")
+                      );
+                      const baseline = (
+                        settings.themeDark
+                          ? preset?.varsDark[keyName]
+                          : preset?.varsLight[keyName]
+                      ) as string | undefined;
+                      if (baseline && v === baseline) delete nextVars[keyName];
+                      else nextVars[keyName] = v;
                       const next: AppSettings = {
                         ...settings,
                         themeVars: nextVars,
@@ -439,8 +467,18 @@ export default function Settings() {
                   onBlur={async (e) => {
                     const nextVars = { ...(settings.themeVars ?? {}) };
                     const v = e.target.value.trim();
-                    if (v) nextVars[keyName] = v;
-                    else delete nextVars[keyName];
+                    if (v) {
+                      const preset = THEME_PRESETS.find(
+                        (p) => p.id === (settings.themePreset ?? "default")
+                      );
+                      const baseline = (
+                        settings.themeDark
+                          ? preset?.varsDark[keyName]
+                          : preset?.varsLight[keyName]
+                      ) as string | undefined;
+                      if (baseline && v === baseline) delete nextVars[keyName];
+                      else nextVars[keyName] = v;
+                    } else delete nextVars[keyName];
                     const next: AppSettings = {
                       ...settings,
                       themeVars: nextVars,
@@ -453,7 +491,17 @@ export default function Settings() {
                 <Button
                   onClick={async () => {
                     const nextVars = { ...(settings.themeVars ?? {}) };
-                    nextVars[keyName] = oklchValue;
+                    const preset = THEME_PRESETS.find(
+                      (p) => p.id === (settings.themePreset ?? "default")
+                    );
+                    const baseline = (
+                      settings.themeDark
+                        ? preset?.varsDark[keyName]
+                        : preset?.varsLight[keyName]
+                    ) as string | undefined;
+                    if (baseline && oklchValue === baseline)
+                      delete nextVars[keyName];
+                    else nextVars[keyName] = oklchValue;
                     const next: AppSettings = {
                       ...settings,
                       themeVars: nextVars,
@@ -728,10 +776,14 @@ export default function Settings() {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button
-                    disabled={Object.keys(data.themeVars ?? {}).length === 0}
+                    disabled={
+                      Object.keys(data.themeVars ?? {}).length === 0 &&
+                      Number(data.pixelFrameWidth ?? 4) === 4
+                    }
                     title={
-                      Object.keys(data.themeVars ?? {}).length === 0
-                        ? "Customize some colors to enable"
+                      Object.keys(data.themeVars ?? {}).length === 0 &&
+                      Number(data.pixelFrameWidth ?? 4) === 4
+                        ? "Customize theme or change pixel frame width to enable"
                         : undefined
                     }
                   >
@@ -754,7 +806,17 @@ export default function Settings() {
                       )?.name ?? "Default"}
                     </div>
                     <div className="text-sm">Customized variables:</div>
-                    <div className="grid grid-cols-1 gap-2 max-h-60 overflow-auto pr-1">
+                    <div className="grid grid-cols-1 gap-4 py-2 max-h-60 overflow-auto pr-1">
+                      {Number(data.pixelFrameWidth ?? 4) !== 4 && (
+                        <div className="flex items-center gap-3">
+                          <span className="w-40 text-xs">
+                            pixel-frame-width
+                          </span>
+                          <span className="text-xs truncate">
+                            {Number(data.pixelFrameWidth ?? 4)}px
+                          </span>
+                        </div>
+                      )}
                       {Object.entries(data.themeVars ?? {}).map(([k, v]) => (
                         <div key={k} className="flex items-center gap-3">
                           <span className="w-40 text-xs">{k}</span>
@@ -777,34 +839,37 @@ export default function Settings() {
                       </div>
                     </div>
                     <div className="flex justify-end">
-                      <Button
-                        onClick={async () => {
-                          const input = document.getElementById(
-                            "save-theme-name"
-                          ) as HTMLInputElement | null;
-                          const name = input?.value?.trim() ?? "";
-                          if (!name) return;
-                          const theme = {
-                            id:
-                              crypto.randomUUID?.() ??
-                              Math.random().toString(36).slice(2),
-                            name,
-                            dark: Boolean(data.themeDark),
-                            presetId: data.themePreset,
-                            vars: data.themeVars ?? {},
-                          };
-                          const next: AppSettings = {
-                            ...data,
-                            savedThemes: [...(data.savedThemes ?? []), theme],
-                          };
-                          await db.settings.put(next);
-                          applyTheme(next);
-                          if (input) input.value = "";
-                          qc.invalidateQueries({ queryKey: ["settings"] });
-                        }}
-                      >
-                        Save
-                      </Button>
+                      <DialogClose asChild>
+                        <Button
+                          onClick={async () => {
+                            const input = document.getElementById(
+                              "save-theme-name"
+                            ) as HTMLInputElement | null;
+                            const name = input?.value?.trim() ?? "";
+                            if (!name) return;
+                            const theme = {
+                              id:
+                                crypto.randomUUID?.() ??
+                                Math.random().toString(36).slice(2),
+                              name,
+                              dark: Boolean(data.themeDark),
+                              presetId: data.themePreset,
+                              vars: data.themeVars ?? {},
+                            };
+                            const next: AppSettings = {
+                              ...data,
+                              savedThemes: [...(data.savedThemes ?? []), theme],
+                            };
+                            await db.settings.put(next);
+                            applyTheme(next);
+                            if (input) input.value = "";
+                            qc.invalidateQueries({ queryKey: ["settings"] });
+                            toast.success("Theme saved");
+                          }}
+                        >
+                          Save
+                        </Button>
+                      </DialogClose>
                     </div>
                   </div>
                 </DialogContent>
@@ -828,25 +893,46 @@ export default function Settings() {
 
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
           <span className="text-sm">Danger zone</span>
-          <Button
-            variant="destructive"
-            onClick={async () => {
-              const next: AppSettings = {
-                ...data,
-                themePreset: "default",
-                themeDark: false,
-                themeVars: {},
-                pixelFrameEnabled: true,
-                pixelFrameWidth: 4,
-                pixelFontEnabled: true,
-              };
-              await db.settings.put(next);
-              applyTheme(next);
-              qc.invalidateQueries({ queryKey: ["settings"] });
-            }}
-          >
-            Reset theme to defaults
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="destructive">Reset theme to defaults</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reset theme to defaults?</DialogTitle>
+                <DialogDescription>
+                  This will revert the theme preset, colors, pixel frame and
+                  font settings to their defaults.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <DialogClose asChild>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      const next: AppSettings = {
+                        ...data,
+                        themePreset: "default",
+                        themeDark: false,
+                        themeVars: {},
+                        pixelFrameEnabled: true,
+                        pixelFrameWidth: 4,
+                        pixelFontEnabled: true,
+                      };
+                      await db.settings.put(next);
+                      applyTheme(next);
+                      qc.invalidateQueries({ queryKey: ["settings"] });
+                    }}
+                  >
+                    Confirm Reset
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
