@@ -38,8 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// removed unused imports after preserving history on type change
-import { toast } from "sonner";
+import { meetsCompletionThresholds } from "./logic";
 import type { DaySortKey } from "./Today";
 
 function DayPane({
@@ -47,7 +46,6 @@ function DayPane({
   headerExpanded,
   sortKey,
   sortDir,
-  filterKind,
   filterCompletion,
   filterTags,
 }: {
@@ -55,7 +53,6 @@ function DayPane({
   headerExpanded: boolean;
   sortKey: DaySortKey;
   sortDir: "asc" | "desc";
-  filterKind: "all" | "boolean" | "quantified" | "time";
   filterCompletion: "all" | "completed" | "incomplete";
   filterTags: string[];
 }) {
@@ -65,6 +62,7 @@ function DayPane({
   const { create, update } = useHabits();
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loggingId, setLoggingId] = useState<string | null>(null);
   // Range entries for streak calculation
   const dayStart = settings.data?.dayStart ?? "00:00";
   const fromKey = useMemo(() => {
@@ -76,39 +74,8 @@ function DayPane({
 
   // Sorting and filtering are controlled by parent (Today.tsx)
 
-  function meetsCompletionThresholds(
-    h: Habit,
-    value: number | null | undefined
-  ): boolean {
-    if (h.kind !== "quantified" && h.kind !== "time") return false;
-
-    // Only accept finite numbers
-    const v =
-      typeof value === "number" && Number.isFinite(value) ? value : null;
-    if (v == null) return false;
-
-    // If no explicit min, use target as a minimum-style goal.
-    const min = h.min ?? h.target ?? null;
-    const max = h.max ?? null;
-
-    // Both bounds present -> inclusive range check.
-    if (min != null && max != null) {
-      // Invalid config (min > max) -> treat as not met.
-      if (min > max) return false;
-      return v >= min && v <= max;
-    }
-
-    if (min != null) return v >= min;
-    if (max != null) return v <= max;
-
-    // No thresholds present
-    return true;
-  }
-
-  function requiresValueForCompletion(h: Habit): boolean {
-    if (h.kind !== "quantified" && h.kind !== "time") return false;
-    return h.min != null || h.max != null || h.target != null;
-  }
+  // Inline helper logic moved to features/today/logic for unified model
+  // Kept here only for local computations via imports when needed.
 
   const processed = useMemo(() => {
     const habits = habitsQ.data ?? [];
@@ -124,27 +91,22 @@ function DayPane({
       completed: boolean;
       value: number | boolean | null;
       contribution: number;
-      effectiveKind: Habit["kind"]; // entry.kindAtEntry || habit.kind
     };
 
     let rows: Row[] = habits.map((h) => {
       const entry = entryByHabitId.get(h.id);
       const s = summaryByHabitId.get(h.id);
-      const effectiveKind = (entry?.kindAtEntry ?? h.kind) as Habit["kind"];
       return {
         habit: h,
         entry,
         completed: s?.completed ?? entry?.completed ?? false,
-        value: entry?.value ?? null,
+        value: s?.value ?? entry?.value ?? null,
         contribution: s?.contribution ?? 0,
-        effectiveKind,
       };
     });
 
     // Filter
-    if (filterKind !== "all") {
-      rows = rows.filter((r) => r.habit.kind === filterKind);
-    }
+    // Kind filter removed in unified model
     if (filterCompletion !== "all") {
       rows = rows.filter((r) =>
         filterCompletion === "completed" ? r.completed : !r.completed
@@ -215,7 +177,6 @@ function DayPane({
     summary,
     sortKey,
     sortDir,
-    filterKind,
     filterCompletion,
     filterTags,
   ]);
@@ -334,80 +295,23 @@ function DayPane({
       />
 
       <section className="flex flex-col gap-3">
-        {processed.map(({ habit: h, entry, effectiveKind }) => {
+        {processed.map(({ habit: h, entry }) => {
           return (
             <HabitRow
               key={`${h.id}-${dayKey}`}
               habit={h}
               entry={entry}
-              effectiveKind={effectiveKind}
               streak={streakByHabitId.get(h.id) ?? 0}
               coldStreak={coldStreakByHabitId.get(h.id) ?? 0}
               isNew={doneEverByHabitId.get(h.id) === false}
-              inlineValueInput={true}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
-                const isInput =
-                  effectiveKind === "quantified" || effectiveKind === "time";
-                if (nextCompleted && isInput) {
-                  const requires = requiresValueForCompletion(h);
-                  const currentValue = entry?.value ?? null;
-                  const numericCurrentValue =
-                    typeof currentValue === "number" ? currentValue : null;
-                  if (requires) {
-                    // Must have a value and meet thresholds to complete
-                    if (meetsCompletionThresholds(h, numericCurrentValue)) {
-                      upsert.mutate({
-                        habitId: h.id,
-                        date: dayKey,
-                        completed: true,
-                        value: numericCurrentValue,
-                        kindAtEntry: entry?.kindAtEntry ?? h.kind,
-                      });
-                    } else {
-                      const hasValue = currentValue != null;
-                      // Build helpful message based on thresholds
-                      const min = h.min ?? h.target ?? null;
-                      const max = h.max ?? null;
-                      let message = "";
-                      if (!hasValue) {
-                        message = "Enter a value first to complete this habit.";
-                      } else if (min != null && max != null) {
-                        message = `Value must be between ${min} and ${max}.`;
-                      } else if (min != null) {
-                        message = `Value must be at least ${min}.`;
-                      } else if (max != null) {
-                        message = `Value must be at most ${max}.`;
-                      } else {
-                        message = "Enter a valid value to complete.";
-                      }
-                      toast.error(message);
-                    }
-                    // If value is missing or doesn't meet thresholds, do nothing
-                    return;
-                  }
-                  // No thresholds: allow convenience set for time kind
-                  if (effectiveKind === "time" && currentValue == null) {
-                    const now = new Date();
-                    const minutes = now.getHours() * 60 + now.getMinutes();
-                    upsert.mutate({
-                      habitId: h.id,
-                      date: dayKey,
-                      completed: true,
-                      value: minutes,
-                      kindAtEntry: entry?.kindAtEntry ?? h.kind,
-                    });
-                    return;
-                  }
-                }
                 // Generic toggle path (including marking incomplete)
                 upsert.mutate({
                   habitId: h.id,
                   date: dayKey,
                   // Preserve any existing value when toggling completion state
                   value:
-                    (effectiveKind === "time" ||
-                      effectiveKind === "quantified") &&
                     typeof entry?.value === "number"
                       ? (entry?.value as number)
                       : null,
@@ -415,19 +319,7 @@ function DayPane({
                   kindAtEntry: entry?.kindAtEntry ?? h.kind,
                 });
               }}
-              onSetValue={(v) => {
-                const requires = requiresValueForCompletion(h);
-                const shouldComplete = requires
-                  ? meetsCompletionThresholds(h, v)
-                  : entry?.completed ?? false;
-                upsert.mutate({
-                  habitId: h.id,
-                  date: dayKey,
-                  value: v,
-                  completed: shouldComplete,
-                  kindAtEntry: entry?.kindAtEntry ?? h.kind,
-                });
-              }}
+              onLog={() => setLoggingId(h.id)}
               onEdit={() => setEditingId(h.id)}
             />
           );
@@ -458,6 +350,45 @@ function DayPane({
         </Dialog>
       ) : null}
 
+      {/* Log dialog */}
+      {loggingId ? (
+        <Dialog open={true} onOpenChange={(o) => !o && setLoggingId(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Log entry</DialogTitle>
+              <DialogDescription>
+                Add time and quantity for this habit
+              </DialogDescription>
+            </DialogHeader>
+            {(() => {
+              const h = (habitsQ.data ?? []).find((x) => x.id === loggingId);
+              const e = (entriesQ.data ?? []).find(
+                (x) => x.habitId === loggingId
+              );
+              if (!h) return null;
+              return (
+                <LogDialogInner
+                  habit={h}
+                  entry={e}
+                  onConfirm={(payload) => {
+                    const completed = meetsCompletionThresholds(h, payload);
+                    upsert.mutate({
+                      habitId: h.id,
+                      date: dayKey,
+                      completed,
+                      quantity: payload.quantity ?? null,
+                      startMinutes: payload.startMinutes ?? null,
+                      endMinutes: payload.endMinutes ?? null,
+                    });
+                    setLoggingId(null);
+                  }}
+                />
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
       <div className="border-2 border-border w-full h-px my-2" />
 
       <footer className="flex gap-3">
@@ -478,7 +409,7 @@ function DayPane({
               id: crypto.randomUUID(),
               title: t,
               weight: 1,
-              kind: "boolean",
+              scoreMode: "both",
               createdAt: new Date().toISOString(),
             };
             create.mutate(habit);
@@ -519,27 +450,114 @@ function Progress({ className, value }: { className: string; value: number }) {
   );
 }
 
+function LogDialogInner({
+  habit,
+  entry,
+  onConfirm,
+}: {
+  habit: Habit;
+  entry: DailyEntry | undefined;
+  onConfirm: (payload: {
+    quantity: number | null;
+    startMinutes: number | null;
+    endMinutes: number | null;
+  }) => void;
+}) {
+  const toTime = (m: number | null | undefined) =>
+    typeof m === "number"
+      ? `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(
+          m % 60
+        ).padStart(2, "0")}`
+      : "";
+  const [start, setStart] = useState<string>(
+    toTime(entry?.startMinutes ?? null)
+  );
+  const [end, setEnd] = useState<string>(toTime(entry?.endMinutes ?? null));
+  const [quantity, setQuantity] = useState<string>(
+    typeof entry?.quantity === "number" ? String(entry?.quantity) : ""
+  );
+
+  const parseTime = (s: string): number | null => {
+    const m = s.match(/^\d{1,2}:\d{2}$/);
+    if (!m) return null;
+    const [hh, mm] = s.split(":").map((x) => Number(x));
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+    return hh * 60 + mm;
+  };
+
+  return (
+    <div className="grid gap-3">
+      <label className="flex items-center gap-3">
+        <span className="w-28 text-sm">Start</span>
+        <div className="pixel-frame w-full">
+          <Input
+            type="time"
+            className="bg-background"
+            value={start}
+            onChange={(ev) => setStart(ev.target.value)}
+          />
+        </div>
+      </label>
+      <label className="flex items-center gap-3">
+        <span className="w-28 text-sm">End</span>
+        <div className="pixel-frame w-full">
+          <Input
+            type="time"
+            className="bg-background"
+            value={end}
+            onChange={(ev) => setEnd(ev.target.value)}
+          />
+        </div>
+      </label>
+      <label className="flex items-center gap-3">
+        <span className="w-28 text-sm">Quantity</span>
+        <div className="pixel-frame w-full relative">
+          <Input
+            type="number"
+            className="bg-background pr-14"
+            value={quantity}
+            onChange={(ev) => setQuantity(ev.target.value)}
+          />
+          <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
+            {habit.quantityUnit ?? ""}
+          </div>
+        </div>
+      </label>
+      <DialogFooter>
+        <Button
+          onClick={() => {
+            const payload = {
+              quantity: quantity.trim() === "" ? null : Number(quantity),
+              startMinutes: parseTime(start),
+              endMinutes: parseTime(end),
+            } as const;
+            onConfirm(payload);
+          }}
+        >
+          Save
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
 function HabitRow({
   habit,
   entry,
-  effectiveKind,
   streak,
   coldStreak,
   isNew,
-  inlineValueInput,
   onToggle,
-  onSetValue,
+  onLog,
   onEdit,
 }: {
   habit: Habit;
   entry: DailyEntry | undefined;
-  effectiveKind: Habit["kind"];
   streak?: number;
   coldStreak?: number;
   isNew?: boolean;
-  inlineValueInput: boolean;
   onToggle: () => void;
-  onSetValue: (v: number | null) => void;
+  onLog: () => void;
   onEdit: () => void;
 }) {
   return (
@@ -576,87 +594,7 @@ function HabitRow({
           </div>
         </div>
         <div className="flex items-end gap-3">
-          {(effectiveKind === "quantified" || effectiveKind === "time") &&
-            inlineValueInput && (
-              <div className="relative w-32 pixel-frame">
-                <>
-                  <Input
-                    aria-label={`value-${habit.id}`}
-                    className="w-32 pr-12 bg-background"
-                    type={effectiveKind === "time" ? "time" : "number"}
-                    defaultValue={(() => {
-                      if (effectiveKind === "time") {
-                        const v =
-                          typeof entry?.value === "number" ? entry.value : null;
-                        return v != null
-                          ? `${String(Math.floor(v / 60)).padStart(
-                              2,
-                              "0"
-                            )}:${String(v % 60).padStart(2, "0")}`
-                          : "";
-                      }
-                      // quantified
-                      return typeof entry?.value === "number"
-                        ? entry.value
-                        : "";
-                    })()}
-                    onChange={(ev) => {
-                      const raw = ev.currentTarget.value.trim();
-                      if (effectiveKind === "time") {
-                        if (raw === "") {
-                          onSetValue(null);
-                          return;
-                        }
-                        // Save only when valid HH:MM
-                        const m = raw.match(/^\d{1,2}:\d{2}$/);
-                        if (m) {
-                          const [hhStr, mmStr] = raw.split(":");
-                          const hh = Number(hhStr);
-                          const mm = Number(mmStr);
-                          if (
-                            Number.isFinite(hh) &&
-                            Number.isFinite(mm) &&
-                            mm >= 0 &&
-                            mm <= 59
-                          ) {
-                            onSetValue(hh * 60 + mm);
-                          }
-                        }
-                      } else {
-                        // quantified number
-                        if (raw === "") {
-                          onSetValue(null);
-                          return;
-                        }
-                        const parsed = Number(raw);
-                        if (Number.isFinite(parsed)) {
-                          onSetValue(parsed);
-                        }
-                      }
-                    }}
-                    onBlur={(ev) => {
-                      const raw = ev.currentTarget.value.trim();
-                      if (effectiveKind === "time") {
-                        // Expect HH:MM, convert to minutes
-                        if (raw === "") onSetValue(null);
-                        else {
-                          const [hh, mm] = raw.split(":").map((s) => Number(s));
-                          const minutes =
-                            (Number.isFinite(hh) ? hh : 0) * 60 +
-                            (Number.isFinite(mm) ? mm : 0);
-                          onSetValue(minutes);
-                        }
-                      } else {
-                        onSetValue(raw === "" ? null : Number(raw));
-                      }
-                    }}
-                  />
-                  <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
-                    {effectiveKind === "time" ? "hh:mm" : habit.unit ?? ""}
-                  </div>
-                </>
-              </div>
-            )}
+          <Button onClick={onLog}>Log</Button>
           <Button aria-label="Edit habit" onClick={onEdit} size="icon-sm">
             <EditIcon className="size-6" />
           </Button>
@@ -679,7 +617,7 @@ function HabitEditorInline({
   const [weightInput, setWeightInput] = useState<string>(String(habit.weight));
   const { remove } = useHabits();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [kindConfirmOpen, setKindConfirmOpen] = useState(false);
+  // removed kind change flow in unified model
   return (
     <div className="mt-1 grid gap-3 grid-cols-1 sm:grid-cols-2">
       <label className="flex items-center gap-3 col-span-full sm:col-span-2">
@@ -718,188 +656,107 @@ function HabitEditorInline({
         </div>
       </label>
       <label className="flex items-center gap-3">
-        <span className="w-24 text-sm">Kind</span>
+        <span className="w-24 text-sm">Quantity min</span>
+        <div className="pixel-frame w-full">
+          <Input
+            type="number"
+            className="bg-background"
+            value={draft.minQuantity ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDraft({ ...draft, minQuantity: v === "" ? null : Number(v) });
+            }}
+          />
+        </div>
+      </label>
+      <label className="flex items-center gap-3">
+        <span className="w-24 text-sm">Quantity max</span>
+        <div className="pixel-frame w-full">
+          <Input
+            type="number"
+            className="bg-background"
+            value={draft.maxQuantity ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDraft({ ...draft, maxQuantity: v === "" ? null : Number(v) });
+            }}
+          />
+        </div>
+      </label>
+      <label className="flex items-center gap-3">
+        <span className="w-24 text-sm">Time min</span>
+        <div className="pixel-frame w-full">
+          <Input
+            type="time"
+            className="bg-background"
+            value={
+              typeof draft.minTimeMinutes === "number"
+                ? `${String(Math.floor(draft.minTimeMinutes / 60)).padStart(
+                    2,
+                    "0"
+                  )}:${String(draft.minTimeMinutes % 60).padStart(2, "0")}`
+                : ""
+            }
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (raw === "") setDraft({ ...draft, minTimeMinutes: null });
+              else {
+                const [hh, mm] = raw.split(":").map((s) => Number(s));
+                const minutes =
+                  (Number.isFinite(hh) ? hh : 0) * 60 +
+                  (Number.isFinite(mm) ? mm : 0);
+                setDraft({ ...draft, minTimeMinutes: minutes });
+              }
+            }}
+          />
+        </div>
+      </label>
+      <label className="flex items-center gap-3">
+        <span className="w-24 text-sm">Time max</span>
+        <div className="pixel-frame w-full">
+          <Input
+            type="time"
+            className="bg-background"
+            value={
+              typeof draft.maxTimeMinutes === "number"
+                ? `${String(Math.floor(draft.maxTimeMinutes / 60)).padStart(
+                    2,
+                    "0"
+                  )}:${String(draft.maxTimeMinutes % 60).padStart(2, "0")}`
+                : ""
+            }
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (raw === "") setDraft({ ...draft, maxTimeMinutes: null });
+              else {
+                const [hh, mm] = raw.split(":").map((s) => Number(s));
+                const minutes =
+                  (Number.isFinite(hh) ? hh : 0) * 60 +
+                  (Number.isFinite(mm) ? mm : 0);
+                setDraft({ ...draft, maxTimeMinutes: minutes });
+              }
+            }}
+          />
+        </div>
+      </label>
+      <label className="flex items-center gap-3">
+        <span className="w-24 text-sm">Score mode</span>
         <div className="pixel-frame w-full">
           <Select
-            value={draft.kind}
+            value={(draft.scoreMode ?? "both") as string}
             onValueChange={(value) =>
-              setDraft({ ...draft, kind: value as Habit["kind"] })
+              setDraft({ ...draft, scoreMode: value as Habit["scoreMode"] })
             }
           >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="pixel-frame">
-              <SelectItem value="boolean">Boolean</SelectItem>
-              <SelectItem value="quantified">Quantified</SelectItem>
+              <SelectItem value="quantity">Quantity</SelectItem>
               <SelectItem value="time">Time</SelectItem>
+              <SelectItem value="both">Both</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </label>
-      <label className="flex items-center gap-3">
-        <span
-          className={cn(
-            "w-24 text-sm",
-            (draft.kind === "boolean" || draft.kind === "time") && "opacity-50"
-          )}
-        >
-          Unit
-        </span>
-        <div className="pixel-frame w-full">
-          <Input
-            value={draft.unit ?? ""}
-            className="bg-background"
-            disabled={draft.kind === "boolean" || draft.kind === "time"}
-            onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
-          />
-        </div>
-      </label>
-      <label className="flex items-center gap-3">
-        <span
-          className={cn(
-            "w-24 text-sm",
-            draft.kind === "boolean" && "opacity-50"
-          )}
-        >
-          Target
-        </span>
-        <div className="pixel-frame w-full">
-          {draft.kind === "time" ? (
-            <Input
-              type="time"
-              className="bg-background"
-              value={
-                typeof draft.target === "number"
-                  ? `${String(Math.floor(draft.target / 60)).padStart(
-                      2,
-                      "0"
-                    )}:${String(draft.target % 60).padStart(2, "0")}`
-                  : ""
-              }
-              disabled={false}
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                if (raw === "") setDraft({ ...draft, target: null });
-                else {
-                  const [hh, mm] = raw.split(":").map((s) => Number(s));
-                  const minutes =
-                    (Number.isFinite(hh) ? hh : 0) * 60 +
-                    (Number.isFinite(mm) ? mm : 0);
-                  setDraft({ ...draft, target: minutes });
-                }
-              }}
-            />
-          ) : (
-            <Input
-              type="number"
-              className="bg-background"
-              value={draft.target ?? ""}
-              disabled={draft.kind === "boolean"}
-              onChange={(e) => {
-                const v = e.target.value;
-                setDraft({ ...draft, target: v === "" ? null : Number(v) });
-              }}
-            />
-          )}
-        </div>
-      </label>
-      <label className="flex items-center gap-3">
-        <span
-          className={cn(
-            "w-24 text-sm",
-            draft.kind === "boolean" && "opacity-50"
-          )}
-        >
-          Min
-        </span>
-        <div className="pixel-frame w-full">
-          {draft.kind === "time" ? (
-            <Input
-              type="time"
-              className="bg-background"
-              value={
-                typeof draft.min === "number"
-                  ? `${String(Math.floor(draft.min / 60)).padStart(
-                      2,
-                      "0"
-                    )}:${String(draft.min % 60).padStart(2, "0")}`
-                  : ""
-              }
-              disabled={false}
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                if (raw === "") setDraft({ ...draft, min: null });
-                else {
-                  const [hh, mm] = raw.split(":").map((s) => Number(s));
-                  const minutes =
-                    (Number.isFinite(hh) ? hh : 0) * 60 +
-                    (Number.isFinite(mm) ? mm : 0);
-                  setDraft({ ...draft, min: minutes });
-                }
-              }}
-            />
-          ) : (
-            <Input
-              type="number"
-              className="bg-background"
-              value={draft.min ?? ""}
-              disabled={draft.kind === "boolean"}
-              onChange={(e) => {
-                const v = e.target.value;
-                setDraft({ ...draft, min: v === "" ? null : Number(v) });
-              }}
-            />
-          )}
-        </div>
-      </label>
-      <label className="flex items-center gap-3">
-        <span
-          className={cn(
-            "w-24 text-sm",
-            draft.kind === "boolean" && "opacity-50"
-          )}
-        >
-          Max
-        </span>
-        <div className="pixel-frame w-full">
-          {draft.kind === "time" ? (
-            <Input
-              type="time"
-              className="bg-background"
-              value={
-                typeof draft.max === "number"
-                  ? `${String(Math.floor(draft.max / 60)).padStart(
-                      2,
-                      "0"
-                    )}:${String(draft.max % 60).padStart(2, "0")}`
-                  : ""
-              }
-              disabled={false}
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                if (raw === "") setDraft({ ...draft, max: null });
-                else {
-                  const [hh, mm] = raw.split(":").map((s) => Number(s));
-                  const minutes =
-                    (Number.isFinite(hh) ? hh : 0) * 60 +
-                    (Number.isFinite(mm) ? mm : 0);
-                  setDraft({ ...draft, max: minutes });
-                }
-              }}
-            />
-          ) : (
-            <Input
-              type="number"
-              className="bg-background"
-              value={draft.max ?? ""}
-              disabled={draft.kind === "boolean"}
-              onChange={(e) => {
-                const v = e.target.value;
-                setDraft({ ...draft, max: v === "" ? null : Number(v) });
-              }}
-            />
-          )}
         </div>
       </label>
 
@@ -920,6 +777,19 @@ function HabitEditorInline({
                 weight: Number.isFinite(parsed) ? parsed : 0,
               });
             }}
+          />
+        </div>
+      </label>
+
+      <label className="flex items-center gap-3">
+        <span className="w-24 text-sm">Unit</span>
+        <div className="pixel-frame w-full">
+          <Input
+            value={draft.quantityUnit ?? ""}
+            className="bg-background"
+            onChange={(e) =>
+              setDraft({ ...draft, quantityUnit: e.target.value })
+            }
           />
         </div>
       </label>
@@ -962,49 +832,17 @@ function HabitEditorInline({
         <div className="flex items-center gap-3">
           <Button
             onClick={async () => {
-              if (draft.kind !== habit.kind) {
-                setKindConfirmOpen(true);
-                return;
-              }
-              onSave(draft);
+              // Ensure scoreMode is set
+              onSave({
+                ...draft,
+                scoreMode: (draft.scoreMode ?? "both") as Habit["scoreMode"],
+              });
             }}
             size="icon"
           >
             <SaveIcon className="size-8" />
           </Button>
-
-          <Dialog open={kindConfirmOpen} onOpenChange={setKindConfirmOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Change type?</DialogTitle>
-                <DialogDescription>
-                  Changing the type preserves existing history. Old days will
-                  keep their original values and type; new logs will use the new
-                  type.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setDraft({ ...draft, kind: habit.kind });
-                    setKindConfirmOpen(false);
-                  }}
-                >
-                  Reset Type
-                </Button>
-                <Button
-                  onClick={async () => {
-                    // Preserve history; just save the new kind
-                    setKindConfirmOpen(false);
-                    onSave(draft);
-                  }}
-                >
-                  Confirm Change
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          {/* kind change dialog removed in unified model */}
         </div>
       </div>
     </div>

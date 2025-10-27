@@ -23,17 +23,18 @@ const NavButton = ({
 function App() {
   return (
     <div className="font-display max-h-svh overflow-y-auto min-h-svh flex flex-col gap-3">
-      {/* Desktop top nav */}
-      <nav className="hidden md:flex pixel-frame bg-card text-card-foreground p-3 gap-3 justify-center">
-        <NavButton to="/">Day</NavButton>
-        <NavButton to="/trends">Trends</NavButton>
-        <NavButton to="/settings">Settings</NavButton>
-      </nav>
-
-      <main className="flex-1 p-1overflow-y-auto pb-20 sm:pb-0">
+      <main className="flex-1 p-1overflow-y-auto pb-20">
         <Outlet />
       </main>
 
+      {/* Desktop top nav */}
+      <nav className="hidden md:flex bottom-0 fixed p-2 inset-x-0 text-card-foreground justify-center">
+        <div className="p-3 gap-3 flex justify-center pixel-frame bg-card w-full">
+          <NavButton to="/">Day</NavButton>
+          <NavButton to="/trends">Trends</NavButton>
+          <NavButton to="/settings">Settings</NavButton>
+        </div>
+      </nav>
       {/* Mobile bottom nav */}
       <MobileBottomNav />
     </div>

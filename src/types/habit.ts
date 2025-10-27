@@ -8,11 +8,22 @@ export interface Habit {
   color?: string;
   tags?: string[];
   weight: number; // default 1.0, [0.1 .. 5.0]
-  kind: "boolean" | "quantified" | "time";
-  unit?: Unit;
-  target?: number | null;
-  min?: number | null;
-  max?: number | null;
+  // Unified model: every habit can track quantity and time
+  quantityUnit?: Unit;
+  // Thresholds for quantity-based completion/scoring
+  minQuantity?: number | null;
+  maxQuantity?: number | null;
+  // Thresholds for time-based completion/scoring (minutes)
+  minTimeMinutes?: number | null;
+  maxTimeMinutes?: number | null;
+  // How to compute contribution when both dimensions exist
+  scoreMode?: "quantity" | "time" | "both" | undefined; // default "both"
+  // Legacy fields (kept for backward compatibility when reading existing data)
+  /** @deprecated */ kind?: "boolean" | "quantified" | "time";
+  /** @deprecated */ unit?: Unit;
+  /** @deprecated */ target?: number | null;
+  /** @deprecated */ min?: number | null;
+  /** @deprecated */ max?: number | null;
   createdAt: string; // ISO
   archivedAt?: string | null;
 }
@@ -21,11 +32,14 @@ export interface DailyEntry {
   habitId: HabitId;
   date: string; // YYYY-MM-DD (user TZ, respecting day start)
   completed?: boolean; // compact logging
-  // value can represent different kinds depending on when it was logged
-  // quantified/time -> number (for time: minutes), boolean -> boolean (optional)
-  value?: number | boolean | null; // detailed logging
-  // snapshot of the habit kind at the time of logging to preserve history
-  kindAtEntry?: Habit["kind"]; // "boolean" | "quantified" | "time"
+  // Unified fields
+  quantity?: number | null;
+  // Store raw start/end (minutes since day start). timeMinutes is derived.
+  startMinutes?: number | null;
+  endMinutes?: number | null;
+  // Legacy fields (kept for backward compatibility)
+  /** @deprecated */ value?: number | boolean | null;
+  /** @deprecated */ kindAtEntry?: Habit["kind"]; // "boolean" | "quantified" | "time"
   note?: string | null;
   editedAt?: string;
 }
@@ -34,6 +48,7 @@ export interface DaySummaryByHabit {
   habitId: HabitId;
   contribution: number; // 0..100 after normalization per habit
   completed: boolean;
+  // For display convenience in lists; optional aggregate of entry data
   value?: number | boolean | null;
 }
 

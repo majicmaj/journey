@@ -41,9 +41,8 @@ export default function Day() {
   const [headerExpanded, setHeaderExpanded] = useState(false);
   const [sortKey, setSortKey] = useState<DaySortKey>("weight");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [filterKind, setFilterKind] = useState<
-    "all" | "boolean" | "quantified" | "time"
-  >("all");
+  // Kind filter removed in unified model
+  const [filterKind, setFilterKind] = useState<"all">("all");
   const [filterCompletion, setFilterCompletion] = useState<
     "all" | "completed" | "incomplete"
   >("all");
@@ -290,8 +289,9 @@ function DayHeader({
   setSortKey,
   sortDir,
   setSortDir,
-  filterKind,
-  setFilterKind,
+  // kept for call-site compatibility; unused in unified model
+  filterKind: _filterKind,
+  setFilterKind: _setFilterKind,
   filterCompletion,
   setFilterCompletion,
   filterTags,
@@ -310,8 +310,8 @@ function DayHeader({
   setSortKey: (v: DaySortKey) => void;
   sortDir: "asc" | "desc";
   setSortDir: (v: "asc" | "desc") => void;
-  filterKind: "all" | "boolean" | "quantified" | "time";
-  setFilterKind: (v: "all" | "boolean" | "quantified" | "time") => void;
+  filterKind: "all";
+  setFilterKind: (v: "all") => void;
   filterCompletion: "all" | "completed" | "incomplete";
   setFilterCompletion: (v: "all" | "completed" | "incomplete") => void;
   filterTags: string[];
@@ -393,24 +393,7 @@ function DayHeader({
               </SelectContent>
             </Select>
           </div>
-          <div className="pixel-frame">
-            <Select
-              value={filterKind}
-              onValueChange={(v: "all" | "boolean" | "quantified" | "time") =>
-                setFilterKind(v)
-              }
-            >
-              <SelectTrigger className="w-full sm:w-36 bg-card">
-                <SelectValue placeholder="Kind" />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                <SelectItem value="all">All kinds</SelectItem>
-                <SelectItem value="boolean">Boolean</SelectItem>
-                <SelectItem value="quantified">Quantified</SelectItem>
-                <SelectItem value="time">Time</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Kind filter removed */}
           <div className="pixel-frame">
             <Select
               value={filterCompletion}

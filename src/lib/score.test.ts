@@ -2,25 +2,25 @@ import { describe, it, expect } from "vitest";
 import { contributionRaw, computeDaySummary } from "./score";
 import type { DailyEntry, Habit } from "@/types/habit";
 
-const boolHabit: Habit = {
-  id: "h1",
-  title: "Drink water",
+const baseHabit: Habit = {
+  id: "h0",
+  title: "Base",
   weight: 1,
-  kind: "boolean",
+  scoreMode: "both",
   createdAt: new Date().toISOString(),
 };
 
+const boolHabit: Habit = { ...baseHabit, id: "h1" };
+
 const quantHabitTarget: Habit = {
+  ...baseHabit,
   id: "h2",
-  title: "Run",
-  weight: 1,
   kind: "quantified",
   target: 5,
-  createdAt: new Date().toISOString(),
 };
 
 describe("score", () => {
-  it("boolean contribution", () => {
+  it("boolean contribution (fallback to completed)", () => {
     expect(contributionRaw(undefined, boolHabit)).toBe(0);
     expect(
       contributionRaw({ habitId: "h1", date: "2024-01-01" }, boolHabit)
@@ -58,15 +58,13 @@ describe("score", () => {
     expect(totalScore).toBe(75); // (1 + 0.5)/2 = 0.75 → 75
   });
 
-  it("uses entry.kindAtEntry=boolean when habit is now quantified", () => {
+  it("legacy: uses entry.kindAtEntry=boolean when habit is now quantified", () => {
     // Habit currently quantified with target 10
     const nowQuant: Habit = {
+      ...baseHabit,
       id: "h3",
-      title: "Reading",
-      weight: 1,
       kind: "quantified",
       target: 10,
-      createdAt: new Date().toISOString(),
     };
     // Entry was logged when it was a boolean habit
     const e: DailyEntry = {
@@ -81,15 +79,9 @@ describe("score", () => {
     expect(totalScore).toBe(100);
   });
 
-  it("treats numeric value when kindAtEntry is time but habit is now boolean", () => {
+  it("legacy: treats numeric value when kindAtEntry is time but habit is now boolean", () => {
     // Habit currently boolean
-    const nowBool: Habit = {
-      id: "h4",
-      title: "Meditate",
-      weight: 1,
-      kind: "boolean",
-      createdAt: new Date().toISOString(),
-    };
+    const nowBool: Habit = { ...baseHabit, id: "h4", kind: "boolean" };
     // Historical entry was time-based with 30 minutes
     const e: DailyEntry = {
       habitId: "h4",
