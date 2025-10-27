@@ -177,15 +177,16 @@ export default function TimeBlocks({
                     target.setAttribute("stroke", "var(--border)");
                     target.setAttribute("stroke-width", "1");
                     const native = e.nativeEvent as PointerEvent;
-                    setTip({
+                    const payload: Tip = {
                       screenX: native.clientX,
                       screenY: native.clientY,
                       row: b.row,
                       fromMin: b.fromMin,
                       toMin: b.toMin,
-                      label: b.label,
-                      color: b.color,
-                    });
+                      ...(b.label != null ? { label: b.label } : {}),
+                      ...(b.color != null ? { color: b.color } : {}),
+                    };
+                    setTip(payload);
                   }}
                   onPointerLeave={(e) => {
                     const target = e.currentTarget as SVGRectElement;

@@ -715,6 +715,32 @@ export default function Trends() {
                               : quantityOverlaySeries
                           }
                           compactXAxis={true}
+                          yDomain={{
+                            min: 0,
+                            max: Math.max(
+                              1,
+                              ...((quantityScope === "aggregated"
+                                ? quantityAggregatedSeries
+                                : quantityOverlaySeries)[0]?.points.map(
+                                (p) => p.y
+                              ) ?? [0])
+                            ),
+                          }}
+                          yTicks={(() => {
+                            const maxY = Math.max(
+                              1,
+                              ...((quantityScope === "aggregated"
+                                ? quantityAggregatedSeries
+                                : quantityOverlaySeries)[0]?.points.map(
+                                (p) => p.y
+                              ) ?? [0])
+                            );
+                            const step = Math.max(1, Math.ceil(maxY / 4));
+                            return Array.from(
+                              { length: 5 },
+                              (_, i) => i * step
+                            );
+                          })()}
                         />
                       )}
                     </ResponsiveContainer>
@@ -743,6 +769,29 @@ export default function Trends() {
                         : quantityOverlaySeries
                     }
                     compactXAxis={true}
+                    yDomain={{
+                      min: 0,
+                      max: Math.max(
+                        1,
+                        ...((quantityScope === "aggregated"
+                          ? quantityAggregatedSeries
+                          : quantityOverlaySeries)[0]?.points.map(
+                          (p) => p.y
+                        ) ?? [0])
+                      ),
+                    }}
+                    yTicks={(() => {
+                      const maxY = Math.max(
+                        1,
+                        ...((quantityScope === "aggregated"
+                          ? quantityAggregatedSeries
+                          : quantityOverlaySeries)[0]?.points.map(
+                          (p) => p.y
+                        ) ?? [0])
+                      );
+                      const step = Math.max(1, Math.ceil(maxY / 4));
+                      return Array.from({ length: 5 }, (_, i) => i * step);
+                    })()}
                   />
                 )}
               </ResponsiveContainer>

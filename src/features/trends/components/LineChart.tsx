@@ -19,6 +19,8 @@ export default function LineChart({
   goalBands,
   onBrush,
   compactXAxis,
+  yDomain,
+  yTicks,
 }: {
   width: number;
   height: number;
@@ -26,6 +28,8 @@ export default function LineChart({
   goalBands?: Array<{ from: number; to: number; colorVar?: string }>;
   onBrush?: (fromX: string, toX: string) => void;
   compactXAxis?: boolean;
+  yDomain?: { min?: number; max?: number };
+  yTicks?: number[];
 }) {
   const padding = { top: 12, right: 12, bottom: 22, left: 28 };
   const innerW = Math.max(1, width - padding.left - padding.right);
@@ -46,8 +50,10 @@ export default function LineChart({
     () => series.flatMap((s) => s.points.map((p) => p.y)),
     [series]
   );
-  const yMin = Math.min(0, ...allY);
-  const yMax = Math.max(100, ...allY);
+  const yMinDefault = Math.min(0, ...allY);
+  const yMaxDefault = Math.max(100, ...allY);
+  const yMin = yDomain?.min ?? yMinDefault;
+  const yMax = yDomain?.max ?? yMaxDefault;
 
   // scales
   const xToPx = (x: string): number => {
@@ -343,7 +349,7 @@ export default function LineChart({
           })}
 
           {/* y ticks */}
-          {[0, 25, 50, 75, 100].map((v) => (
+          {(yTicks ?? [0, 25, 50, 75, 100]).map((v) => (
             <g key={v}>
               <line
                 x1={-4}
