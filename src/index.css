@@ -134,6 +134,13 @@
     @apply bg-background text-foreground font-display;
   }
 
+  /* When pixel font is disabled globally, override font token used by `font-display` */
+  .no-pixel-font {
+    --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+
   .pixelart-icons-font {
     @apply inline-block;
   }
@@ -142,12 +149,14 @@
   /* Pixel-art frame: outer border drawn OUTSIDE, corners missing.
      Inner bevel: bottom + right only (inside). */
   .pixel-frame {
-    --p: 4px;
+    --p: var(--pixel-frame-size, 4px);
     --outer: var(--border);
     position: relative;
     overflow: visible; /* ensure the outside border isn't clipped */
     /* text-shadow: 1.5px 1.5px 0px var(--outer); */
     text-shadow: 2px 2px 0px color-mix(in srgb, var(--border) 10%, transparent);
+    /* Add extra margin when pixel width exceeds the default 4px */
+    margin: max(0px, calc(var(--p) - 4px));
   }
 
   /* OUTER border OUTSIDE the element */
@@ -232,6 +241,18 @@
         )
         right 0 top / var(--p) 100% no-repeat;
     pointer-events: none;
+  }
+
+  /* When pixel frame is disabled globally, replace with a simple border */
+  .no-pixel-frame .pixel-frame {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-shadow: none;
+    margin: 0; /* cancel extra margin when disabled */
+  }
+  .no-pixel-frame .pixel-frame::before,
+  .no-pixel-frame .pixel-frame::after {
+    content: none;
   }
 
   /* Pixel-frame for active tabs trigger (Radix Tabs) */

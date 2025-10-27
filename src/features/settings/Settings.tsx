@@ -21,7 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useMemo, useState } from "react";
-import { CloseIcon, SaveIcon } from "@/components/pixel/icons";
+import { CloseIcon } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -341,103 +341,98 @@ export default function Settings() {
         </details>
 
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
-          <span className="text-sm">Saved themes</span>
-          <div className="flex gap-3">
-            <div className="pixel-frame flex-1">
-              <Input
-                placeholder="Theme name"
-                onKeyDown={async (e) => {
-                  if (e.key !== "Enter") return;
-                  const name = (e.target as HTMLInputElement).value.trim();
-                  if (!name) return;
-                  const theme = {
-                    id:
-                      crypto.randomUUID?.() ??
-                      Math.random().toString(36).slice(2),
-                    name,
-                    dark: Boolean(data.themeDark),
-                    presetId: data.themePreset,
-                    vars: data.themeVars ?? {},
-                  };
-                  const next: AppSettings = {
-                    ...data,
-                    savedThemes: [...(data.savedThemes ?? []), theme],
-                  };
-                  await db.settings.put(next);
-                  (e.target as HTMLInputElement).value = "";
-                  qc.invalidateQueries({ queryKey: ["settings"] });
-                }}
-              />
-            </div>
-            <Button
-              onClick={async () => {
-                const Input =
-                  (document.activeElement as HTMLInputElement) ?? undefined;
-                const name = Input?.value?.trim?.() ?? "";
-                if (!name) return;
-                const theme = {
-                  id:
-                    crypto.randomUUID?.() ??
-                    Math.random().toString(36).slice(2),
-                  name,
-                  dark: Boolean(data.themeDark),
-                  presetId: data.themePreset,
-                  vars: data.themeVars ?? {},
-                };
-                const next: AppSettings = {
+          <span className="text-sm">Frame and corners</span>
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={data.pixelFrameEnabled !== false}
+              onCheckedChange={async (checked: boolean) => {
+                const next = {
                   ...data,
-                  savedThemes: [...(data.savedThemes ?? []), theme],
-                };
+                  pixelFrameEnabled: checked,
+                } as AppSettings;
                 await db.settings.put(next);
-                if (Input) Input.value = "";
+                applyTheme(next);
                 qc.invalidateQueries({ queryKey: ["settings"] });
               }}
-              size="icon"
-            >
-              <SaveIcon className="size-8" />
-            </Button>
+            />
+            <span className="text-sm">Enable pixel frame</span>
+          </label>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm w-40">Pixel frame width</span>
+            <Slider
+              min={0}
+              max={16}
+              step={1}
+              value={[Number(data.pixelFrameWidth ?? 4)]}
+              onValueChange={async (value: number[]) => {
+                const width = Math.max(0, Math.min(16, Number(value[0])));
+                const next = { ...data, pixelFrameWidth: width } as AppSettings;
+                await db.settings.put(next);
+                applyTheme(next);
+                qc.invalidateQueries({ queryKey: ["settings"] });
+              }}
+              className="flex-1"
+            />
+            <span className="text-xs text-muted-foreground w-10 text-right">
+              {data.pixelFrameWidth ?? 4}px
+            </span>
           </div>
-          <div className="grid grid-cols-1 gap-3">
-            {(data.savedThemes ?? []).map((t) => (
-              <div key={t.id} className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="text-sm">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {t.dark ? "Dark" : "Light"} · {t.presetId ?? "custom"}
-                  </div>
-                </div>
-                <Button
-                  onClick={async () => {
-                    const next: AppSettings = {
-                      ...data,
-                      themeDark: t.dark,
-                      themePreset: t.presetId ?? "default",
-                      themeVars: t.vars,
-                    };
-                    await db.settings.put(next);
-                    applyTheme(next);
-                    qc.invalidateQueries({ queryKey: ["settings"] });
-                  }}
-                >
-                  Apply
-                </Button>
-                <Button
-                  onClick={async () => {
-                    const next: AppSettings = {
-                      ...data,
-                      savedThemes: (data.savedThemes ?? []).filter(
-                        (x) => x.id !== t.id
-                      ),
-                    };
-                    await db.settings.put(next);
-                    qc.invalidateQueries({ queryKey: ["settings"] });
-                  }}
-                >
-                  Delete
-                </Button>
-              </div>
-            ))}
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm w-40">Corner radius</span>
+            <Slider
+              min={0}
+              max={16}
+              step={1}
+              value={[
+                Number(
+                  data.themeVars?.["radius"]
+                    ? parseInt(data.themeVars["radius"], 10)
+                    : typeof window !== "undefined"
+                    ? parseInt(
+                        getComputedStyle(document.documentElement)
+                          .getPropertyValue("--radius")
+                          .trim() || "0",
+                        10
+                      )
+                    : 0
+                ),
+              ]}
+              onValueChange={async (value: number[]) => {
+                const r = `${Math.max(0, Math.min(32, Number(value[0])))}px`;
+                const nextVars = { ...(data.themeVars ?? {}) };
+                nextVars["radius"] = r;
+                const next = { ...data, themeVars: nextVars } as AppSettings;
+                await db.settings.put(next);
+                applyTheme(next);
+                qc.invalidateQueries({ queryKey: ["settings"] });
+              }}
+              className="flex-1"
+            />
+            <span className="text-xs text-muted-foreground w-10 text-right">
+              {data.themeVars?.["radius"] ?? "0px"}
+            </span>
           </div>
+        </div>
+
+        <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
+          <span className="text-sm">Typography</span>
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={data.pixelFontEnabled !== false}
+              onCheckedChange={async (checked: boolean) => {
+                const next = {
+                  ...data,
+                  pixelFontEnabled: checked,
+                } as AppSettings;
+                await db.settings.put(next);
+                applyTheme(next);
+                qc.invalidateQueries({ queryKey: ["settings"] });
+              }}
+            />
+            <span className="text-sm">Enable pixel art font</span>
+          </label>
         </div>
       </div>
 

@@ -170,6 +170,7 @@ export default function Trends() {
     "line" | "stacked"
   >("line");
   const [hourView, setHourView] = useState<"flat" | "clock">("flat");
+  const [hourMetric, setHourMetric] = useState<"time" | "quantity">("time");
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -476,29 +477,70 @@ export default function Trends() {
     blocksLayout === "by-day" ? blocksByDay : blocksByHabit;
 
   // ---------- Hourly heat (24 columns) ----------
-  const hourlyBinsPct: number[] = useMemo(() => {
-    const minsPerHour = new Array(24).fill(0) as number[];
+  const hourlyBins: number[] = useMemo(() => {
     const dayCount = Math.max(1, dateKeys.length);
-    // Aggregate minutes overlapped in each hour across selected habits
-    for (const e of entriesQ.data ?? []) {
-      if (!activeHabits.find((h) => h.id === e.habitId)) continue;
-      const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
-      const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
-      if (s == null || t == null || t <= s) continue;
-      const startH = Math.max(0, Math.floor(s / 60));
-      const endH = Math.min(23, Math.floor((t - 1) / 60));
-      for (let h = startH; h <= endH; h++) {
-        const hStart = h * 60;
-        const hEnd = hStart + 60;
-        const overlap = Math.max(0, Math.min(t, hEnd) - Math.max(s, hStart));
-        if (overlap > 0) minsPerHour[h] += overlap;
+    if (hourMetric === "time") {
+      // Percent of days with any overlap in that hour
+      const hitsPerHour = new Array(24).fill(0) as number[];
+      // Build per-day sets of hours with any overlap
+      const entriesByDate = new Map<string, DailyEntry[]>();
+      for (const e of entriesQ.data ?? []) {
+        if (!activeHabits.find((h) => h.id === e.habitId)) continue;
+        const arr = entriesByDate.get(e.date) ?? [];
+        arr.push(e);
+        entriesByDate.set(e.date, arr);
       }
+      for (const [, list] of entriesByDate) {
+        const hoursHit = new Set<number>();
+        for (const e of list) {
+          const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
+          const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
+          if (s == null || t == null || t <= s) continue;
+          const startH = Math.max(0, Math.floor(s / 60));
+          const endH = Math.min(23, Math.floor((t - 1) / 60));
+          for (let h = startH; h <= endH; h++) {
+            const hStart = h * 60;
+            const hEnd = hStart + 60;
+            const overlap = Math.max(
+              0,
+              Math.min(t, hEnd) - Math.max(s, hStart)
+            );
+            if (overlap > 0) hoursHit.add(h);
+          }
+        }
+        hoursHit.forEach((h) => (hitsPerHour[h] += 1));
+      }
+      return hitsPerHour.map((c) =>
+        Math.max(0, Math.min(100, (c / dayCount) * 100))
+      );
+    } else {
+      // Distribute quantity across overlapped hours proportionally
+      const qtyPerHour = new Array(24).fill(0) as number[];
+      for (const e of entriesQ.data ?? []) {
+        if (!activeHabits.find((h) => h.id === e.habitId)) continue;
+        const q =
+          typeof e.quantity === "number" ? (e.quantity as number) : null;
+        const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
+        const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
+        if (q == null || s == null || t == null || t <= s) continue;
+        const total = t - s;
+        if (total <= 0) continue;
+        const startH = Math.max(0, Math.floor(s / 60));
+        const endH = Math.min(23, Math.floor((t - 1) / 60));
+        for (let h = startH; h <= endH; h++) {
+          const hStart = h * 60;
+          const hEnd = hStart + 60;
+          const overlap = Math.max(0, Math.min(t, hEnd) - Math.max(s, hStart));
+          if (overlap > 0) qtyPerHour[h] += (q * overlap) / total;
+        }
+      }
+      // Average per day and normalize to 0..100 by max value across hours
+      const averaged = qtyPerHour.map((v) => v / dayCount);
+      const maxV = Math.max(0, ...averaged);
+      if (maxV <= 0) return new Array(24).fill(0);
+      return averaged.map((v) => Math.max(0, Math.min(100, (v / maxV) * 100)));
     }
-    // Average per day, then scale 0..100 with 60 minutes → 100
-    return minsPerHour.map((m) =>
-      Math.max(0, Math.min(100, (m / dayCount / 60) * 100))
-    );
-  }, [entriesQ.data, activeHabits, dateKeys.length]);
+  }, [entriesQ.data, activeHabits, dateKeys.length, hourMetric]);
 
   return (
     <div className="p-3 flex flex-col gap-4">
@@ -978,6 +1020,21 @@ export default function Trends() {
                 </SelectContent>
               </Select>
             </div>
+            <span className="opacity-70 text-sm">Metric</span>
+            <div className="pixel-frame">
+              <Select
+                value={hourMetric}
+                onValueChange={(v: "time" | "quantity") => setHourMetric(v)}
+              >
+                <SelectTrigger className="w-[160px] bg-card">
+                  <SelectValue placeholder="Metric" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="time">Time coverage</SelectItem>
+                  <SelectItem value="quantity">Quantity</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {hourView === "flat" ? (
@@ -994,7 +1051,7 @@ export default function Trends() {
                           height={vh}
                           rows={1}
                           cols={24}
-                          valueAt={(_r, c) => hourlyBinsPct[c] ?? 0}
+                          valueAt={(_r, c) => hourlyBins[c] ?? 0}
                           labelForCol={(c) => String(c).padStart(2, "0")}
                           labelForRow={() => "Avg/min"}
                           showWeekBands={false}
@@ -1022,7 +1079,7 @@ export default function Trends() {
                     height={vh}
                     rows={1}
                     cols={24}
-                    valueAt={(_r, c) => hourlyBinsPct[c] ?? 0}
+                    valueAt={(_r, c) => hourlyBins[c] ?? 0}
                     labelForCol={(c) => String(c).padStart(2, "0")}
                     labelForRow={() => "Avg/min"}
                     showWeekBands={false}
@@ -1042,7 +1099,7 @@ export default function Trends() {
                         <ClockHeatmap
                           width={vw}
                           height={vh}
-                          values={hourlyBinsPct}
+                          values={hourlyBins}
                         />
                       )}
                     </ResponsiveContainer>
@@ -1062,7 +1119,7 @@ export default function Trends() {
                 height={(w) => Math.max(220, Math.floor(w * 0.5))}
               >
                 {(vw, vh) => (
-                  <ClockHeatmap width={vw} height={vh} values={hourlyBinsPct} />
+                  <ClockHeatmap width={vw} height={vh} values={hourlyBins} />
                 )}
               </ResponsiveContainer>
             </>

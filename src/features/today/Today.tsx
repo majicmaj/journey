@@ -273,28 +273,7 @@ export default function Day() {
   );
 }
 
-function DayHeader({
-  dayKey,
-  baseTodayKey,
-  canGoNext,
-  onPrev,
-  onNext,
-  onSetDayKey,
-  dayStart,
-  headerExpanded,
-  sortKey,
-  setSortKey,
-  sortDir,
-  setSortDir,
-  // kept for call-site compatibility; unused in unified model
-  filterKind: _filterKind,
-  setFilterKind: _setFilterKind,
-  filterCompletion,
-  setFilterCompletion,
-  filterTags,
-  setFilterTags,
-  allTags,
-}: {
+function DayHeader(props: {
   dayKey: string;
   baseTodayKey: string;
   canGoNext: boolean;
@@ -315,6 +294,25 @@ function DayHeader({
   setFilterTags: (v: string[]) => void;
   allTags: string[];
 }) {
+  const {
+    dayKey,
+    baseTodayKey,
+    canGoNext,
+    onPrev,
+    onNext,
+    onSetDayKey,
+    dayStart,
+    headerExpanded,
+    sortKey,
+    setSortKey,
+    sortDir,
+    setSortDir,
+    filterCompletion,
+    setFilterCompletion,
+    filterTags,
+    setFilterTags,
+    allTags,
+  } = props;
   return (
     <header
       className={cn(

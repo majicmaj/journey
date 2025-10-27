@@ -443,7 +443,13 @@ function Progress({ className, value }: { className: string; value: number }) {
       />
       <div className="absolute inset-0 grid grid-cols-10">
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="border-r-4 border-border" />
+          <div
+            key={i}
+            className="border-r border-border"
+            style={{
+              borderWidth: "max(var(--pixel-frame-size), 1px)",
+            }}
+          />
         ))}
       </div>
     </div>

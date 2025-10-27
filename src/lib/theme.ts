@@ -25,6 +25,23 @@ export function applyTheme(settings: Settings) {
   if (settings.themeDark) root.classList.add("dark");
   else root.classList.remove("dark");
 
+  // Pixel frame toggle class
+  if (settings.pixelFrameEnabled === false)
+    root.classList.add("no-pixel-frame");
+  else root.classList.remove("no-pixel-frame");
+
+  // Pixel font toggle class
+  if (settings.pixelFontEnabled === false) root.classList.add("no-pixel-font");
+  else root.classList.remove("no-pixel-font");
+
+  // Pixel frame width variable
+  const pixelSize =
+    typeof settings.pixelFrameWidth === "number"
+      ? `${Math.max(0, Math.min(16, settings.pixelFrameWidth))}px`
+      : undefined;
+  if (pixelSize) root.style.setProperty("--pixel-frame-size", pixelSize);
+  else root.style.removeProperty("--pixel-frame-size");
+
   const preset = getPresetById(settings.themePreset);
   // First clear previously applied override keys to avoid accumulation
   const keysToClear = new Set<string>();
