@@ -40,6 +40,8 @@ type RangePreset =
   | "this-month"
   | "last-12-months"
   | "last-6-months"
+  | "last-7-days"
+  | "last-24-hours"
   | "last-90-days"
   | "last-30-days"
   | "all-time"
@@ -69,6 +71,14 @@ function calcRange(
     }
     case "last-6-months": {
       d.setMonth(d.getMonth() - 6);
+      return { from: toDayKey(d, dayStart), to };
+    }
+    case "last-7-days": {
+      d.setDate(d.getDate() - 7);
+      return { from: toDayKey(d, dayStart), to };
+    }
+    case "last-24-hours": {
+      d.setDate(d.getDate() - 1);
       return { from: toDayKey(d, dayStart), to };
     }
     case "last-90-days": {
@@ -528,6 +538,8 @@ export default function Trends() {
               <SelectContent className="pixel-frame">
                 <SelectItem value="this-month">This month</SelectItem>
                 <SelectItem value="this-year">This year</SelectItem>
+                <SelectItem value="last-24-hours">Last 24 hours</SelectItem>
+                <SelectItem value="last-7-days">Last 7 days</SelectItem>
                 <SelectItem value="last-30-days">Last 30 days</SelectItem>
                 <SelectItem value="last-90-days">Last 90 days</SelectItem>
                 <SelectItem value="last-6-months">Last 6 months</SelectItem>
