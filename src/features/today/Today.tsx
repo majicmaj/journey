@@ -244,7 +244,6 @@ export default function Day() {
             headerExpanded={headerExpanded}
             sortKey={sortKey}
             sortDir={sortDir}
-            filterKind={filterKind}
             filterCompletion={filterCompletion}
             filterTags={filterTags}
           />
@@ -255,7 +254,6 @@ export default function Day() {
             headerExpanded={headerExpanded}
             sortKey={sortKey}
             sortDir={sortDir}
-            filterKind={filterKind}
             filterCompletion={filterCompletion}
             filterTags={filterTags}
           />
@@ -266,7 +264,6 @@ export default function Day() {
             headerExpanded={headerExpanded}
             sortKey={sortKey}
             sortDir={sortDir}
-            filterKind={filterKind}
             filterCompletion={filterCompletion}
             filterTags={filterTags}
           />
