@@ -246,12 +246,6 @@ export default function Settings() {
       </label>
 
       <hr className="my-4 w-full border-2" />
-      <label className="flex items-center gap-3">
-        <Checkbox aria-label="Show streaks" checked={true} disabled />
-        <span>Show streaks (always on)</span>
-      </label>
-
-      <hr className="my-4 w-full border-2" />
 
       <div className="flex flex-col gap-3">
         <label className="flex items-center gap-3">
@@ -433,6 +427,29 @@ export default function Settings() {
             />
             <span className="text-sm">Enable pixel art font</span>
           </label>
+        </div>
+
+        <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
+          <span className="text-sm">Danger zone</span>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              const next: AppSettings = {
+                ...data,
+                themePreset: "default",
+                themeDark: false,
+                themeVars: {},
+                pixelFrameEnabled: true,
+                pixelFrameWidth: 4,
+                pixelFontEnabled: true,
+              };
+              await db.settings.put(next);
+              applyTheme(next);
+              qc.invalidateQueries({ queryKey: ["settings"] });
+            }}
+          >
+            Reset theme to defaults
+          </Button>
         </div>
       </div>
 

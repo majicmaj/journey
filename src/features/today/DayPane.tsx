@@ -182,7 +182,6 @@ function DayPane({
   ]);
 
   const streakByHabitId = useMemo(() => {
-    if (!settings.data?.showStreaks) return new Map<string, number>();
     const habits = habitsQ.data ?? [];
     const all = rangeQ.data ?? [];
     // Build map: habitId -> dateKey -> entry
@@ -216,17 +215,9 @@ function DayPane({
       out.set(h.id, streak);
     }
     return out;
-  }, [
-    settings.data?.showStreaks,
-    habitsQ.data,
-    rangeQ.data,
-    dayKey,
-    dayStart,
-    fromKey,
-  ]);
+  }, [habitsQ.data, rangeQ.data, dayKey, dayStart, fromKey]);
 
   const doneEverByHabitId = useMemo(() => {
-    if (!settings.data?.showStreaks) return new Map<string, boolean>();
     const habits = habitsQ.data ?? [];
     const all = rangeQ.data ?? [];
     const entriesByHabit = new Map<string, DailyEntry[]>();
@@ -242,10 +233,9 @@ function DayPane({
       out.set(h.id, anyDone);
     }
     return out;
-  }, [settings.data?.showStreaks, habitsQ.data, rangeQ.data]);
+  }, [habitsQ.data, rangeQ.data]);
 
   const coldStreakByHabitId = useMemo(() => {
-    if (!settings.data?.showStreaks) return new Map<string, number>();
     const habits = habitsQ.data ?? [];
     const all = rangeQ.data ?? [];
     const entriesByHabit = new Map<string, Map<string, DailyEntry>>();
@@ -271,14 +261,7 @@ function DayPane({
       out.set(h.id, streak - 1);
     }
     return out;
-  }, [
-    settings.data?.showStreaks,
-    habitsQ.data,
-    rangeQ.data,
-    dayKey,
-    dayStart,
-    fromKey,
-  ]);
+  }, [habitsQ.data, rangeQ.data, dayKey, dayStart, fromKey]);
 
   return (
     <div
