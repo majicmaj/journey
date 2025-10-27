@@ -24,7 +24,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import React, { useMemo, useState } from "react";
-import { CloseIcon } from "@/components/pixel/icons";
+import { CloseIcon, TrashIcon } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -630,8 +630,13 @@ export default function Settings() {
           <span className="text-sm">Theme</span>
           <div className="pixel-frame flex">
             <Select
-              value={data.themePreset ?? "default"}
+              value={
+                Object.keys(data.themeVars ?? {}).length > 0
+                  ? "custom"
+                  : data.themePreset ?? "default"
+              }
               onValueChange={async (value) => {
+                if (value === "custom") return; // reflect unsaved custom, no-op
                 if (value.startsWith("custom:")) {
                   const id = value.slice("custom:".length);
                   const t = (data.savedThemes ?? []).find((x) => x.id === id);
@@ -646,7 +651,19 @@ export default function Settings() {
                   applyTheme(next);
                   qc.invalidateQueries({ queryKey: ["settings"] });
                 } else {
-                  const next = { ...data, themePreset: value } as AppSettings;
+                  // Selecting a preset. If returning to the currently-selected preset while
+                  // there are overrides, clear overrides to load original values
+                  const isReturningToSamePreset =
+                    value === (data.themePreset ?? "default");
+                  const hasOverrides =
+                    Object.keys(data.themeVars ?? {}).length > 0;
+                  const next: AppSettings = {
+                    ...data,
+                    themePreset: value,
+                    ...(isReturningToSamePreset && hasOverrides
+                      ? { themeVars: {} }
+                      : {}),
+                  } as AppSettings;
                   await db.settings.put(next);
                   applyTheme(next);
                   qc.invalidateQueries({ queryKey: ["settings"] });
@@ -657,6 +674,14 @@ export default function Settings() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
+                {Object.keys(data.themeVars ?? {}).length > 0 && (
+                  <>
+                    <SelectGroup>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectGroup>
+                    <SelectSeparator />
+                  </>
+                )}
                 <SelectGroup>
                   <SelectLabel>Presets</SelectLabel>
                   {THEME_PRESETS.map((p) => (
@@ -949,7 +974,7 @@ export default function Settings() {
           <span className="text-sm">Danger zone</span>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="destructive">Reset theme to defaults</Button>
+              <Button variant="destructive">Reset Theme</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -994,11 +1019,14 @@ export default function Settings() {
 
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="destructive">Reset DB</Button>
+          <Button variant="destructive">
+            <TrashIcon className="size-8" />
+            Delete All Data
+          </Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset database?</DialogTitle>
+            <DialogTitle>Delete all data?</DialogTitle>
             <DialogDescription>
               This will delete all habits and entries stored locally. This
               cannot be undone.
