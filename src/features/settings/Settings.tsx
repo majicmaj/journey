@@ -6,7 +6,10 @@ import { applyTheme } from "@/lib/theme";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -20,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { CloseIcon } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,6 +46,263 @@ export default function Settings() {
     return out;
   }
 
+  function ThemeColorRow({
+    keyName,
+    label,
+    dark,
+    presetId,
+    value,
+    onChange,
+  }: {
+    keyName: string;
+    label: string;
+    dark: boolean;
+    presetId?: string;
+    value: string | undefined;
+    onChange: (next: string | undefined) => void;
+  }) {
+    const computed =
+      typeof window !== "undefined"
+        ? getComputedStyle(document.documentElement)
+            .getPropertyValue(`--${keyName}`)
+            .trim()
+        : "";
+
+    const baseGrid = useMemo(() => generateOKLCHGrid(), []);
+    const preset = THEME_PRESETS.find((p) => p.id === (presetId ?? "default"));
+    const presetValues = useMemo(
+      () =>
+        Array.from(
+          new Set([
+            computed,
+            ...(dark
+              ? THEME_PRESETS.map((p) => p.varsDark[keyName])
+              : THEME_PRESETS.map((p) => p.varsLight[keyName])
+            ).filter(Boolean),
+            dark ? preset?.varsDark[keyName] : preset?.varsLight[keyName],
+            ...baseGrid,
+          ] as string[])
+        ).filter(Boolean),
+      [computed, dark, keyName, baseGrid, preset]
+    );
+
+    const [l, setL] = useState(0.6);
+    const [c, setC] = useState(0.1);
+    const [h, setH] = useState(220);
+    const oklchValue = `oklch(${l} ${c} ${h})`;
+
+    return (
+      <div className="flex sm:items-center flex-col sm:flex-row gap-3">
+        <label className="w-40 text-sm" htmlFor={`theme-edit-${keyName}`}>
+          {label}
+        </label>
+        <Dialog>
+          <DialogTrigger asChild>
+            <button
+              id={`theme-edit-${keyName}`}
+              className="pixel-frame flex-1 bg-background p-2 text-left flex items-center gap-3"
+              aria-label={`Pick color for ${label}`}
+            >
+              <span
+                className="inline-block size-4 pixel-frame"
+                style={{ background: value || computed || undefined }}
+              />
+              <span className="truncate">
+                {value || computed || "Choose color"}
+              </span>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="w-[min(28rem,95vw)]">
+            <div className="grid grid-cols-8 gap-3">
+              {presetValues.slice(0, 24).map((v) => (
+                <DialogClose key={v} asChild>
+                  <button
+                    className="pixel-frame size-8"
+                    style={{ background: v }}
+                    title={v}
+                    onClick={() => onChange(v)}
+                  />
+                </DialogClose>
+              ))}
+            </div>
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-3">
+                <span className="text-sm w-16">OKLCH</span>
+                <span
+                  className="inline-block size-6 pixel-frame"
+                  style={{ background: oklchValue }}
+                />
+                <span className="text-xs text-muted-foreground truncate">
+                  {oklchValue}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 items-center">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-8">L</span>
+                  <Slider
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={[Number(l)]}
+                    onValueChange={(v: number[]) => setL(v[0])}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-8">C</span>
+                  <Slider
+                    min={0}
+                    max={0.4}
+                    step={0.005}
+                    value={[Number(c)]}
+                    onValueChange={(v: number[]) => setC(v[0])}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs w-8">H</span>
+                  <Slider
+                    min={0}
+                    max={360}
+                    step={1}
+                    value={[h]}
+                    onValueChange={(v) => setH(v[0])}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-col sm:flex-row">
+                <span className="text-sm w-16">Manual</span>
+                <Input
+                  defaultValue={value || computed}
+                  placeholder={computed || `CSS color, oklch(...) or #hex`}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    onChange(v || undefined);
+                  }}
+                />
+                <Button onClick={() => onChange(oklchValue)}>Use color</Button>
+                <Button onClick={() => onChange(undefined)}>Reset</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  function SavedThemesEditor({ settings }: { settings: AppSettings }) {
+    const [selectedId, setSelectedId] = useState<string | null>(
+      settings.savedThemes?.[0]?.id ?? null
+    );
+    const selected =
+      (settings.savedThemes ?? []).find((t) => t.id === selectedId) ?? null;
+    const [draftVars, setDraftVars] = useState<Record<string, string>>({
+      ...(selected?.vars ?? {}),
+    });
+
+    // keep in sync if selection changes
+    React.useEffect(() => {
+      setDraftVars({ ...(selected?.vars ?? {}) });
+    }, [selectedId, selected?.vars]);
+
+    if ((settings.savedThemes ?? []).length === 0) {
+      return (
+        <div className="text-sm text-muted-foreground">
+          No custom themes saved yet.
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-3">
+        <div className="pixel-frame">
+          <Select
+            {...(selectedId ? { value: selectedId } : {})}
+            onValueChange={(v: string) => setSelectedId(v)}
+          >
+            <SelectTrigger className="w-full bg-card">
+              <SelectValue placeholder="Select a theme" />
+            </SelectTrigger>
+            <SelectContent className="pixel-frame">
+              {(settings.savedThemes ?? []).map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {selected ? (
+          <>
+            <div className="text-sm">
+              Base:{" "}
+              {THEME_PRESETS.find(
+                (p) => p.id === (selected.presetId ?? "default")
+              )?.name ?? "Default"}{" "}
+              · {selected.dark ? "Dark" : "Light"}
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {THEME_KEYS.map(({ key, label }) => (
+                <ThemeColorRow
+                  key={key}
+                  keyName={key}
+                  label={label}
+                  dark={selected.dark}
+                  {...(selected.presetId !== undefined
+                    ? { presetId: selected.presetId }
+                    : {})}
+                  value={draftVars[key]}
+                  onChange={(next) => {
+                    setDraftVars((prev) => {
+                      const copy = { ...prev } as Record<string, string>;
+                      if (!next) delete copy[key];
+                      else copy[key] = next;
+                      return copy;
+                    });
+                  }}
+                />
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (!selected) return;
+                  if (!confirm(`Delete theme "${selected.name}"?`)) return;
+                  const next: AppSettings = {
+                    ...settings,
+                    savedThemes: (settings.savedThemes ?? []).filter(
+                      (x) => x.id !== selected.id
+                    ),
+                  };
+                  await db.settings.put(next);
+                  qc.invalidateQueries({ queryKey: ["settings"] });
+                  setSelectedId(next.savedThemes?.[0]?.id ?? null);
+                }}
+              >
+                Delete theme
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!selected) return;
+                  const next: AppSettings = {
+                    ...settings,
+                    savedThemes: (settings.savedThemes ?? []).map((t) =>
+                      t.id === selected.id ? { ...t, vars: draftVars } : t
+                    ),
+                  };
+                  await db.settings.put(next);
+                  qc.invalidateQueries({ queryKey: ["settings"] });
+                }}
+              >
+                Save changes
+              </Button>
+            </div>
+          </>
+        ) : null}
+      </div>
+    );
+  }
   function ColorRow({
     keyName,
     label,
@@ -265,26 +525,57 @@ export default function Settings() {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm">Theme preset</span>
+          <span className="text-sm">Theme</span>
           <div className="pixel-frame flex">
             <Select
               value={data.themePreset ?? "default"}
               onValueChange={async (value) => {
-                const next = { ...data, themePreset: value } as AppSettings;
-                await db.settings.put(next);
-                applyTheme(next);
-                qc.invalidateQueries({ queryKey: ["settings"] });
+                if (value.startsWith("custom:")) {
+                  const id = value.slice("custom:".length);
+                  const t = (data.savedThemes ?? []).find((x) => x.id === id);
+                  if (!t) return;
+                  const next = {
+                    ...data,
+                    themeDark: t.dark,
+                    themePreset: t.presetId ?? "default",
+                    themeVars: t.vars ?? {},
+                  } as AppSettings;
+                  await db.settings.put(next);
+                  applyTheme(next);
+                  qc.invalidateQueries({ queryKey: ["settings"] });
+                } else {
+                  const next = { ...data, themePreset: value } as AppSettings;
+                  await db.settings.put(next);
+                  applyTheme(next);
+                  qc.invalidateQueries({ queryKey: ["settings"] });
+                }
               }}
             >
               <SelectTrigger className="w-full bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="pixel-frame">
-                {THEME_PRESETS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectLabel>Presets</SelectLabel>
+                  {THEME_PRESETS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                {(data.savedThemes ?? []).length > 0 && (
+                  <>
+                    <SelectSeparator />
+                    <SelectGroup>
+                      <SelectLabel>Custom</SelectLabel>
+                      {(data.savedThemes ?? []).map((t) => (
+                        <SelectItem key={t.id} value={`custom:${t.id}`}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -427,6 +718,112 @@ export default function Settings() {
             />
             <span className="text-sm">Enable pixel art font</span>
           </label>
+        </div>
+
+        {/* Save Theme */}
+        <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm">Custom theme actions</span>
+            <div className="flex gap-3">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    disabled={Object.keys(data.themeVars ?? {}).length === 0}
+                    title={
+                      Object.keys(data.themeVars ?? {}).length === 0
+                        ? "Customize some colors to enable"
+                        : undefined
+                    }
+                  >
+                    Save Theme
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[min(30rem,95vw)]">
+                  <DialogHeader>
+                    <DialogTitle>Save custom theme</DialogTitle>
+                    <DialogDescription>
+                      This will save your current theme selection and custom
+                      colors.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-3">
+                    <div className="text-sm">
+                      Base theme:{" "}
+                      {THEME_PRESETS.find(
+                        (p) => p.id === (data.themePreset ?? "default")
+                      )?.name ?? "Default"}
+                    </div>
+                    <div className="text-sm">Customized variables:</div>
+                    <div className="grid grid-cols-1 gap-2 max-h-60 overflow-auto pr-1">
+                      {Object.entries(data.themeVars ?? {}).map(([k, v]) => (
+                        <div key={k} className="flex items-center gap-3">
+                          <span className="w-40 text-xs">{k}</span>
+                          <span
+                            className="inline-block size-4 pixel-frame"
+                            style={{ background: v }}
+                          />
+                          <span className="text-xs truncate">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm w-24">Name</span>
+                      <div className="pixel-frame flex-1">
+                        <Input
+                          id="save-theme-name"
+                          className="bg-card w-full"
+                          placeholder="My theme"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={async () => {
+                          const input = document.getElementById(
+                            "save-theme-name"
+                          ) as HTMLInputElement | null;
+                          const name = input?.value?.trim() ?? "";
+                          if (!name) return;
+                          const theme = {
+                            id:
+                              crypto.randomUUID?.() ??
+                              Math.random().toString(36).slice(2),
+                            name,
+                            dark: Boolean(data.themeDark),
+                            presetId: data.themePreset,
+                            vars: data.themeVars ?? {},
+                          };
+                          const next: AppSettings = {
+                            ...data,
+                            savedThemes: [...(data.savedThemes ?? []), theme],
+                          };
+                          await db.settings.put(next);
+                          applyTheme(next);
+                          if (input) input.value = "";
+                          qc.invalidateQueries({ queryKey: ["settings"] });
+                        }}
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Configure custom themes */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Configure custom themes</Button>
+                </DialogTrigger>
+                <DialogContent className="w-[min(42rem,95vw)] max-h-[85vh] overflow-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configure custom themes</DialogTitle>
+                  </DialogHeader>
+                  <SavedThemesEditor settings={data} />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
         </div>
 
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
