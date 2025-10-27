@@ -562,11 +562,11 @@ function HabitRow({
 }) {
   return (
     <PixelCard className="flex flex-col gap-3">
-      <div className="flex items-start pt-1 justify-between gap-3">
-        <div className="flex items-start gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <Button
             aria-label={entry?.completed ? "Mark incomplete" : "Mark complete"}
-            size="icon"
+            size="icon-sm"
             variant={entry?.completed ? "secondary" : "background"}
             onClick={onToggle}
           >
@@ -594,7 +594,9 @@ function HabitRow({
           </div>
         </div>
         <div className="flex items-end gap-3">
-          <Button onClick={onLog}>Log</Button>
+          <Button size="sm" onClick={onLog}>
+            Log
+          </Button>
           <Button aria-label="Edit habit" onClick={onEdit} size="icon-sm">
             <EditIcon className="size-6" />
           </Button>

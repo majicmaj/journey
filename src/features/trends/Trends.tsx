@@ -13,12 +13,16 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import MultiSelect from "@/components/ui/multi-select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { computeDaySummary } from "@/lib/score";
 import type { DailyEntry } from "@/types/habit";
 import LineChart, { type LineSeries } from "./components/LineChart";
 import BarChart from "./components/BarChart";
 import HeatmapMatrix from "./components/HeatmapMatrix";
+import ClockHeatmap from "./components/ClockHeatmap";
+import TimeBlocks, { type TimeBlock } from "./components/TimeBlocks";
+import StackedBarChart, {
+  type StackedPoint,
+} from "./components/StackedBarChart";
 import StreakTimeline from "./components/StreakTimeline";
 import ResponsiveContainer from "./components/ResponsiveContainer";
 import PanZoom from "./components/PanZoom";
@@ -92,7 +96,17 @@ function enumerateDateKeys(fromKey: string, toKey: string): string[] {
   return out;
 }
 
-type ViewMode = "trend" | "streaks" | "cadence" | "weekday";
+type ViewMode =
+  | "trend"
+  | "streaks"
+  | "cadence"
+  | "weekday"
+  | "quantities"
+  | "blocks"
+  | "hours";
+
+type QuantityScope = "per-habit" | "aggregated";
+type BlocksLayout = "by-day" | "by-habit";
 
 export default function Trends() {
   const settings = useSettings();
@@ -137,6 +151,11 @@ export default function Trends() {
   const [habitId, setHabitId] = useState<string | null>(null);
   const [habitIds, setHabitIds] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Local view-specific toggles
+  const [quantityScope, setQuantityScope] =
+    useState<QuantityScope>("per-habit");
+  const [blocksLayout, setBlocksLayout] = useState<BlocksLayout>("by-day");
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -297,20 +316,197 @@ export default function Trends() {
     return { segs, labels, dates: days };
   }, [from, to, activeHabits, entriesQ.data]);
 
+  // ---------- Quantities (per-day) ----------
+  const dateKeys = useMemo(() => enumKeys(from, to), [from, to]);
+  const entriesByHabitByDate = useMemo(() => {
+    const map = new Map<string, Map<string, DailyEntry>>(); // habitId -> (date -> entry)
+    for (const e of entriesQ.data ?? []) {
+      const byDate = map.get(e.habitId) ?? new Map<string, DailyEntry>();
+      byDate.set(e.date, e);
+      map.set(e.habitId, byDate);
+    }
+    return map;
+  }, [entriesQ.data]);
+
+  function habitColorAt(index: number, fallback?: string): string {
+    const varIdx = (index % 5) + 1;
+    return fallback ?? `var(--chart-${varIdx})`;
+  }
+
+  const quantityOverlaySeries: LineSeries[] = useMemo(() => {
+    const series: LineSeries[] = [];
+    activeHabits.forEach((h, i) => {
+      const byDate = entriesByHabitByDate.get(h.id) ?? new Map();
+      const pts = dateKeys.map((dk) => {
+        const q = byDate.get(dk)?.quantity;
+        return { x: dk, y: Number.isFinite(q as number) ? (q as number) : 0 };
+      });
+      series.push({
+        name: h.title,
+        color: habitColorAt(i, h.color),
+        points: pts,
+      });
+    });
+    return series;
+  }, [activeHabits, entriesByHabitByDate, dateKeys]);
+
+  const quantityAggregatedSeries: LineSeries[] = useMemo(() => {
+    const pts = dateKeys.map((dk) => {
+      let sum = 0;
+      for (let i = 0; i < activeHabits.length; i++) {
+        const h = activeHabits[i];
+        const q = entriesByHabitByDate.get(h.id)?.get(dk)?.quantity ?? 0;
+        if (Number.isFinite(q)) sum += q as number;
+      }
+      return { x: dk, y: sum };
+    });
+    return [
+      {
+        name: "Sum",
+        color: "var(--secondary)",
+        points: pts,
+      },
+    ];
+  }, [activeHabits, entriesByHabitByDate, dateKeys]);
+
+  const quantityStacked: StackedPoint[] = useMemo(() => {
+    return dateKeys.map((dk) => {
+      const segments = activeHabits.map((h, i) => {
+        const q = entriesByHabitByDate.get(h.id)?.get(dk)?.quantity ?? 0;
+        return {
+          key: h.id,
+          value: Number.isFinite(q) ? (q as number) : 0,
+          color: habitColorAt(i, h.color),
+        };
+      });
+      return { x: dk, segments };
+    });
+  }, [dateKeys, activeHabits, entriesByHabitByDate]);
+
+  // ---------- Time blocks ----------
+  const blocksByDay: {
+    rows: number;
+    blocks: TimeBlock[];
+    rowLabelAt: (r: number) => string;
+  } = useMemo(() => {
+    const rows = dateKeys.length;
+    const blocks: TimeBlock[] = [];
+    // For each day row, add blocks for ALL selected habits that have start/end
+    dateKeys.forEach((dk, r) => {
+      for (let i = 0; i < activeHabits.length; i++) {
+        const h = activeHabits[i];
+        const e = entriesByHabitByDate.get(h.id)?.get(dk);
+        const s =
+          typeof e?.startMinutes === "number"
+            ? (e!.startMinutes as number)
+            : null;
+        const t =
+          typeof e?.endMinutes === "number" ? (e!.endMinutes as number) : null;
+        if (s != null && t != null && t > s) {
+          blocks.push({
+            row: r,
+            fromMin: s,
+            toMin: t,
+            color: h.color ?? habitColorAt(i),
+            label: `${dk} • ${h.title}`,
+          });
+        }
+      }
+    });
+    return { rows, blocks, rowLabelAt: (r) => dateKeys[r] ?? "" };
+  }, [dateKeys, activeHabits, entriesByHabitByDate]);
+
+  function median(nums: number[]): number | null {
+    if (nums.length === 0) return null;
+    const a = [...nums].sort((x, y) => x - y);
+    const m = Math.floor(a.length / 2);
+    if (a.length % 2 === 0) return (a[m - 1] + a[m]) / 2;
+    return a[m];
+  }
+
+  const blocksByHabit: {
+    rows: number;
+    blocks: TimeBlock[];
+    rowLabelAt: (r: number) => string;
+  } = useMemo(() => {
+    const rows = activeHabits.length;
+    const blocks: TimeBlock[] = [];
+    activeHabits.forEach((h, r) => {
+      const entries = entriesQ.data?.filter((e) => e.habitId === h.id) ?? [];
+      const starts: number[] = [];
+      const ends: number[] = [];
+      for (const e of entries) {
+        const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
+        const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
+        if (s != null && t != null && t > s) {
+          starts.push(s);
+          ends.push(t);
+        }
+      }
+      const ms = median(starts);
+      const me = median(ends);
+      if (ms != null && me != null && me > ms) {
+        blocks.push({
+          row: r,
+          fromMin: ms,
+          toMin: me,
+          color: h.color ?? habitColorAt(r),
+          label: h.title,
+        });
+      }
+    });
+    return { rows, blocks, rowLabelAt: (r) => activeHabits[r]?.title ?? "" };
+  }, [activeHabits, entriesQ.data]);
+
+  const blocksResolved =
+    blocksLayout === "by-day" ? blocksByDay : blocksByHabit;
+
+  // ---------- Hourly heat (24 columns) ----------
+  const hourlyBinsPct: number[] = useMemo(() => {
+    const minsPerHour = new Array(24).fill(0) as number[];
+    const dayCount = Math.max(1, dateKeys.length);
+    // Aggregate minutes overlapped in each hour across selected habits
+    for (const e of entriesQ.data ?? []) {
+      if (!activeHabits.find((h) => h.id === e.habitId)) continue;
+      const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
+      const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
+      if (s == null || t == null || t <= s) continue;
+      const startH = Math.max(0, Math.floor(s / 60));
+      const endH = Math.min(23, Math.floor((t - 1) / 60));
+      for (let h = startH; h <= endH; h++) {
+        const hStart = h * 60;
+        const hEnd = hStart + 60;
+        const overlap = Math.max(0, Math.min(t, hEnd) - Math.max(s, hStart));
+        if (overlap > 0) minsPerHour[h] += overlap;
+      }
+    }
+    // Average per day, then scale 0..100 with 60 minutes → 100
+    return minsPerHour.map((m) =>
+      Math.max(0, Math.min(100, (m / dayCount / 60) * 100))
+    );
+  }, [entriesQ.data, activeHabits, dateKeys.length]);
+
   return (
     <div className="p-3 flex flex-col gap-4">
-      <Tabs value={view} onValueChange={(v: string) => setView(v as ViewMode)}>
-        <div className="pixel-frame bg-card">
-          <TabsList className="bg-transparent">
-            <TabsTrigger value="trend">Trend</TabsTrigger>
-            <TabsTrigger value="cadence">Cadence</TabsTrigger>
-            <TabsTrigger value="weekday">Weekday</TabsTrigger>
-            <TabsTrigger value="streaks">Streaks</TabsTrigger>
-          </TabsList>
-        </div>
-      </Tabs>
       <header className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="grid w-full sm:flex gap-3 items-center flex-wrap">
+          <span className="opacity-70 text-sm">View</span>
+          <div className="pixel-frame">
+            <Select value={view} onValueChange={(v: ViewMode) => setView(v)}>
+              <SelectTrigger className="w-full sm:w-48 bg-card">
+                <SelectValue placeholder="View" />
+              </SelectTrigger>
+              <SelectContent className="pixel-frame">
+                <SelectItem value="trend">Trend</SelectItem>
+                <SelectItem value="cadence">Cadence</SelectItem>
+                <SelectItem value="weekday">Weekday</SelectItem>
+                <SelectItem value="streaks">Streaks</SelectItem>
+                <SelectItem value="quantities">Quantities</SelectItem>
+                <SelectItem value="blocks">Time blocks</SelectItem>
+                <SelectItem value="hours">Hourly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <span className="opacity-70 text-sm">Range</span>
           <div className="pixel-frame">
             <Select
@@ -458,6 +654,282 @@ export default function Trends() {
           )}
         </div>
       </header>
+
+      {/* Quantities view */}
+      {view === "quantities" && (
+        <div className="pixel-frame bg-card p-3">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="opacity-70 text-sm">Scope</span>
+            <div className="pixel-frame">
+              <Select
+                value={quantityScope}
+                onValueChange={(v: QuantityScope) => setQuantityScope(v)}
+              >
+                <SelectTrigger className="w-[160px] bg-card">
+                  <SelectValue placeholder="Scope" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="per-habit">Per habit (overlay)</SelectItem>
+                  <SelectItem value="aggregated">Aggregated sum</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Fullscreen
+            affordance={({ open }) => <FullScreenButton onClick={open} />}
+          >
+            {({ close }) => (
+              <PanZoom className="w-full h-full bg-background">
+                <ResponsiveContainer height="fill" className="h-full">
+                  {(vw, vh) => (
+                    <LineChart
+                      width={vw}
+                      height={vh}
+                      series={
+                        quantityScope === "aggregated"
+                          ? quantityAggregatedSeries
+                          : quantityOverlaySeries
+                      }
+                      compactXAxis={true}
+                    />
+                  )}
+                </ResponsiveContainer>
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
+
+          <ResponsiveContainer
+            height={(w) => Math.max(260, Math.floor(w * 0.4))}
+          >
+            {(vw, vh) => (
+              <LineChart
+                width={vw}
+                height={vh}
+                series={
+                  quantityScope === "aggregated"
+                    ? quantityAggregatedSeries
+                    : quantityOverlaySeries
+                }
+                compactXAxis={true}
+              />
+            )}
+          </ResponsiveContainer>
+
+          <div className="mt-4">
+            <Fullscreen
+              affordance={({ open }) => <FullScreenButton onClick={open} />}
+            >
+              {({ close }) => (
+                <PanZoom className="w-full h-full bg-background">
+                  <ResponsiveContainer height="fill" className="h-full">
+                    {(vw, vh) => (
+                      <StackedBarChart
+                        width={vw}
+                        height={vh}
+                        data={quantityStacked}
+                      />
+                    )}
+                  </ResponsiveContainer>
+                  <div className="absolute -top-6 -right-6 translate-x-1/2">
+                    <button
+                      className="pixel-frame px-2 py-1 bg-card"
+                      onClick={close}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </PanZoom>
+              )}
+            </Fullscreen>
+
+            <ResponsiveContainer
+              height={(w) => Math.max(200, Math.floor(w * 0.3))}
+            >
+              {(vw, vh) => (
+                <StackedBarChart
+                  width={vw}
+                  height={vh}
+                  data={quantityStacked}
+                />
+              )}
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Time blocks view */}
+      {view === "blocks" && (
+        <div className="pixel-frame bg-card p-3">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="opacity-70 text-sm">Layout</span>
+            <div className="pixel-frame">
+              <Select
+                value={blocksLayout}
+                onValueChange={(v: BlocksLayout) => setBlocksLayout(v)}
+              >
+                <SelectTrigger className="w-[160px] bg-card">
+                  <SelectValue placeholder="Layout" />
+                </SelectTrigger>
+                <SelectContent className="pixel-frame">
+                  <SelectItem value="by-day">By day</SelectItem>
+                  <SelectItem value="by-habit">
+                    By habit (median block)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Fullscreen
+            affordance={({ open }) => <FullScreenButton onClick={open} />}
+          >
+            {({ close }) => (
+              <PanZoom className="w-full h-full bg-background">
+                <ResponsiveContainer height="fill" className="h-full">
+                  {(vw, vh) => (
+                    <TimeBlocks
+                      width={vw}
+                      height={vh}
+                      rows={blocksResolved.rows}
+                      rowLabelAt={blocksResolved.rowLabelAt}
+                      blocks={blocksResolved.blocks}
+                    />
+                  )}
+                </ResponsiveContainer>
+                <div className="absolute -top-6 -right-6 translate-x-1/2">
+                  <button
+                    className="pixel-frame px-2 py-1 bg-card"
+                    onClick={close}
+                  >
+                    Close
+                  </button>
+                </div>
+              </PanZoom>
+            )}
+          </Fullscreen>
+
+          <ResponsiveContainer
+            height={() => Math.max(220, blocksResolved.rows * 28)}
+          >
+            {(vw, vh) => (
+              <TimeBlocks
+                width={vw}
+                height={vh}
+                rows={blocksResolved.rows}
+                rowLabelAt={blocksResolved.rowLabelAt}
+                blocks={blocksResolved.blocks}
+              />
+            )}
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Hourly heat view */}
+      {view === "hours" && (
+        <div className="pixel-frame bg-card p-3">
+          <div className="mb-3 grid gap-2 sm:flex sm:items-center sm:justify-start">
+            <span className="opacity-70 text-sm">Hourly visuals</span>
+          </div>
+
+          {/* Row: matrix + clock side-by-side on large screens */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Fullscreen
+                affordance={({ open }) => <FullScreenButton onClick={open} />}
+              >
+                {({ close }) => (
+                  <PanZoom className="w-full h-full bg-background">
+                    <ResponsiveContainer height="fill" className="h-full">
+                      {(vw, vh) => (
+                        <HeatmapMatrix
+                          width={vw}
+                          height={vh}
+                          rows={1}
+                          cols={24}
+                          valueAt={(_r, c) => hourlyBinsPct[c] ?? 0}
+                          labelForCol={(c) => String(c).padStart(2, "0")}
+                          labelForRow={() => "Avg/min"}
+                          showWeekBands={false}
+                        />
+                      )}
+                    </ResponsiveContainer>
+                    <div className="absolute -top-6 -right-6 translate-x-1/2">
+                      <button
+                        className="pixel-frame px-2 py-1 bg-card"
+                        onClick={close}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </PanZoom>
+                )}
+              </Fullscreen>
+
+              <ResponsiveContainer
+                height={(w) => Math.max(160, Math.floor(w * 0.25))}
+              >
+                {(vw, vh) => (
+                  <HeatmapMatrix
+                    width={vw}
+                    height={vh}
+                    rows={1}
+                    cols={24}
+                    valueAt={(_r, c) => hourlyBinsPct[c] ?? 0}
+                    labelForCol={(c) => String(c).padStart(2, "0")}
+                    labelForRow={() => "Avg/min"}
+                    showWeekBands={false}
+                  />
+                )}
+              </ResponsiveContainer>
+            </div>
+
+            <div>
+              <Fullscreen
+                affordance={({ open }) => <FullScreenButton onClick={open} />}
+              >
+                {({ close }) => (
+                  <PanZoom className="w-full h-full bg-background">
+                    <ResponsiveContainer height="fill" className="h-full">
+                      {(vw, vh) => (
+                        <ClockHeatmap
+                          width={vw}
+                          height={vh}
+                          values={hourlyBinsPct}
+                        />
+                      )}
+                    </ResponsiveContainer>
+                    <div className="absolute -top-6 -right-6 translate-x-1/2">
+                      <button
+                        className="pixel-frame px-2 py-1 bg-card"
+                        onClick={close}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </PanZoom>
+                )}
+              </Fullscreen>
+
+              <ResponsiveContainer
+                height={(w) => Math.max(220, Math.floor(w * 0.5))}
+              >
+                {(vw, vh) => (
+                  <ClockHeatmap width={vw} height={vh} values={hourlyBinsPct} />
+                )}
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {view === "trend" && (
         <div className="pixel-frame bg-card p-3">

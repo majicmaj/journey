@@ -319,7 +319,7 @@ function DayHeader({
     <header
       className={cn(
         "h-0 transition-all duration-300 overflow-hidden",
-        headerExpanded && "h-62"
+        headerExpanded && "h-50"
       )}
     >
       <div className="m-1 flex flex-col gap-3">
@@ -408,7 +408,7 @@ function DayHeader({
               </SelectContent>
             </Select>
           </div>
-          <div className="pixel-frame flex-1 col-span-2 sm:col-span-1">
+          <div className="pixel-frame">
             <MultiSelect
               options={allTags.map((t) => ({ value: t, label: t }))}
               value={filterTags}
