@@ -289,17 +289,21 @@ function DayPane({
               isNew={doneEverByHabitId.get(h.id) === false}
               onToggle={() => {
                 const nextCompleted = !(entry?.completed ?? false);
-                // Generic toggle path (including marking incomplete)
+                // Preserve any existing logged fields when toggling completion
                 upsert.mutate({
                   habitId: h.id,
                   date: dayKey,
-                  // Preserve any existing value when toggling completion state
-                  value:
-                    typeof entry?.value === "number"
-                      ? (entry?.value as number)
-                      : null,
                   completed: nextCompleted,
-                  kindAtEntry: entry?.kindAtEntry ?? h.kind,
+                  quantity:
+                    typeof entry?.quantity === "number" ? entry.quantity : null,
+                  startMinutes:
+                    typeof entry?.startMinutes === "number"
+                      ? entry.startMinutes
+                      : null,
+                  endMinutes:
+                    typeof entry?.endMinutes === "number"
+                      ? entry.endMinutes
+                      : null,
                 });
               }}
               onLog={() => setLoggingId(h.id)}
@@ -583,8 +587,13 @@ function HabitRow({
           </div>
         </div>
         <div className="flex items-end gap-3">
-          <Button size="sm" onClick={onLog}>
-            Log
+          <Button
+            size="sm"
+            variant={entry ? "outline" : "default"}
+            aria-label={entry ? "Update log" : "Log"}
+            onClick={onLog}
+          >
+            LOG
           </Button>
           <Button aria-label="Edit habit" onClick={onEdit} size="icon-sm">
             <EditIcon className="size-6" />

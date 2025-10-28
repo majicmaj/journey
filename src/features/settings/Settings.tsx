@@ -816,9 +816,9 @@ export default function Settings() {
 
         {/* Save Theme */}
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex sm:items-center flex-col sm:flex-row justify-between gap-3">
             <span className="text-sm">Custom theme actions</span>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Dialog>
                 <DialogTrigger asChild>
                   <Button
