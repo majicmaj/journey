@@ -5,10 +5,7 @@ import { FireIcon } from "@/components/pixel/icons";
 type Segment = { start: string; end: string };
 
 type TipState = {
-  // screen-space for fixed tooltip (robust under relative/transform parents)
-  screenX: number;
-  screenY: number;
-  // container-local (for date mapping)
+  // container-local (for tooltip and date mapping)
   localX: number;
   localY: number;
   row: number;
@@ -136,8 +133,6 @@ export default function StreakTimeline({
     }
 
     setTip({
-      screenX: e.clientX,
-      screenY: e.clientY,
       localX,
       localY,
       row: r,
@@ -413,14 +408,13 @@ export default function StreakTimeline({
         </g>
       </svg>
 
-      {/* Tooltip — FIXED so clientX/Y is correct even under relative parents */}
+      {/* Tooltip — container-relative like HeatmapMatrix */}
       {tip && (
         <div
-          className="pointer-events-none fixed z-50 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
+          className="pointer-events-none absolute z-10 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
           style={{
-            // keep on-screen with simple flip logic
-            left: Math.min(tip.screenX + 16, window.innerWidth - 220),
-            top: Math.min(tip.screenY + 16, window.innerHeight - 80),
+            left: Math.min(padding.left + tip.localX + 12, width - 220),
+            top: Math.min(padding.top + tip.localY + 12, height - 80),
             whiteSpace: "nowrap",
           }}
           role="status"

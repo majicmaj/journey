@@ -58,7 +58,7 @@ export default function ChartFrame({
   // With fullscreen affordance
   return (
     <div className={cn("pixel-frame bg-card p-3", className)}>
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
         {controls ? <div className="min-w-0">{controls}</div> : <div />}
         <Fullscreen
           affordance={({ open }) => <FullScreenButton onClick={open} />}

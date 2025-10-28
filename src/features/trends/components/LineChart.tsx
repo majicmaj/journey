@@ -5,9 +5,9 @@ export type LinePoint = { x: string; y: number };
 export type LineSeries = { name: string; color: string; points: LinePoint[] };
 
 type TipState = {
-  screenX: number; // viewport coords for fixed tooltip
-  screenY: number;
-  localX: number; // chart-local (for x-index mapping)
+  containerX: number; // container-local (for tooltip positioning)
+  containerY: number;
+  localX: number; // inner-chart local X for index mapping
   xKey: string | null;
   idx: number | null;
 } | null;
@@ -88,7 +88,9 @@ export default function LineChart({
     const gy = (rect?.top ?? 0) + padding.top;
     const lx = Math.max(0, Math.min(innerW, clientX - gx));
     const ly = Math.max(0, Math.min(innerH, clientY - gy));
-    return { lx, ly };
+    const cx = clientX - (rect?.left ?? 0);
+    const cy = clientY - (rect?.top ?? 0);
+    return { lx, ly, cx, cy };
   };
 
   const idxFromLocalX = (lx: number) => {
@@ -106,11 +108,11 @@ export default function LineChart({
         rafRef.current = null;
         const p = queuedRef.current;
         if (!p) return;
-        const { lx } = localFromClient(p.clientX, p.clientY);
+        const { lx, cx, cy } = localFromClient(p.clientX, p.clientY);
         const idx = idxFromLocalX(lx);
         setTip({
-          screenX: p.clientX,
-          screenY: p.clientY,
+          containerX: cx,
+          containerY: cy,
           localX: lx,
           xKey: xDomain[idx] ?? null,
           idx,
@@ -412,13 +414,13 @@ export default function LineChart({
         </g>
       </svg>
 
-      {/* Fixed, bounds-aware tooltip (robust vs. relative/transform parents) */}
+      {/* Container-relative, bounds-aware tooltip */}
       {tip?.xKey && (
         <div
-          className="pointer-events-none fixed z-50 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
+          className="pointer-events-none absolute z-10 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
           style={{
-            left: Math.min(tip.screenX + 16, window.innerWidth - 220),
-            top: Math.min(tip.screenY + 16, window.innerHeight - 120),
+            left: Math.min(tip.containerX + 12, width - 220),
+            top: Math.min(tip.containerY + 12, height - 120),
             whiteSpace: "nowrap",
           }}
           role="status"

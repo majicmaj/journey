@@ -37,12 +37,13 @@ export default function BarChart({
   const valToH = (v: number) => Math.round((v / max) * innerH);
 
   type Tip = {
-    screenX: number;
-    screenY: number;
     i: number;
   } | null;
   const [tip, setTip] = useState<Tip>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+    null
+  );
 
   // rAF throttle
   const rafRef = useRef<number | null>(null);
@@ -57,6 +58,9 @@ export default function BarChart({
         if (!p) return;
         const rect = wrapperRef.current?.getBoundingClientRect();
         const gx = (rect?.left ?? 0) + padding.left;
+        const gy = (rect?.top ?? 0) + padding.top;
+        const cx = p.clientX - (rect?.left ?? 0);
+        const cy = p.clientY - (rect?.top ?? 0);
         const lx = p.clientX - gx;
         // hit-test which bar we’re over
         let idx = -1;
@@ -69,10 +73,12 @@ export default function BarChart({
         }
         if (idx >= 0) {
           setHoverIdx(idx);
-          setTip({ screenX: p.clientX, screenY: p.clientY, i: idx });
+          setTip({ i: idx });
+          setMousePos({ x: cx, y: cy });
         } else {
           setHoverIdx(null);
           setTip(null);
+          setMousePos(null);
         }
       });
     }
@@ -86,6 +92,7 @@ export default function BarChart({
   const onLeave = () => {
     setHoverIdx(null);
     setTip(null);
+    setMousePos(null);
   };
 
   return (
@@ -199,13 +206,13 @@ export default function BarChart({
         </g>
       </svg>
 
-      {/* Fixed, bounds-aware tooltip */}
-      {tip && bars[tip.i] && (
+      {/* Container-relative, bounds-aware tooltip */}
+      {tip && bars[tip.i] && mousePos && (
         <div
-          className="pointer-events-none fixed z-50 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
+          className="pointer-events-none absolute z-10 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
           style={{
-            left: Math.min(tip.screenX + 16, window.innerWidth - 240),
-            top: Math.min(tip.screenY + 16, window.innerHeight - 120),
+            left: Math.min(mousePos.x + 12, width - 240),
+            top: Math.min(mousePos.y + 12, height - 120),
             whiteSpace: "nowrap",
           }}
           role="status"
