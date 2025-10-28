@@ -33,7 +33,7 @@ export default function ChartFrame({
   const ChartBody = ({ full }: { full: boolean }) => {
     const Wrapper = pannable ? PanZoom : "div";
     const wrapperProps = pannable
-      ? { className: cn("w-full h-full bg-background", innerClassName) }
+      ? { className: cn("w-full h-full bg-card border", innerClassName) }
       : { className: cn("w-full h-full", innerClassName) };
 
     return (
