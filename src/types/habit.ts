@@ -16,6 +16,9 @@ export interface Habit {
   // Thresholds for time-based completion/scoring (minutes)
   minTimeMinutes?: number | null;
   maxTimeMinutes?: number | null;
+  // Thresholds for total duration across all logs in a day (minutes)
+  minDurationMinutes?: number | null;
+  maxDurationMinutes?: number | null;
   // How to compute contribution when both dimensions exist
   scoreMode?: "quantity" | "time" | "both" | undefined; // default "both"
   // Legacy fields (kept for backward compatibility when reading existing data)
@@ -33,10 +36,18 @@ export interface DailyEntry {
   date: string; // YYYY-MM-DD (user TZ, respecting day start)
   completed?: boolean; // compact logging
   // Unified fields
-  quantity?: number | null;
+  quantity?: number | null; // legacy flat field
   // Store raw start/end (minutes since day start). timeMinutes is derived.
-  startMinutes?: number | null;
-  endMinutes?: number | null;
+  startMinutes?: number | null; // legacy flat field
+  endMinutes?: number | null; // legacy flat field
+  // Multiple logs per day
+  logs?: Array<{
+    id: string;
+    quantity: number | null;
+    startMinutes: number | null;
+    endMinutes: number | null;
+    editedAt?: string;
+  }>;
   // Legacy fields (kept for backward compatibility)
   /** @deprecated */ value?: number | boolean | null;
   /** @deprecated */ kindAtEntry?: Habit["kind"]; // "boolean" | "quantified" | "time"

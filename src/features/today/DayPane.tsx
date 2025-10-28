@@ -352,14 +352,21 @@ function DayPane({
                   habit={h}
                   entry={e}
                   onConfirm={(payload) => {
-                    const completed = meetsCompletionThresholds(h, payload);
+                    const completed = meetsCompletionThresholds(
+                      h,
+                      payload as any
+                    );
                     upsert.mutate({
                       habitId: h.id,
                       date: dayKey,
                       completed,
-                      quantity: payload.quantity ?? null,
-                      startMinutes: payload.startMinutes ?? null,
-                      endMinutes: payload.endMinutes ?? null,
+                      logs: payload.logs.map((l) => ({
+                        id: crypto.randomUUID(),
+                        quantity: l.quantity,
+                        startMinutes: l.startMinutes,
+                        endMinutes: l.endMinutes,
+                        editedAt: new Date().toISOString(),
+                      })),
                     });
                     setLoggingId(null);
                   }}
@@ -421,9 +428,11 @@ function LogDialogInner({
   habit: Habit;
   entry: DailyEntry | undefined;
   onConfirm: (payload: {
-    quantity: number | null;
-    startMinutes: number | null;
-    endMinutes: number | null;
+    logs: Array<{
+      quantity: number | null;
+      startMinutes: number | null;
+      endMinutes: number | null;
+    }>;
   }) => void;
 }) {
   const toTime = (m: number | null | undefined) =>
@@ -432,12 +441,29 @@ function LogDialogInner({
           m % 60
         ).padStart(2, "0")}`
       : "";
-  const [start, setStart] = useState<string>(
-    toTime(entry?.startMinutes ?? null)
-  );
-  const [end, setEnd] = useState<string>(toTime(entry?.endMinutes ?? null));
-  const [quantity, setQuantity] = useState<string>(
-    typeof entry?.quantity === "number" ? String(entry?.quantity) : ""
+  type LogRow = { id: string; start: string; end: string; quantity: string };
+  const initialLogs: LogRow[] = (() => {
+    const logs = entry?.logs ?? [];
+    if (logs.length > 0)
+      return logs.map((l) => ({
+        id: l.id,
+        start: toTime(l.startMinutes ?? null),
+        end: toTime(l.endMinutes ?? null),
+        quantity: typeof l.quantity === "number" ? String(l.quantity) : "",
+      }));
+    return [
+      {
+        id: crypto.randomUUID(),
+        start: toTime(entry?.startMinutes ?? null),
+        end: toTime(entry?.endMinutes ?? null),
+        quantity:
+          typeof entry?.quantity === "number" ? String(entry.quantity) : "",
+      },
+    ];
+  })();
+  const [rows, setRows] = useState<LogRow[]>(initialLogs);
+  const [selectedId, setSelectedId] = useState<string>(
+    initialLogs[0]?.id ?? ""
   );
 
   const parseTime = (s: string): number | null => {
@@ -448,53 +474,143 @@ function LogDialogInner({
     return hh * 60 + mm;
   };
 
+  const totalDuration = rows.reduce((sum, row) => {
+    const s = parseTime(row.start);
+    const e = parseTime(row.end);
+    if (s == null || e == null) return sum;
+    return sum + Math.max(e - s, 0);
+  }, 0);
+  const totalHH = Math.floor(totalDuration / 60);
+  const totalMM = totalDuration % 60;
+
   return (
     <div className="grid gap-3">
-      <label className="flex items-center gap-3">
-        <span className="w-28 text-sm">Start</span>
-        <div className="pixel-frame w-full">
-          <Input
-            type="time"
-            className="bg-background"
-            value={start}
-            onChange={(ev) => setStart(ev.target.value)}
-          />
+      {/* Log list as buttons */}
+      <div className="pixel-frame">
+        <div className="flex flex-col p-3 gap-2 overflow-y-auto overflow-x-hidden max-h-96">
+          {rows.map((row, i) => {
+            const s = parseTime(row.start);
+            const e = parseTime(row.end);
+            const d = s != null && e != null ? Math.max(e - s, 0) : null;
+            const label = `${row.start || "--:--"}-${row.end || "--:--"}${
+              d != null ? ` (${Math.floor(d / 60)}h ${d % 60}m)` : ""
+            }${
+              row.quantity
+                ? ` • ${row.quantity}${habit.quantityUnit ?? ""}`
+                : ""
+            }`;
+            return (
+              <div
+                key={row.id}
+                className={cn(
+                  "pixel-frame p-1 px-2",
+                  selectedId === row.id ? "bg-secondary" : "bg-background"
+                )}
+                role="button"
+                onClick={() => setSelectedId(row.id)}
+              >
+                {`${i + 1}: ${label}`}
+              </div>
+            );
+          })}
         </div>
-      </label>
-      <label className="flex items-center gap-3">
-        <span className="w-28 text-sm">End</span>
-        <div className="pixel-frame w-full">
-          <Input
-            type="time"
-            className="bg-background"
-            value={end}
-            onChange={(ev) => setEnd(ev.target.value)}
-          />
-        </div>
-      </label>
-      <label className="flex items-center gap-3">
-        <span className="w-28 text-sm">Quantity</span>
-        <div className="pixel-frame w-full relative">
-          <Input
-            type="number"
-            className="bg-background pr-14"
-            value={quantity}
-            onChange={(ev) => setQuantity(ev.target.value)}
-          />
-          <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
-            {habit.quantityUnit ?? ""}
+      </div>
+      <Button
+        variant="outline"
+        onClick={() => {
+          const newRow: LogRow = {
+            id: crypto.randomUUID(),
+            start: "",
+            end: "",
+            quantity: "",
+          };
+          setRows((r) => [...r, newRow]);
+          setSelectedId(newRow.id);
+        }}
+      >
+        Add a new log
+      </Button>
+
+      {/* Summary */}
+      <div className="text-sm opacity-80">
+        Total: {totalHH}h {totalMM}m • {rows.length} log
+        {rows.length === 1 ? "" : "s"}
+      </div>
+
+      {/* Editor for selected */}
+      {(() => {
+        const row = rows.find((r) => r.id === selectedId) ?? rows[0];
+        if (!row) return null;
+        return (
+          <div key={row.id} className="grid gap-2">
+            <div className="flex items-center gap-3">
+              <span className="w-28 text-sm">Start</span>
+              <div className="pixel-frame w-full">
+                <Input
+                  type="time"
+                  className="bg-background"
+                  value={row.start}
+                  onChange={(ev) =>
+                    setRows((r) =>
+                      r.map((x) =>
+                        x.id === row.id ? { ...x, start: ev.target.value } : x
+                      )
+                    )
+                  }
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-28 text-sm">End</span>
+              <div className="pixel-frame w-full">
+                <Input
+                  type="time"
+                  className="bg-background"
+                  value={row.end}
+                  onChange={(ev) =>
+                    setRows((r) =>
+                      r.map((x) =>
+                        x.id === row.id ? { ...x, end: ev.target.value } : x
+                      )
+                    )
+                  }
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-28 text-sm">Quantity</span>
+              <div className="pixel-frame w-full relative">
+                <Input
+                  type="number"
+                  className="bg-background pr-14"
+                  value={row.quantity}
+                  onChange={(ev) =>
+                    setRows((r) =>
+                      r.map((x) =>
+                        x.id === row.id
+                          ? { ...x, quantity: ev.target.value }
+                          : x
+                      )
+                    )
+                  }
+                />
+                <div className="pointer-events-none absolute right-2 bottom-1 text-xs text-muted-foreground max-w-16 truncate">
+                  {habit.quantityUnit ?? ""}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </label>
+        );
+      })()}
       <DialogFooter>
         <Button
           onClick={() => {
-            const payload = {
-              quantity: quantity.trim() === "" ? null : Number(quantity),
-              startMinutes: parseTime(start),
-              endMinutes: parseTime(end),
-            } as const;
-            onConfirm(payload);
+            const logs = rows.map((r) => ({
+              quantity: r.quantity.trim() === "" ? null : Number(r.quantity),
+              startMinutes: parseTime(r.start),
+              endMinutes: parseTime(r.end),
+            }));
+            onConfirm({ logs });
           }}
         >
           Save

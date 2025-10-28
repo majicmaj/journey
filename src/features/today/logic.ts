@@ -51,28 +51,57 @@ function meetsOneDimension(
 export function meetsCompletionThresholds(
   h: Habit,
   entry:
-    | Pick<DailyEntry, "quantity" | "startMinutes" | "endMinutes">
+    | Pick<DailyEntry, "quantity" | "startMinutes" | "endMinutes" | "logs">
     | null
     | undefined
 ): boolean {
   const { min: qMin, max: qMax } = getQuantityThresholds(h);
-  const { min: tMin, max: tMax } = getTimeThresholds(h);
-  const quantity = entry?.quantity ?? null;
-  const minutes =
-    typeof entry?.startMinutes === "number" &&
-    typeof entry?.endMinutes === "number"
-      ? Math.max(entry!.endMinutes! - entry!.startMinutes!, 0)
-      : null;
+  const { min: windowStart, max: windowEnd } = getTimeThresholds(h);
+  const minDur = h.minDurationMinutes ?? null;
+  const maxDur = h.maxDurationMinutes ?? null;
+
+  // Normalize to logs array
+  const logs = (entry?.logs ?? []).length
+    ? (entry!.logs as NonNullable<DailyEntry["logs"]>)
+    : [
+        {
+          id: "single",
+          quantity: entry?.quantity ?? null,
+          startMinutes: entry?.startMinutes ?? null,
+          endMinutes: entry?.endMinutes ?? null,
+        },
+      ];
+
+  // Check each log falls within time window if configured
+  const eachWithinWindow = logs.every((log) => {
+    if (windowStart == null && windowEnd == null) return true;
+    if (log.startMinutes == null || log.endMinutes == null) return false;
+    const s = log.startMinutes;
+    const e = log.endMinutes;
+    if (windowStart != null && s < windowStart) return false;
+    if (windowEnd != null && e > windowEnd) return false;
+    return true;
+  });
+
+  // Sum quantities and durations
+  const totalQuantity = logs.reduce((sum, l) => sum + (l.quantity ?? 0), 0);
+  const totalDuration = logs.reduce((sum, l) => {
+    if (typeof l.startMinutes === "number" && typeof l.endMinutes === "number")
+      return sum + Math.max(l.endMinutes - l.startMinutes, 0);
+    return sum;
+  }, 0);
 
   const hasQ = qMin != null || qMax != null;
-  const hasT = tMin != null || tMax != null;
+  const hasWindow = windowStart != null || windowEnd != null;
+  const hasDur = minDur != null || maxDur != null;
 
-  const qOk = meetsOneDimension(qMin, qMax, quantity);
-  const tOk = meetsOneDimension(tMin, tMax, minutes);
+  const qOk = meetsOneDimension(qMin, qMax, totalQuantity);
+  const durOk = meetsOneDimension(minDur, maxDur, totalDuration);
 
-  if (hasQ && hasT) return qOk && tOk; // BOTH as requested
+  if (hasQ && hasDur) return qOk && durOk && eachWithinWindow; // both + window
+  if (hasDur) return durOk && eachWithinWindow;
+  if (hasWindow) return eachWithinWindow;
   if (hasQ) return qOk;
-  if (hasT) return tOk;
   // No thresholds configured -> not required to meet anything
   return true;
 }
