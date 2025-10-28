@@ -29,8 +29,10 @@ export default function Fullscreen({
 
 export function FullScreenButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button size="icon" onClick={onClick}>
-      <FullScreenIcon className="size-8" />
-    </Button>
+    <div className="flex-1 flex justify-end">
+      <Button size="icon" onClick={onClick}>
+        <FullScreenIcon className="size-8" />
+      </Button>
+    </div>
   );
 }

@@ -24,7 +24,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import React, { useMemo, useState } from "react";
-import { CloseIcon, TrashIcon } from "@/components/pixel/icons";
+import { TrashIcon } from "@/components/pixel/icons";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
