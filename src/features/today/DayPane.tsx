@@ -271,11 +271,7 @@ function DayPane({
       )}
     >
       {/* Header toggle moved to Today.tsx */}
-      <Progress
-        key={dayKey}
-        className="w-full my-2 p"
-        value={summary?.totalScore ?? 0}
-      />
+      <Progress key={dayKey} value={summary?.totalScore ?? 0} />
 
       <section className="flex flex-col gap-3">
         {processed.map(({ habit: h, entry }) => {
@@ -412,32 +408,39 @@ function DayPane({
 }
 export default DayPane;
 
-function Progress({ className, value }: { className: string; value: number }) {
+function Progress({ value }: { className?: string; value: number }) {
+  const pixelFrameEnabled = useSettings().data?.pixelFrameEnabled ?? false;
   return (
-    <div
-      className={cn(
-        "pixel-frame rounded-md overflow-hidden bg-card h-6 w-64 relative",
-        className
-      )}
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={value}
-    >
+    <div className="pixel-frame w-full flex overflow-hidden rounded-md">
       <div
-        className="bg-secondary h-full transition-all"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-      <div className="absolute inset-0 grid grid-cols-10">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div
-            key={i}
-            className="border-r border-border"
-            style={{
-              borderWidth: "max(var(--pixel-frame-size), 1px)",
-            }}
-          />
-        ))}
+        className={cn("flex-1 bg-card h-6 w-64 overflow-hidden rounded-md")}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+      >
+        <div
+          className="bg-secondary h-full transition-all rounded-md overflow-hidden"
+          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+        />
+        <div
+          className={cn("w-full grid grid-cols-10 relative -top-6 z-10 h-6")}
+        >
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                // if pixel frame is enabled, use pixel frame size, otherwise use 1px
+                borderRightWidth:
+                  i === 9
+                    ? "0px"
+                    : pixelFrameEnabled
+                    ? "max(var(--pixel-frame-size), 1px)"
+                    : "1px",
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
