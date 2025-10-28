@@ -503,13 +503,45 @@ function LogDialogInner({
               <div
                 key={row.id}
                 className={cn(
-                  "pixel-frame p-1 px-2",
+                  "pixel-frame p-2 pl-3",
                   selectedId === row.id ? "bg-secondary" : "bg-background"
                 )}
                 role="button"
                 onClick={() => setSelectedId(row.id)}
               >
-                {`${i + 1}: ${label}`}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{`${i + 1}: ${label}`}</span>
+                  <Button
+                    size="icon-sm"
+                    variant="destructive"
+                    aria-label="Delete log"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setRows((prev) => {
+                        const next = prev.filter((r) => r.id !== row.id);
+                        if (next.length === 0) {
+                          const newRow = {
+                            id: crypto.randomUUID(),
+                            start: "",
+                            end: "",
+                            quantity: "",
+                          } as const;
+                          setSelectedId(newRow.id);
+                          return [newRow];
+                        }
+                        if (selectedId === row.id) {
+                          const idx = prev.findIndex((r) => r.id === row.id);
+                          const fallback =
+                            next[Math.max(0, Math.min(idx, next.length - 1))];
+                          setSelectedId(fallback.id);
+                        }
+                        return next;
+                      });
+                    }}
+                  >
+                    <TrashIcon className="size-6" />
+                  </Button>
+                </div>
               </div>
             );
           })}
