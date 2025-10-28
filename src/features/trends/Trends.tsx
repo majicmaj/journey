@@ -24,9 +24,6 @@ import StackedBarChart, {
   type StackedPoint,
 } from "./components/StackedBarChart";
 import StreakTimeline from "./components/StreakTimeline";
-import ResponsiveContainer from "./components/ResponsiveContainer";
-import PanZoom from "./components/PanZoom";
-import Fullscreen, { FullScreenButton } from "./components/Fullscreen";
 
 import {
   enumerateDateKeys as enumKeys,
