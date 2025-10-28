@@ -229,7 +229,9 @@ export default function Day() {
             <ChevronDownIcon className="size-8" />
           )}
         </Button>
-        <Progress value={todaySummary?.totalScore ?? 0} />
+        <div className="my-2">
+          <Progress value={todaySummary?.totalScore ?? 0} />
+        </div>
       </div>
       <div
         className={cn(
@@ -275,10 +277,15 @@ export default function Day() {
   );
 }
 
-function Progress({ value }: { className?: string; value: number }) {
+function Progress({ value, className }: { className?: string; value: number }) {
   const pixelFrameEnabled = useSettings().data?.pixelFrameEnabled ?? false;
   return (
-    <div className="pixel-frame w-full flex overflow-hidden rounded-md">
+    <div
+      className={cn(
+        "pixel-frame w-full flex overflow-hidden rounded-md",
+        className
+      )}
+    >
       <div
         className={cn("flex-1 bg-card h-6 w-64 overflow-hidden rounded-md")}
         role="progressbar"

@@ -122,32 +122,89 @@ export const THEME_PRESETS: ThemePreset[] = [
       border: "oklch(0.6 0.07 50)",
     },
   },
+  // {
+  //   id: "minecraft",
+  //   name: "Minecraft",
+  //   dark: false,
+  //   varsLight: {
+  //     background: "oklch(0.6076 0.0881 58.5)",
+  //     card: "oklch(0.4114 0.0607 51.77)",
+  //     "card-foreground": "oklch(0.96 0.01 140)",
+  //     foreground: "oklch(0.96 0.01 140)",
+  //     primary: "oklch(0.5514 0.1032 134.15)",
+  //     "primary-foreground": "oklch(0.98 0 0)",
+  //     secondary: "oklch(0.3325 0.1391 265.62)",
+  //     "secondary-foreground": "oklch(0.98 0.01 90)",
+  //     accent: "oklch(0.5142 0.0064 274.88)",
+  //     border: "oklch(0.5142 0.0064 274.88)",
+  //   },
+  //   varsDark: {
+  //     background: "oklch(0.4114 0.0607 51.77)",
+  //     foreground: "oklch(0.96 0.01 140)",
+  //     card: "oklch(0.6076 0.0881 58.5)",
+  //     primary: "oklch(0.5514 0.1032 134.15)",
+  //     "primary-foreground": "oklch(0.98 0 0)",
+  //     secondary: "oklch(0.4539 0.1475 263.19)",
+  //     "secondary-foreground": "oklch(0.98 0.01 90)",
+  //     accent: "oklch(0.5142 0.0064 274.88)",
+  //     border: "oklch(0.5142 0.0064 274.88)",
+  //   },
+  // },
   {
     id: "minecraft",
     name: "Minecraft",
     dark: false,
     varsLight: {
-      background: "oklch(0.6076 0.0881 58.5)",
-      card: "oklch(0.4114 0.0607 51.77)",
-      "card-foreground": "oklch(0.96 0.01 140)",
-      foreground: "oklch(0.96 0.01 140)",
-      primary: "oklch(0.5514 0.1032 134.15)",
-      "primary-foreground": "oklch(0.98 0 0)",
-      secondary: "oklch(0.3325 0.1391 265.62)",
-      "secondary-foreground": "oklch(0.98 0.01 90)",
-      accent: "oklch(0.5142 0.0064 274.88)",
-      border: "oklch(0.5142 0.0064 274.88)",
+      /* Sandstone canvas + dark cocoa text for >7:1 body contrast */
+      background: "oklch(0.985 0.020 95)",
+      foreground: "oklch(0.18 0.05 70)", // deep brown for legibility
+
+      /* Card slightly darker than page for clear elevation */
+      card: "oklch(0.96 0.018 95)",
+      "card-foreground": "oklch(0.18 0.05 70)",
+
+      /* Emerald primary (buttons/links) with white text */
+      primary: "oklch(0.62 0.17 150)",
+      "primary-foreground": "oklch(0.99 0 0)",
+
+      /* Dirt/wood secondary (chips/secondary buttons) with near-white text */
+      secondary: "oklch(0.48 0.09 65)",
+      "secondary-foreground": "oklch(0.98 0 0)",
+
+      /* Grass accent for subtle highlights */
+      accent: "oklch(0.74 0.14 142)",
+
+      /* Borders/Input outlines: low-chroma mid-light to read on light bg */
+      border: "oklch(0.82 0.04 100)",
     },
     varsDark: {
-      background: "oklch(0.4114 0.0607 51.77)",
-      foreground: "oklch(0.96 0.01 140)",
-      card: "oklch(0.6076 0.0881 58.5)",
-      primary: "oklch(0.5514 0.1032 134.15)",
-      "primary-foreground": "oklch(0.98 0 0)",
-      secondary: "oklch(0.4539 0.1475 263.19)",
-      "secondary-foreground": "oklch(0.98 0.01 90)",
-      accent: "oklch(0.5142 0.0064 274.88)",
-      border: "oklch(0.5142 0.0064 274.88)",
+      /* Slate cave at night + white text */
+      background: "oklch(0.150 0.03 300)",
+      foreground: "oklch(0.98 0 0)",
+
+      /* Card a touch brighter for separation */
+      card: "oklch(0.195 0.02 300)",
+      "card-foreground": "oklch(0.98 0 0)",
+
+      /* Emerald pops on dark; keep same hue for brand consistency */
+      primary: "oklch(0.7 0.20 150)",
+      "primary-foreground": "oklch(0.1 0.02 260)", // very dark text for high contrast on bright primary
+
+      /* Slightly lighter wood for dark mode secondary */
+      secondary: "oklch(0.60 0.10 65)",
+      "secondary-foreground": "oklch(0.1 0.02 260)",
+
+      /* Deeper grass for dark highlights */
+      accent: "oklch(0.66 0.13 142)",
+
+      /* Borders readable on dark without looking chalky */
+      border: "oklch(0.3 0 0)",
+      // under varsLight
+      "chart-1": "oklch(0.62 0.24 30)", // Lava (fiery orange-red)
+      "chart-2": "oklch(0.70 0.14 200)", // Diamond (icy cyan)
+      "chart-3": "oklch(0.66 0.18 150)", // Emerald (bright green)
+      "chart-4": "oklch(0.58 0.22 25)", // Redstone (deep red)
+      "chart-5": "oklch(0.82 0.22 95)", // Gold (rich yellow)
     },
   },
   {
