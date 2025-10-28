@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
-import { useSettings } from "@/hooks/useData";
+import { useDaySummary, useSettings } from "@/hooks/useData";
 import { toDayKey } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import DayPane from "./DayPane";
@@ -78,6 +78,7 @@ export default function Day() {
     return toDayKey(d, dayStart);
   }, [activeKey, dayStart]);
   const canGoNext = activeKey < baseTodayKey;
+  const { summary: todaySummary } = useDaySummary(activeKey);
 
   // Track panel width (viewport width) for 3-panel layout
   const [panelW, setPanelW] = useState(0);
@@ -228,6 +229,7 @@ export default function Day() {
             <ChevronDownIcon className="size-8" />
           )}
         </Button>
+        <Progress value={todaySummary?.totalScore ?? 0} />
       </div>
       <div
         className={cn(
@@ -267,6 +269,43 @@ export default function Day() {
             filterCompletion={filterCompletion}
             filterTags={filterTags}
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Progress({ value }: { className?: string; value: number }) {
+  const pixelFrameEnabled = useSettings().data?.pixelFrameEnabled ?? false;
+  return (
+    <div className="pixel-frame w-full flex overflow-hidden rounded-md">
+      <div
+        className={cn("flex-1 bg-card h-6 w-64 overflow-hidden rounded-md")}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+      >
+        <div
+          className="bg-secondary h-full transition-all rounded-md overflow-hidden"
+          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+        />
+        <div
+          className={cn("w-full grid grid-cols-10 relative -top-6 z-10 h-6")}
+        >
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                borderRightWidth:
+                  i === 9
+                    ? "0px"
+                    : pixelFrameEnabled
+                    ? "max(var(--pixel-frame-size), 1px)"
+                    : "1px",
+              }}
+            />
+          ))}
         </div>
       </div>
     </div>

@@ -36,6 +36,19 @@ export default function Settings() {
   const qc = useQueryClient();
   if (!data) return null;
 
+  function isShallowEqualRecord(
+    a: Record<string, string> | undefined,
+    b: Record<string, string> | undefined
+  ): boolean {
+    const aKeys = Object.keys(a ?? {});
+    const bKeys = Object.keys(b ?? {});
+    if (aKeys.length !== bKeys.length) return false;
+    for (const k of aKeys) {
+      if ((a ?? {})[k] !== (b ?? {})[k]) return false;
+    }
+    return true;
+  }
+
   function parseOklch(
     input: string
   ): { l: number; c: number; h: number } | null {
@@ -629,82 +642,92 @@ export default function Settings() {
         <label className="flex flex-col gap-1">
           <span className="text-sm">Theme</span>
           <div className="pixel-frame flex">
-            <Select
-              value={
-                Object.keys(data.themeVars ?? {}).length > 0
-                  ? "custom"
-                  : data.themePreset ?? "default"
-              }
-              onValueChange={async (value) => {
-                if (value === "custom") return; // reflect unsaved custom, no-op
-                if (value.startsWith("custom:")) {
-                  const id = value.slice("custom:".length);
-                  const t = (data.savedThemes ?? []).find((x) => x.id === id);
-                  if (!t) return;
-                  const next = {
-                    ...data,
-                    themeDark: t.dark,
-                    themePreset: t.presetId ?? "default",
-                    themeVars: t.vars ?? {},
-                  } as AppSettings;
-                  await db.settings.put(next);
-                  applyTheme(next);
-                  qc.invalidateQueries({ queryKey: ["settings"] });
-                } else {
-                  // Selecting a preset. If returning to the currently-selected preset while
-                  // there are overrides, clear overrides to load original values
-                  const isReturningToSamePreset =
-                    value === (data.themePreset ?? "default");
-                  const hasOverrides =
-                    Object.keys(data.themeVars ?? {}).length > 0;
-                  const next: AppSettings = {
-                    ...data,
-                    themePreset: value,
-                    ...(isReturningToSamePreset && hasOverrides
-                      ? { themeVars: {} }
-                      : {}),
-                  } as AppSettings;
-                  await db.settings.put(next);
-                  applyTheme(next);
-                  qc.invalidateQueries({ queryKey: ["settings"] });
-                }
-              }}
-            >
-              <SelectTrigger className="w-full bg-card">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="pixel-frame">
-                {Object.keys(data.themeVars ?? {}).length > 0 && (
-                  <>
+            {(() => {
+              const hasOverrides = Object.keys(data.themeVars ?? {}).length > 0;
+              const matchedSaved = (data.savedThemes ?? []).find(
+                (t) =>
+                  Boolean(data.themeDark) === Boolean(t.dark) &&
+                  (data.themePreset ?? "default") ===
+                    (t.presetId ?? "default") &&
+                  isShallowEqualRecord(t.vars ?? {}, data.themeVars ?? {})
+              );
+              const selectValue = matchedSaved
+                ? `custom:${matchedSaved.id}`
+                : hasOverrides
+                ? "custom"
+                : data.themePreset ?? "default";
+              return (
+                <Select
+                  value={selectValue}
+                  onValueChange={async (value) => {
+                    if (value === "custom") return; // reflect unsaved custom, no-op
+                    if (value.startsWith("custom:")) {
+                      const id = value.slice("custom:".length);
+                      const t = (data.savedThemes ?? []).find(
+                        (x) => x.id === id
+                      );
+                      if (!t) return;
+                      const next = {
+                        ...data,
+                        themeDark: t.dark,
+                        themePreset: t.presetId ?? "default",
+                        themeVars: t.vars ?? {},
+                      } as AppSettings;
+                      await db.settings.put(next);
+                      applyTheme(next);
+                      qc.invalidateQueries({ queryKey: ["settings"] });
+                    } else {
+                      // Selecting any preset: clear overrides if present so preset loads unmodified
+                      const hasOverridesNow =
+                        Object.keys(data.themeVars ?? {}).length > 0;
+                      const next: AppSettings = {
+                        ...data,
+                        themePreset: value,
+                        ...(hasOverridesNow ? { themeVars: {} } : {}),
+                      } as AppSettings;
+                      await db.settings.put(next);
+                      applyTheme(next);
+                      qc.invalidateQueries({ queryKey: ["settings"] });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-card">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="pixel-frame">
+                    {!matchedSaved && hasOverrides && (
+                      <>
+                        <SelectGroup>
+                          <SelectItem value="custom">Custom</SelectItem>
+                        </SelectGroup>
+                        <SelectSeparator />
+                      </>
+                    )}
                     <SelectGroup>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectGroup>
-                    <SelectSeparator />
-                  </>
-                )}
-                <SelectGroup>
-                  <SelectLabel>Presets</SelectLabel>
-                  {THEME_PRESETS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-                {(data.savedThemes ?? []).length > 0 && (
-                  <>
-                    <SelectSeparator />
-                    <SelectGroup>
-                      <SelectLabel>Custom</SelectLabel>
-                      {(data.savedThemes ?? []).map((t) => (
-                        <SelectItem key={t.id} value={`custom:${t.id}`}>
-                          {t.name}
+                      <SelectLabel>Presets</SelectLabel>
+                      {THEME_PRESETS.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
                         </SelectItem>
                       ))}
                     </SelectGroup>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+                    {(data.savedThemes ?? []).length > 0 && (
+                      <>
+                        <SelectSeparator />
+                        <SelectGroup>
+                          <SelectLabel>Custom</SelectLabel>
+                          {(data.savedThemes ?? []).map((t) => (
+                            <SelectItem key={t.id} value={`custom:${t.id}`}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
         </label>
 
