@@ -2,6 +2,8 @@
 
 # Journey
 
+<img width="1511" height="853" alt="image" src="https://github.com/user-attachments/assets/3ef9f224-991f-482b-bc8d-7d89a5babbd6" />
+
 Habit tracker & activity logger with powerful visualizations.
 
 </div>
@@ -10,8 +12,8 @@ Journey helps you build habits and understand your time. Log the little things e
 
 ## Why Journey?
 
-- **Privacy-first**: Everything is stored locally in your browser (IndexedDB via Dexie). No cloud, no tracking.
-- **Approachable**: Clean daily view for quick logging — numeric values and checkoffs.
+- **Privacy-first**: Everything is stored locally in your browser (IndexedDB via Dexie).
+- **Approachable**: Clean daily view for quick logging, with numeric values and checkoffs.
 - **Insightful**: Heatmaps, timelines, and charts reveal streaks and patterns at a glance.
 
 ## Features
@@ -77,12 +79,16 @@ Please favor clear TypeScript, small focused PRs, and accessible UI.
 
 ## Screenshots
 
-Screenshots live in `docs/screenshots/` (coming soon):
+### Desktop
 
-![Day view](docs/screenshots/day-view.png)
-![Trends heatmap](docs/screenshots/trends-heatmap.png)
-![Line & stacked charts](docs/screenshots/trends-line.png)
-![Settings](docs/screenshots/settings.png)
+<img width="1512" height="857" alt="image" src="https://github.com/user-attachments/assets/3a24e3a7-3d99-4528-814b-5b509138fd2f" />
+<img width="1512" height="856" alt="image" src="https://github.com/user-attachments/assets/97aca429-f13f-44f2-ace3-63f872da086d" />
+<img width="1512" height="857" alt="image" src="https://github.com/user-attachments/assets/eb9ee4e2-5a2d-431e-a4cf-dd2cdddef9d4" />
+
+### Mobile
+
+<img width="288" height="640" alt="image" src="https://github.com/user-attachments/assets/61909fbb-c7db-49a8-b03a-004545019f17" />
+<img width="288" height="640" alt="image" src="https://github.com/user-attachments/assets/4d81a661-114c-45fb-8433-aed66876791b" />
 
 ## License
 
