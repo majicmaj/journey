@@ -654,7 +654,7 @@ function HabitEditorInline({
         </div>
       </label>
       <label className="flex items-center gap-3">
-        <span className="w-24 text-sm">Time min</span>
+        <span className="w-24 text-sm">Min daily duration</span>
         <div className="pixel-frame w-full">
           <Input
             type="time"
@@ -682,7 +682,7 @@ function HabitEditorInline({
         </div>
       </label>
       <label className="flex items-center gap-3">
-        <span className="w-24 text-sm">Time max</span>
+        <span className="w-24 text-sm">Max daily duration</span>
         <div className="pixel-frame w-full">
           <Input
             type="time"

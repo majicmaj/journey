@@ -158,7 +158,7 @@ export default function ClockHeatmap({
           fontSize={12}
         >
           {hour != null && maxVal > 0
-            ? `${values[hour].toFixed(0) ?? 0} (max ${maxVal})`
+            ? `${values[hour].toFixed(0) ?? 0} (max ${maxVal.toFixed(0)})`
             : "avg per hour"}
         </text>
       </g>
