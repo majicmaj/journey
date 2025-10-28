@@ -214,7 +214,7 @@ export default function TimeBlocks({
           aria-live="polite"
         >
           <div className="font-medium mb-0.5">{rowLabelAt(tip.row)}</div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {tip.color && (
               <span
                 aria-hidden

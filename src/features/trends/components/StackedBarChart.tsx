@@ -222,7 +222,7 @@ export default function StackedBarChart({
           <div className="font-medium mb-0.5">{data[tip.i].x}</div>
           <div className="mb-0.5">Total: {totals[tip.i]}</div>
           {data[tip.i].segments.map((s, j) => (
-            <div key={j} className="flex items-center gap-2">
+            <div key={j} className="flex items-center gap-3">
               <span
                 aria-hidden
                 style={{ background: s.color, width: 8, height: 8 }}

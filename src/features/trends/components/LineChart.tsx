@@ -426,7 +426,7 @@ export default function LineChart({
         >
           <div className="font-medium mb-0.5">{tip.xKey}</div>
           {valuesAtX(tip.xKey).map((v, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} className="flex items-center gap-3">
               <span
                 aria-hidden
                 style={{ background: v.color, width: 8, height: 8 }}

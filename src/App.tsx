@@ -72,7 +72,7 @@ function MobileBottomNav() {
       aria-label="Mobile"
     >
       <div className="pixel-frame p-2">
-        <div className="mx-auto max-w-md grid grid-cols-3 gap-2 justify-items-center">
+        <div className="mx-auto max-w-md grid grid-cols-3 gap-3 justify-items-center">
           <Item to="/" Icon={Home} label="Day" />
           <Item to="/trends" Icon={Calendar} label="Trends" />
           <Item to="/settings" Icon={Sliders} label="Settings" />

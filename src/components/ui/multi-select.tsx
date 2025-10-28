@@ -125,7 +125,7 @@ export function MultiSelect<Value extends string | number>({
           )}
         >
           {creatable && (
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-3 mb-2">
               <div className="pixel-frame flex-1">
                 <Input
                   placeholder={createPlaceholder}
@@ -148,7 +148,7 @@ export function MultiSelect<Value extends string | number>({
           )}
           {showSelectAllNone && (
             <>
-              <label className="flex items-center gap-2 py-1">
+              <label className="flex items-center gap-3 py-1">
                 <Checkbox
                   checked={noneSelected}
                   onCheckedChange={(val) => {
@@ -158,7 +158,7 @@ export function MultiSelect<Value extends string | number>({
                 />
                 <span className="text-sm">Select None</span>
               </label>
-              <label className="flex items-center gap-2 py-1">
+              <label className="flex items-center gap-3 py-1">
                 <Checkbox
                   checked={allSelected}
                   onCheckedChange={(val) => {
@@ -178,7 +178,7 @@ export function MultiSelect<Value extends string | number>({
               <label
                 key={String(o.value)}
                 className={cn(
-                  "flex items-center gap-2 py-1",
+                  "flex items-center gap-3 py-1",
                   o.disabled && "opacity-60"
                 )}
               >

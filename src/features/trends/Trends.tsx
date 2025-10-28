@@ -808,7 +808,7 @@ export default function Trends() {
       {/* Time blocks view */}
       {view === "blocks" && (
         <div className="pixel-frame bg-card p-3">
-          <div className="mb-3 flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-3">
             <span className="opacity-70 text-sm">Layout</span>
             <div className="pixel-frame">
               <Select
@@ -873,8 +873,8 @@ export default function Trends() {
               : Math.max(220, Math.floor(w * 0.5))
           }
           controls={
-            <div className="flex sm:items-center gap-2 flex-col sm:flex-row">
-              <div className="flex items-center gap-2">
+            <div className="flex sm:items-center gap-3 flex-col sm:flex-row">
+              <div className="flex items-center gap-3">
                 <span className="opacity-70 text-sm">Display</span>
                 <div className="pixel-frame">
                   <Select
@@ -891,7 +891,7 @@ export default function Trends() {
                   </Select>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="opacity-70 text-sm">Metric</span>
                 <div className="pixel-frame">
                   <Select
