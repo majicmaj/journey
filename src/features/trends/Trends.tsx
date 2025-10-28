@@ -35,6 +35,8 @@ import {
   computeStreakSegments,
   endOfISOWeek,
 } from "./utils";
+import ChartFrame from "./components/ChartFrame";
+import { isCompactAxis, weekMonthAbbr } from "./components/chart-utils";
 
 type RangePreset =
   | "this-year"
@@ -713,156 +715,96 @@ export default function Trends() {
           )}
         </div>
       </header>
-
       {/* Quantities view */}
       {view === "quantities" && (
-        <div className="pixel-frame bg-card p-3">
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <div className="flex items-center gap-3">
-              <span className="opacity-70 text-sm w-16 sm:w-auto">Scope</span>
-              <div className="pixel-frame">
-                <Select
-                  value={quantityScope}
-                  onValueChange={(v: QuantityScope) => setQuantityScope(v)}
-                >
-                  <SelectTrigger className="w-[160px] bg-card">
-                    <SelectValue placeholder="Scope" />
-                  </SelectTrigger>
-                  <SelectContent className="pixel-frame">
-                    <SelectItem value="per-habit">
-                      Per habit (overlay)
-                    </SelectItem>
-                    <SelectItem value="aggregated">Aggregated sum</SelectItem>
-                  </SelectContent>
-                </Select>
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) => Math.max(260, Math.floor(w * 0.4))}
+          controls={
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="flex items-center gap-3">
+                <span className="opacity-70 text-sm w-16 sm:w-auto">Scope</span>
+                <div className="pixel-frame">
+                  <Select
+                    value={quantityScope}
+                    onValueChange={(v: QuantityScope) => setQuantityScope(v)}
+                  >
+                    <SelectTrigger className="w-[160px] bg-card">
+                      <SelectValue placeholder="Scope" />
+                    </SelectTrigger>
+                    <SelectContent className="pixel-frame">
+                      <SelectItem value="per-habit">
+                        Per habit (overlay)
+                      </SelectItem>
+                      <SelectItem value="aggregated">Aggregated sum</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="opacity-70 text-sm w-16 sm:w-auto">Type</span>
-              <div className="pixel-frame">
-                <Select
-                  value={quantityChartType}
-                  onValueChange={(v: "line" | "stacked") =>
-                    setQuantityChartType(v)
-                  }
-                >
-                  <SelectTrigger className="w-[160px] bg-card">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent className="pixel-frame">
-                    <SelectItem value="line">Line</SelectItem>
-                    <SelectItem value="stacked">Stacked bars</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Fullscreen
-              affordance={({ open }) => <FullScreenButton onClick={open} />}
-            >
-              {() => (
-                <PanZoom className="w-full h-full bg-background">
-                  <ResponsiveContainer height="fill" className="h-full">
-                    {(vw, vh) =>
-                      quantityChartType === "line" ? (
-                        <LineChart
-                          width={vw}
-                          height={vh}
-                          series={
-                            quantityScope === "aggregated"
-                              ? quantityAggregatedSeries
-                              : quantityOverlaySeries
-                          }
-                          compactXAxis={true}
-                          yDomain={{
-                            min: 0,
-                            max: Math.max(
-                              1,
-                              ...((quantityScope === "aggregated"
-                                ? quantityAggregatedSeries
-                                : quantityOverlaySeries)[0]?.points.map(
-                                (p) => p.y
-                              ) ?? [0])
-                            ),
-                          }}
-                          yTicks={(() => {
-                            const maxY = Math.max(
-                              1,
-                              ...((quantityScope === "aggregated"
-                                ? quantityAggregatedSeries
-                                : quantityOverlaySeries)[0]?.points.map(
-                                (p) => p.y
-                              ) ?? [0])
-                            );
-                            const step = Math.max(1, Math.ceil(maxY / 4));
-                            return Array.from(
-                              { length: 5 },
-                              (_, i) => i * step
-                            );
-                          })()}
-                        />
-                      ) : (
-                        <StackedBarChart
-                          width={vw}
-                          height={vh}
-                          data={quantityStacked}
-                        />
-                      )
+              <div className="flex items-center gap-3">
+                <span className="opacity-70 text-sm w-16 sm:w-auto">Type</span>
+                <div className="pixel-frame">
+                  <Select
+                    value={quantityChartType}
+                    onValueChange={(v: "line" | "stacked") =>
+                      setQuantityChartType(v)
                     }
-                  </ResponsiveContainer>
-                </PanZoom>
-              )}
-            </Fullscreen>
-          </div>
-          <ResponsiveContainer
-            height={(w) => Math.max(260, Math.floor(w * 0.4))}
-          >
-            {(vw, vh) =>
-              quantityChartType === "line" ? (
-                <LineChart
-                  width={vw}
-                  height={vh}
-                  series={
-                    quantityScope === "aggregated"
+                  >
+                    <SelectTrigger className="w-[160px] bg-card">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent className="pixel-frame">
+                      <SelectItem value="line">Line</SelectItem>
+                      <SelectItem value="stacked">Stacked bars</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          {(vw, vh) =>
+            quantityChartType === "line" ? (
+              <LineChart
+                width={vw}
+                height={vh}
+                series={
+                  quantityScope === "aggregated"
+                    ? quantityAggregatedSeries
+                    : quantityOverlaySeries
+                }
+                compactXAxis
+                yDomain={{
+                  min: 0,
+                  max: Math.max(
+                    1,
+                    ...((quantityScope === "aggregated"
                       ? quantityAggregatedSeries
-                      : quantityOverlaySeries
-                  }
-                  compactXAxis={true}
-                  yDomain={{
-                    min: 0,
-                    max: Math.max(
-                      1,
-                      ...((quantityScope === "aggregated"
-                        ? quantityAggregatedSeries
-                        : quantityOverlaySeries)[0]?.points.map((p) => p.y) ?? [
-                        0,
-                      ])
-                    ),
-                  }}
-                  yTicks={(() => {
-                    const maxY = Math.max(
-                      1,
-                      ...((quantityScope === "aggregated"
-                        ? quantityAggregatedSeries
-                        : quantityOverlaySeries)[0]?.points.map((p) => p.y) ?? [
-                        0,
-                      ])
-                    );
-                    const step = Math.max(1, Math.ceil(maxY / 4));
-                    return Array.from({ length: 5 }, (_, i) => i * step);
-                  })()}
-                />
-              ) : (
-                <StackedBarChart
-                  width={vw}
-                  height={vh}
-                  data={quantityStacked}
-                />
-              )
-            }
-          </ResponsiveContainer>
-        </div>
+                      : quantityOverlaySeries)[0]?.points.map((p) => p.y) ?? [
+                      0,
+                    ])
+                  ),
+                }}
+                yTicks={(() => {
+                  const maxY = Math.max(
+                    1,
+                    ...((quantityScope === "aggregated"
+                      ? quantityAggregatedSeries
+                      : quantityOverlaySeries)[0]?.points.map((p) => p.y) ?? [
+                      0,
+                    ])
+                  );
+                  const step = Math.max(1, Math.ceil(maxY / 4));
+                  return Array.from({ length: 5 }, (_, i) => i * step);
+                })()}
+              />
+            ) : (
+              <StackedBarChart width={vw} height={vh} data={quantityStacked} />
+            )
+          }
+        </ChartFrame>
       )}
-
       {/* Time blocks view */}
       {view === "blocks" && (
         <div className="pixel-frame bg-card p-3">
@@ -920,471 +862,178 @@ export default function Trends() {
           </ResponsiveContainer>
         </div>
       )}
-
       {/* Hourly heat view */}
       {view === "hours" && (
-        <div className="pixel-frame bg-card p-3">
-          <div className="mb-3 flex sm:items-center gap-2 flex-col sm:flex-row">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="opacity-70 text-sm">Display</span>
-              <div className="pixel-frame">
-                <Select
-                  value={hourView}
-                  onValueChange={(v: "flat" | "clock") => setHourView(v)}
-                >
-                  <SelectTrigger className="w-[160px] bg-card">
-                    <SelectValue placeholder="Display" />
-                  </SelectTrigger>
-                  <SelectContent className="pixel-frame">
-                    <SelectItem value="flat">Flat heatmap</SelectItem>
-                    <SelectItem value="clock">Clock heatmap</SelectItem>
-                  </SelectContent>
-                </Select>
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) =>
+            hourView === "flat"
+              ? Math.max(160, Math.floor(w * 0.25))
+              : Math.max(220, Math.floor(w * 0.5))
+          }
+          controls={
+            <div className="flex sm:items-center gap-2 flex-col sm:flex-row">
+              <div className="flex items-center gap-2">
+                <span className="opacity-70 text-sm">Display</span>
+                <div className="pixel-frame">
+                  <Select
+                    value={hourView}
+                    onValueChange={(v: "flat" | "clock") => setHourView(v)}
+                  >
+                    <SelectTrigger className="w-[160px] bg-card">
+                      <SelectValue placeholder="Display" />
+                    </SelectTrigger>
+                    <SelectContent className="pixel-frame">
+                      <SelectItem value="flat">Flat heatmap</SelectItem>
+                      <SelectItem value="clock">Clock heatmap</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="opacity-70 text-sm">Metric</span>
+                <div className="pixel-frame">
+                  <Select
+                    value={hourMetric}
+                    onValueChange={(v: "time" | "quantity") => setHourMetric(v)}
+                  >
+                    <SelectTrigger className="w-[160px] bg-card">
+                      <SelectValue placeholder="Metric" />
+                    </SelectTrigger>
+                    <SelectContent className="pixel-frame">
+                      <SelectItem value="time">Time coverage</SelectItem>
+                      <SelectItem value="quantity">Quantity</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div className="mb-3 flex items-center w-full gap-2">
-              <span className="opacity-70 text-sm">Metric</span>
-              <div className="pixel-frame">
-                <Select
-                  value={hourMetric}
-                  onValueChange={(v: "time" | "quantity") => setHourMetric(v)}
-                >
-                  <SelectTrigger className="w-[160px] bg-card">
-                    <SelectValue placeholder="Metric" />
-                  </SelectTrigger>
-                  <SelectContent className="pixel-frame">
-                    <SelectItem value="time">Time coverage</SelectItem>
-                    <SelectItem value="quantity">Quantity</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {hourView === "flat" ? (
-                <Fullscreen
-                  affordance={({ open }) => <FullScreenButton onClick={open} />}
-                >
-                  {({ close }) => (
-                    <PanZoom className="w-full h-full bg-background">
-                      <ResponsiveContainer height="fill" className="h-full">
-                        {(vw, vh) => (
-                          <HeatmapMatrix
-                            width={vw}
-                            height={vh}
-                            rows={1}
-                            cols={24}
-                            valueAt={(_r, c) => hourlyBins[c] ?? 0}
-                            labelForCol={(c) => String(c).padStart(2, "0")}
-                            labelForRow={() => "Avg/min"}
-                            showWeekBands={false}
-                          />
-                        )}
-                      </ResponsiveContainer>
-                      <div className="absolute -top-6 -right-6 translate-x-1/2">
-                        <button
-                          className="pixel-frame px-2 py-1 bg-card"
-                          onClick={close}
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </PanZoom>
-                  )}
-                </Fullscreen>
-              ) : (
-                <Fullscreen
-                  affordance={({ open }) => <FullScreenButton onClick={open} />}
-                >
-                  {({ close }) => (
-                    <PanZoom className="w-full h-full bg-background">
-                      <ResponsiveContainer height="fill" className="h-full">
-                        {(vw, vh) => (
-                          <ClockHeatmap
-                            width={vw}
-                            height={vh}
-                            values={hourlyBins}
-                          />
-                        )}
-                      </ResponsiveContainer>
-                      <div className="absolute -top-6 -right-6 translate-x-1/2">
-                        <button
-                          className="pixel-frame px-2 py-1 bg-card"
-                          onClick={close}
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </PanZoom>
-                  )}
-                </Fullscreen>
-              )}
-            </div>
-          </div>
-          {hourView === "flat" ? (
-            <ResponsiveContainer
-              height={(w) => Math.max(160, Math.floor(w * 0.25))}
-            >
-              {(vw, vh) => (
-                <HeatmapMatrix
-                  width={vw}
-                  height={vh}
-                  rows={1}
-                  cols={24}
-                  valueAt={(_r, c) => hourlyBins[c] ?? 0}
-                  labelForCol={(c) => String(c).padStart(2, "0")}
-                  labelForRow={() => "Avg/min"}
-                  showWeekBands={false}
-                />
-              )}
-            </ResponsiveContainer>
-          ) : (
-            <ResponsiveContainer
-              height={(w) => Math.max(220, Math.floor(w * 0.5))}
-            >
-              {(vw, vh) => (
-                <ClockHeatmap width={vw} height={vh} values={hourlyBins} />
-              )}
-            </ResponsiveContainer>
-          )}
-        </div>
+          }
+        >
+          {(vw, vh) =>
+            hourView === "flat" ? (
+              <HeatmapMatrix
+                width={vw}
+                height={vh}
+                rows={1}
+                cols={24}
+                valueAt={(_r, c) => hourlyBins[c] ?? 0}
+                labelForCol={(c) => String(c).padStart(2, "0")}
+                labelForRow={() => "Avg/min"}
+                showWeekBands={false}
+              />
+            ) : (
+              <ClockHeatmap width={vw} height={vh} values={hourlyBins} />
+            )
+          }
+        </ChartFrame>
       )}
-
       {view === "trend" && (
-        <div className="pixel-frame bg-card p-3">
-          <Fullscreen
-            affordance={({ open }) => <FullScreenButton onClick={open} />}
-          >
-            {({ close }) => (
-              <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer height="fill" className="h-full">
-                  {(vw, vh) => (
-                    <LineChart
-                      width={vw}
-                      height={vh}
-                      series={[
-                        {
-                          name: "Total",
-                          color: "var(--secondary)",
-                          points: totalScoreSeries,
-                        },
-                        { name: "MA7", color: "var(--chart-1)", points: ma7 },
-                        { name: "MA28", color: "var(--chart-2)", points: ma28 },
-                      ]}
-                      goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-                      compactXAxis={trendCompact}
-                    />
-                  )}
-                </ResponsiveContainer>
-                <div className="absolute -top-6 -right-6 translate-x-1/2">
-                  <button
-                    className="pixel-frame px-2 py-1 bg-card"
-                    onClick={close}
-                  >
-                    Close
-                  </button>
-                </div>
-              </PanZoom>
-            )}
-          </Fullscreen>
-          <ResponsiveContainer
-            height={(w) => Math.max(300, Math.min(280, Math.floor(w * 0.4)))}
-          >
-            {(w, h) => (
-              <LineChart
-                width={w}
-                height={h}
-                series={
-                  [
-                    {
-                      name: "Total",
-                      color: "var(--secondary)",
-                      points: totalScoreSeries,
-                    },
-                    { name: "MA7", color: "var(--chart-1)", points: ma7 },
-                    { name: "MA28", color: "var(--chart-2)", points: ma28 },
-                  ] as LineSeries[]
-                }
-                goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
-                onBrush={(fromX, toX) => {
-                  setPreset("custom");
-                  setCustomRange({ from: fromX, to: toX });
-                }}
-                compactXAxis={trendCompact}
-              />
-            )}
-          </ResponsiveContainer>
-        </div>
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) => Math.max(300, Math.min(280, Math.floor(w * 0.4)))}
+        >
+          {(vw, vh) => (
+            <LineChart
+              width={vw}
+              height={vh}
+              series={[
+                {
+                  name: "Total",
+                  color: "var(--secondary)",
+                  points: totalScoreSeries,
+                },
+                { name: "MA7", color: "var(--chart-1)", points: ma7 },
+                { name: "MA28", color: "var(--chart-2)", points: ma28 },
+              ]}
+              goalBands={[{ from: 80, to: 100, colorVar: "--chart-1" }]}
+              onBrush={(fromX, toX) => {
+                setPreset("custom");
+                setCustomRange({ from: fromX, to: toX });
+              }}
+              compactXAxis={trendCompact}
+            />
+          )}
+        </ChartFrame>
       )}
-
       {view === "cadence" && (
-        <div className="pixel-frame bg-card p-3">
-          <Fullscreen
-            affordance={({ open }) => <FullScreenButton onClick={open} />}
-          >
-            {({ close }) => (
-              <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer height="fill" className="h-full">
-                  {(vw, vh) => (
-                    <BarChart width={vw} height={vh} bars={weeklyBars} />
-                  )}
-                </ResponsiveContainer>
-                <div className="absolute -top-6 -right-6 translate-x-1/2">
-                  <button
-                    className="pixel-frame px-2 py-1 bg-card"
-                    onClick={close}
-                  >
-                    Close
-                  </button>
-                </div>
-              </PanZoom>
-            )}
-          </Fullscreen>
-          <ResponsiveContainer
-            height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
-          >
-            {(w, h) => <BarChart width={w} height={h} bars={weeklyBars} />}
-          </ResponsiveContainer>
-        </div>
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
+        >
+          {(vw, vh) => <BarChart width={vw} height={vh} bars={weeklyBars} />}
+        </ChartFrame>
       )}
-
       {view === "streaks" && (
-        <div className="pixel-frame bg-card p-3">
-          <Fullscreen
-            affordance={({ open }) => <FullScreenButton onClick={open} />}
-          >
-            {({ close }) => (
-              <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer height="fill" className="h-full">
-                  {(vw, vh) => (
-                    <StreakTimeline
-                      width={vw}
-                      height={vh}
-                      rows={streakRows.labels.length}
-                      dates={streakRows.dates}
-                      segmentsByRow={streakRows.segs}
-                      labelForRow={(r) => streakRows.labels[r] ?? ""}
-                    />
-                  )}
-                </ResponsiveContainer>
-                <div className="absolute -top-6 -right-6 translate-x-1/2">
-                  <button
-                    className="pixel-frame px-2 py-1 bg-card"
-                    onClick={close}
-                  >
-                    Close
-                  </button>
-                </div>
-              </PanZoom>
-            )}
-          </Fullscreen>
-          <ResponsiveContainer
-            height={() => Math.max(160, streakRows.labels.length * 28)}
-          >
-            {(w, h) => (
-              <StreakTimeline
-                width={w}
-                height={h}
-                rows={streakRows.labels.length}
-                dates={streakRows.dates}
-                segmentsByRow={streakRows.segs}
-                labelForRow={(r) => streakRows.labels[r] ?? ""}
-              />
-            )}
-          </ResponsiveContainer>
-        </div>
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
+        >
+          {(vw, vh) => (
+            <StreakTimeline
+              width={vw}
+              height={vh}
+              rows={streakRows.labels.length}
+              dates={streakRows.dates}
+              segmentsByRow={streakRows.segs}
+              labelForRow={(r) => streakRows.labels[r] ?? ""}
+            />
+          )}
+        </ChartFrame>
       )}
-
       {view === "weekday" && (
-        <div className="pixel-frame bg-card p-3">
-          <Fullscreen
-            affordance={({ open }) => <FullScreenButton onClick={open} />}
-          >
-            {({ close }) => (
-              <PanZoom className="w-full h-full bg-background">
-                <ResponsiveContainer height="fill" className="h-full">
-                  {(vw, vh) => {
-                    const days = enumKeys(from, to);
-                    const weeks = Array.from(
-                      groupByISOWeek(days).keys()
-                    ).sort();
-                    const rowLabels = [
-                      "Mon",
-                      "Tue",
-                      "Wed",
-                      "Thu",
-                      "Fri",
-                      "Sat",
-                      "Sun",
-                    ];
-                    const threshold =
-                      typeof window !== "undefined" && window.innerWidth <= 640
-                        ? 30
-                        : 90;
-                    const compact = days.length >= threshold;
-                    function weekMonthAbbr(
-                      weekStartStr: string
-                    ): string | null {
-                      const ws = new Date(weekStartStr + "T00:00:00");
-                      for (let i = 0; i < 7; i++) {
-                        const d = new Date(
-                          ws.getTime() + i * 24 * 60 * 60 * 1000
-                        );
-                        if (d.getDate() === 1) {
-                          const mm = d.getMonth();
-                          return [
-                            "Jan",
-                            "Feb",
-                            "Mar",
-                            "Apr",
-                            "May",
-                            "Jun",
-                            "Jul",
-                            "Aug",
-                            "Sep",
-                            "Oct",
-                            "Nov",
-                            "Dec",
-                          ][mm];
-                        }
-                      }
-                      return null;
-                    }
-                    function valueAt(r: number, c: number): number {
-                      const weekStart = weeks[c];
-                      if (!weekStart) return 0;
-                      const weekDays = enumKeys(
-                        weekStart,
-                        endOfISOWeek(weekStart)
-                      );
-                      const dk = weekDays[(r + 0) % 7];
-                      if (!dk) return 0;
-                      const { totalScore } = computeDaySummary(
-                        dk,
-                        activeHabits,
-                        entriesByDate.get(dk) ?? []
-                      );
-                      return totalScore;
-                    }
-                    return (
-                      <HeatmapMatrix
-                        width={vw}
-                        height={vh}
-                        rows={7}
-                        cols={weeks.length}
-                        valueAt={valueAt}
-                        dateForCell={(r, c) => {
-                          const weekStart = weeks[c];
-                          if (!weekStart) return undefined;
-                          const weekDays = enumKeys(
-                            weekStart,
-                            endOfISOWeek(weekStart)
-                          );
-                          return weekDays[(r + 0) % 7];
-                        }}
-                        labelForCol={(c) =>
-                          compact
-                            ? weekMonthAbbr(weeks[c] ?? "") ?? ""
-                            : (weeks[c] ?? "").slice(5)
-                        }
-                        labelForRow={(r) => rowLabels[r]}
-                      />
-                    );
-                  }}
-                </ResponsiveContainer>
-                <div className="absolute -top-6 -right-6 translate-x-1/2">
-                  <button
-                    className="pixel-frame px-2 py-1 bg-card"
-                    onClick={close}
-                  >
-                    Close
-                  </button>
-                </div>
-              </PanZoom>
-            )}
-          </Fullscreen>
-          <ResponsiveContainer
-            height={(w) => Math.max(180, Math.min(260, Math.floor(w * 0.35)))}
-          >
-            {(w, h) => {
-              const days = enumKeys(from, to);
-              const weeks = Array.from(groupByISOWeek(days).keys()).sort();
-              const rowLabels = [
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-                "Sun",
-              ];
-              const threshold =
-                typeof window !== "undefined" && window.innerWidth <= 640
-                  ? 30
-                  : 90;
-              const compact = days.length >= threshold;
-              function weekMonthAbbr(weekStartStr: string): string | null {
-                const ws = new Date(weekStartStr + "T00:00:00");
-                for (let i = 0; i < 7; i++) {
-                  const d = new Date(ws.getTime() + i * 24 * 60 * 60 * 1000);
-                  if (d.getDate() === 1) {
-                    const mm = d.getMonth();
-                    return [
-                      "Jan",
-                      "Feb",
-                      "Mar",
-                      "Apr",
-                      "May",
-                      "Jun",
-                      "Jul",
-                      "Aug",
-                      "Sep",
-                      "Oct",
-                      "Nov",
-                      "Dec",
-                    ][mm];
-                  }
-                }
-                return null;
-              }
-              function valueAt(r: number, c: number): number {
-                const weekStart = weeks[c];
-                if (!weekStart) return 0;
-                const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
-                const dk = weekDays[(r + 0) % 7];
-                if (!dk) return 0;
-                const { totalScore } = computeDaySummary(
-                  dk,
-                  activeHabits,
-                  entriesByDate.get(dk) ?? []
-                );
-                return totalScore;
-              }
-              return (
-                <HeatmapMatrix
-                  width={w}
-                  height={h}
-                  rows={7}
-                  cols={weeks.length}
-                  valueAt={valueAt}
-                  dateForCell={(r, c) => {
-                    const weekStart = weeks[c];
-                    if (!weekStart) return undefined;
-                    const weekDays = enumKeys(
-                      weekStart,
-                      endOfISOWeek(weekStart)
-                    );
-                    return weekDays[(r + 0) % 7];
-                  }}
-                  labelForCol={(c) =>
-                    compact
-                      ? weekMonthAbbr(weeks[c] ?? "") ?? ""
-                      : (weeks[c] ?? "").slice(5)
-                  }
-                  labelForRow={(r) => rowLabels[r]}
-                />
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) => Math.max(180, Math.min(260, Math.floor(w * 0.35)))}
+        >
+          {(vw, vh) => {
+            const days = enumKeys(from, to);
+            const weeks = Array.from(groupByISOWeek(days).keys()).sort();
+            const rowLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+            const compact = isCompactAxis(from, to);
+
+            function valueAt(r: number, c: number): number {
+              const weekStart = weeks[c];
+              if (!weekStart) return 0;
+              const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
+              const dk = weekDays[r % 7];
+              if (!dk) return 0;
+              const { totalScore } = computeDaySummary(
+                dk,
+                activeHabits,
+                entriesByDate.get(dk) ?? []
               );
-            }}
-          </ResponsiveContainer>
-        </div>
+              return totalScore;
+            }
+
+            return (
+              <HeatmapMatrix
+                width={vw}
+                height={vh}
+                rows={7}
+                cols={weeks.length}
+                valueAt={valueAt}
+                dateForCell={(r, c) => {
+                  const weekStart = weeks[c];
+                  if (!weekStart) return undefined;
+                  const weekDays = enumKeys(weekStart, endOfISOWeek(weekStart));
+                  return weekDays[r % 7];
+                }}
+                labelForCol={(c) =>
+                  compact
+                    ? weekMonthAbbr(weeks[c] ?? "") ?? ""
+                    : (weeks[c] ?? "").slice(5)
+                }
+                labelForRow={(r) => rowLabels[r]}
+              />
+            );
+          }}
+        </ChartFrame>
       )}
     </div>
   );

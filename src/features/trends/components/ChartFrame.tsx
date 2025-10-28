@@ -1,68 +1,78 @@
-import Fullscreen, { FullScreenButton } from "./Fullscreen";
-import ResponsiveContainer from "./ResponsiveContainer";
+// components/ChartFrame.tsx
+import type { ReactNode } from "react";
 import PanZoom from "./PanZoom";
+import ResponsiveContainer from "./ResponsiveContainer";
+import Fullscreen, { FullScreenButton } from "./Fullscreen";
+import { cn } from "@/lib/utils";
+
+type ChartFrameProps = {
+  className?: string;
+  /** Put any dropdowns/toggles here. Shown above the chart. */
+  controls?: ReactNode;
+  /** If true, wraps with PanZoom */
+  pannable?: boolean;
+  /** If true, shows fullscreen affordance and renders children into a fullscreen pane when opened */
+  fullscreenable?: boolean;
+  /** Height for the inline (non-fullscreen) chart. Can be a number or function(w)->h like ResponsiveContainer. */
+  height: number | ((width: number) => number);
+  /** Optional class for the inner container that holds the chart */
+  innerClassName?: string;
+  /** Your chart renderer receives the responsive width/height */
+  children: (vw: number, vh: number) => ReactNode;
+};
 
 export default function ChartFrame({
-  controls,
-  height,
-  enablePanZoom = true,
   className,
+  controls,
+  pannable = true,
+  fullscreenable = true,
+  height,
+  innerClassName,
   children,
-}: {
-  controls?: React.ReactNode;
-  height: number | ((w: number) => number);
-  enablePanZoom?: boolean;
-  className?: string;
-  children: (w: number, h: number) => React.ReactNode;
-}) {
-  return (
-    <div className={className}>
-      <div className="relative mb-2">
-        <div className="pr-12 flex flex-wrap items-center gap-2">
-          {controls}
-        </div>
-        <div className="absolute top-0 right-0">
-          <Fullscreen
-            affordance={({ open }) => <FullScreenButton onClick={open} />}
-          >
-            {({ close }) => (
-              <div className="w-full h-full relative">
-                {enablePanZoom ? (
-                  <PanZoom className="w-full h-full bg-background">
-                    <ResponsiveContainer height="fill" className="h-full">
-                      {(vw, vh) => children(vw, vh)}
-                    </ResponsiveContainer>
-                    <div className="absolute -top-6 -right-6 translate-x-1/2">
-                      <button
-                        className="pixel-frame px-2 py-1 bg-card"
-                        onClick={close}
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </PanZoom>
-                ) : (
-                  <ResponsiveContainer height="fill" className="h-full">
-                    {(vw, vh) => children(vw, vh)}
-                  </ResponsiveContainer>
-                )}
-              </div>
-            )}
-          </Fullscreen>
-        </div>
-      </div>
+}: ChartFrameProps) {
+  const ChartBody = ({ full }: { full: boolean }) => {
+    const Wrapper = pannable ? PanZoom : "div";
+    const wrapperProps = pannable
+      ? { className: cn("w-full h-full bg-background", innerClassName) }
+      : { className: cn("w-full h-full", innerClassName) };
 
-      {enablePanZoom ? (
-        <PanZoom className="w-full h-full bg-background">
-          <ResponsiveContainer height={height}>
-            {(vw, vh) => children(vw, vh)}
-          </ResponsiveContainer>
-        </PanZoom>
-      ) : (
-        <ResponsiveContainer height={height}>
+    return (
+      <Wrapper {...wrapperProps}>
+        <ResponsiveContainer height={full ? "fill" : height} className="h-full">
           {(vw, vh) => children(vw, vh)}
         </ResponsiveContainer>
-      )}
+      </Wrapper>
+    );
+  };
+
+  if (!fullscreenable) {
+    // Inline-only
+    return (
+      <div className={cn("pixel-frame bg-card p-3", className)}>
+        {controls ? <div className="mb-3">{controls}</div> : null}
+        <ChartBody full={false} />
+      </div>
+    );
+  }
+
+  // With fullscreen affordance
+  return (
+    <div className={cn("pixel-frame bg-card p-3", className)}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {controls ? <div className="min-w-0">{controls}</div> : <div />}
+        <Fullscreen
+          affordance={({ open }) => <FullScreenButton onClick={open} />}
+        >
+          {() => (
+            <div className="relative w-full h-full">
+              <ChartBody full />
+            </div>
+          )}
+        </Fullscreen>
+      </div>
+
+      {/* Inline */}
+      <ChartBody full={false} />
     </div>
   );
 }
