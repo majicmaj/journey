@@ -574,7 +574,7 @@ function LogDialogInner({
         const row = rows.find((r) => r.id === selectedId) ?? rows[0];
         if (!row) return null;
         return (
-          <div key={row.id} className="grid gap-2">
+          <div key={row.id} className="grid gap-3">
             <div className="flex items-center gap-3">
               <span className="w-28 text-sm">Start</span>
               <div className="pixel-frame w-full">
