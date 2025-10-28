@@ -35,10 +35,8 @@ export default function TimeBlocks({
   // hours labels (every 3h to reduce clutter on small screens)
   const hourTicks = [0, 3, 6, 9, 12, 15, 18, 21, 24];
 
-  // Tooltip state (fixed tooltip like other charts)
+  // Tooltip state (container-relative like HeatmapMatrix)
   type Tip = {
-    screenX: number;
-    screenY: number;
     row: number;
     fromMin: number;
     toMin: number;
@@ -46,6 +44,9 @@ export default function TimeBlocks({
     color?: string;
   } | null;
   const [tip, setTip] = useState<Tip>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+    null
+  );
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const queuedRef = useRef<PointerEvent | null>(null);
@@ -58,9 +59,10 @@ export default function TimeBlocks({
         rafRef.current = null;
         const p = queuedRef.current;
         if (!p) return;
-        setTip((t) =>
-          t ? { ...t, screenX: p.clientX, screenY: p.clientY } : t
-        );
+        const rect = wrapperRef.current?.getBoundingClientRect();
+        const cx = p.clientX - (rect?.left ?? 0);
+        const cy = p.clientY - (rect?.top ?? 0);
+        setMousePos({ x: cx, y: cy });
       });
     }
   };
@@ -83,7 +85,10 @@ export default function TimeBlocks({
         height={height}
         className={cn("bg-card w-full h-auto rounded-md")}
         onPointerMove={handleMove}
-        onPointerLeave={() => setTip(null)}
+        onPointerLeave={() => {
+          setTip(null);
+          setMousePos(null);
+        }}
       >
         <g transform={`translate(${padding.left},${padding.top})`}>
           {/* axes */}
@@ -177,22 +182,24 @@ export default function TimeBlocks({
                     target.setAttribute("stroke", "var(--border)");
                     target.setAttribute("stroke-width", "1");
                     const native = e.nativeEvent as PointerEvent;
-                    const payload: Tip = {
-                      screenX: native.clientX,
-                      screenY: native.clientY,
+                    const rect = wrapperRef.current?.getBoundingClientRect();
+                    const cx = native.clientX - (rect?.left ?? 0);
+                    const cy = native.clientY - (rect?.top ?? 0);
+                    setMousePos({ x: cx, y: cy });
+                    setTip({
                       row: b.row,
                       fromMin: b.fromMin,
                       toMin: b.toMin,
                       ...(b.label != null ? { label: b.label } : {}),
                       ...(b.color != null ? { color: b.color } : {}),
-                    };
-                    setTip(payload);
+                    });
                   }}
                   onPointerLeave={(e) => {
                     const target = e.currentTarget as SVGRectElement;
                     target.removeAttribute("stroke");
                     target.removeAttribute("stroke-width");
                     setTip(null);
+                    setMousePos(null);
                   }}
                 />
               </g>
@@ -201,13 +208,13 @@ export default function TimeBlocks({
         </g>
       </svg>
 
-      {/* Fixed tooltip */}
-      {tip && (
+      {/* Container-relative, bounds-aware tooltip */}
+      {tip && mousePos && (
         <div
-          className="pointer-events-none fixed z-50 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
+          className="pointer-events-none absolute z-10 px-2 py-1 text-xs bg-popover text-popover-foreground border border-border rounded shadow-md"
           style={{
-            left: Math.min(tip.screenX + 16, window.innerWidth - 240),
-            top: Math.min(tip.screenY + 16, window.innerHeight - 120),
+            left: Math.min(mousePos.x + 12, width - 240),
+            top: Math.min(mousePos.y + 12, height - 120),
             whiteSpace: "nowrap",
           }}
           role="status"
