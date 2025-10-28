@@ -807,60 +807,21 @@ export default function Trends() {
       )}
       {/* Time blocks view */}
       {view === "blocks" && (
-        <div className="pixel-frame bg-card p-3">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="opacity-70 text-sm">Layout</span>
-            <div className="pixel-frame">
-              <Select
-                value={blocksLayout}
-                onValueChange={(v: BlocksLayout) => setBlocksLayout(v)}
-              >
-                <SelectTrigger className="w-[160px] bg-card">
-                  <SelectValue placeholder="Layout" />
-                </SelectTrigger>
-                <SelectContent className="pixel-frame">
-                  <SelectItem value="by-day">By day</SelectItem>
-                  <SelectItem value="by-habit">
-                    By habit (median block)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Fullscreen
-              affordance={({ open }) => <FullScreenButton onClick={open} />}
-            >
-              {() => (
-                <PanZoom className="w-full h-full bg-background">
-                  <ResponsiveContainer height="fill" className="h-full">
-                    {(vw, vh) => (
-                      <TimeBlocks
-                        width={vw}
-                        height={vh}
-                        rows={blocksResolved.rows}
-                        rowLabelAt={blocksResolved.rowLabelAt}
-                        blocks={blocksResolved.blocks}
-                      />
-                    )}
-                  </ResponsiveContainer>
-                </PanZoom>
-              )}
-            </Fullscreen>
-          </div>
-
-          <ResponsiveContainer
-            height={() => Math.max(220, blocksResolved.rows * 28)}
-          >
-            {(vw, vh) => (
-              <TimeBlocks
-                width={vw}
-                height={vh}
-                rows={blocksResolved.rows}
-                rowLabelAt={blocksResolved.rowLabelAt}
-                blocks={blocksResolved.blocks}
-              />
-            )}
-          </ResponsiveContainer>
-        </div>
+        <ChartFrame
+          pannable
+          fullscreenable
+          height={(w) => Math.max(220, blocksResolved.rows * 28)}
+        >
+          {(vw, vh) => (
+            <TimeBlocks
+              width={vw}
+              height={vh}
+              rows={blocksResolved.rows}
+              rowLabelAt={blocksResolved.rowLabelAt}
+              blocks={blocksResolved.blocks}
+            />
+          )}
+        </ChartFrame>
       )}
       {/* Hourly heat view */}
       {view === "hours" && (

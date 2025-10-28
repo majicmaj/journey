@@ -22,7 +22,7 @@ const NavButton = ({
 
 function App() {
   return (
-    <div className="font-display max-h-svh overflow-y-auto min-h-svh flex flex-col gap-3">
+    <div className="max-h-svh overflow-y-auto min-h-svh flex flex-col gap-3">
       <main className="flex-1 p-1overflow-y-auto pb-20">
         <Outlet />
       </main>
@@ -67,11 +67,11 @@ function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden grid px-2 fixed inset-x-0 bottom-0 z-50 bg-card text-card-foreground pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      className="md:hidden grid px-2 fixed inset-x-0 bottom-0 z-50 text-card-foreground pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
       role="navigation"
       aria-label="Mobile"
     >
-      <div className="pixel-frame p-2">
+      <div className="pixel-frame p-2 bg-card">
         <div className="mx-auto max-w-md grid grid-cols-3 gap-3 justify-items-center">
           <Item to="/" Icon={Home} label="Day" />
           <Item to="/trends" Icon={Calendar} label="Trends" />

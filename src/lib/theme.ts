@@ -21,6 +21,7 @@ function clearCssVars(keys: string[]) {
 
 export function applyTheme(settings: Settings) {
   const root = document.documentElement;
+  root.classList.add("font-display");
   // Dark mode class
   if (settings.themeDark) root.classList.add("dark");
   else root.classList.remove("dark");
@@ -32,7 +33,10 @@ export function applyTheme(settings: Settings) {
 
   // Pixel font toggle class
   if (settings.pixelFontEnabled === false) root.classList.add("no-pixel-font");
-  else root.classList.remove("no-pixel-font");
+  else {
+    root.classList.remove("no-pixel-font");
+    root.classList.add("font-display");
+  }
 
   // Pixel frame width variable
   const pixelSize =

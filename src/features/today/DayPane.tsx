@@ -57,6 +57,7 @@ function DayPane({
   filterTags: string[];
 }) {
   const settings = useSettings();
+  const pixelFrameEnabled = settings.data?.pixelFrameEnabled ?? false;
   const { habitsQ, entriesQ, summary } = useDaySummary(dayKey);
   const { upsert } = useEntries(dayKey);
   const { create, update } = useHabits();
@@ -369,7 +370,14 @@ function DayPane({
         </Dialog>
       ) : null}
 
-      <div className="border-2 border-border w-full h-px my-2" />
+      <div
+        className="border rounded-md border-border w-full h-px my-2"
+        style={{
+          borderTopWidth: pixelFrameEnabled
+            ? "max(var(--pixel-frame-size), 1px)"
+            : "1px",
+        }}
+      />
 
       <footer className="flex gap-3">
         <div className="pixel-frame flex-1">

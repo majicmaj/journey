@@ -124,6 +124,9 @@
 }
 
 @layer base {
+  :root {
+    @apply font-display;
+  }
   button {
     @apply active:top-0.5;
   }
@@ -131,7 +134,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-display;
+    @apply bg-background text-foreground;
   }
 
   /* When pixel font is disabled globally, override font token used by `font-display` */
