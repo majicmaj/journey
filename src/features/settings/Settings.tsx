@@ -717,39 +717,6 @@ export default function Settings() {
               <ColorRow key={key} keyName={key} label={label} settings={data} />
             ))}
           </div>
-          <div className="flex gap-3 p-3 flex-col sm:flex-row">
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                const next = { ...data, themeVars: {} } as AppSettings;
-                await db.settings.put(next);
-                applyTheme(next);
-                qc.invalidateQueries({ queryKey: ["settings"] });
-              }}
-            >
-              <CloseIcon className="size-8" />
-              Reset custom colors
-            </Button>
-            <Button
-              onClick={async () => {
-                const preset = THEME_PRESETS.find(
-                  (p) => p.id === (data.themePreset ?? "default")
-                );
-                const next = {
-                  ...data,
-                  themeVars:
-                    (data.themeDark ? preset?.varsDark : preset?.varsLight) ??
-                    {},
-                  themeDark: Boolean(preset?.dark ?? data.themeDark),
-                } as AppSettings;
-                await db.settings.put(next);
-                applyTheme(next);
-                qc.invalidateQueries({ queryKey: ["settings"] });
-              }}
-            >
-              Apply preset values
-            </Button>
-          </div>
         </details>
 
         <div className="pixel-frame bg-card text-card-foreground p-3 flex flex-col gap-3">
