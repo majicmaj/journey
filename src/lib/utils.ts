@@ -200,7 +200,6 @@ export const THEME_PRESETS: ThemePreset[] = [
     name: "Shadcn",
     dark: false,
     varsLight: {
-      radius: "0.65rem",
       background: "oklch(1 0 0)",
       foreground: "oklch(0 0 0)",
       card: "oklch(0.97 0 0)",
@@ -211,7 +210,6 @@ export const THEME_PRESETS: ThemePreset[] = [
       border: "oklch(0 0 0 / 10%)",
     },
     varsDark: {
-      radius: "0.65rem",
       background: "oklch(0.145 0 0)",
       foreground: "oklch(0.985 0 0)",
       card: "oklch(0.205 0 0)",
