@@ -16,7 +16,6 @@ import MultiSelect from "@/components/ui/multi-select";
 import { computeDaySummary } from "@/lib/score";
 import type { DailyEntry } from "@/types/habit";
 import LineChart, { type LineSeries } from "./components/LineChart";
-import BarChart from "./components/BarChart";
 import HeatmapMatrix from "./components/HeatmapMatrix";
 import ClockHeatmap from "./components/ClockHeatmap";
 import TimeBlocks, { type TimeBlock } from "./components/TimeBlocks";
@@ -109,7 +108,6 @@ function enumerateDateKeys(fromKey: string, toKey: string): string[] {
 type ViewMode =
   | "trend"
   | "streaks"
-  | "cadence"
   | "weekday"
   | "quantities"
   | "blocks"
@@ -279,67 +277,6 @@ export default function Trends() {
   }, [entriesQ.data]);
 
   // Adherence view removed
-
-  // Weekly cadence bars
-  const weeklyBars = useMemo(() => {
-    const days = enumKeys(from, to);
-    const byWeek = groupByISOWeek(days);
-    const threshold =
-      typeof window !== "undefined" && window.innerWidth <= 640 ? 30 : 90;
-    const compact = days.length >= threshold;
-    function weekMonthAbbr(weekStartStr: string): string | null {
-      const ws = new Date(weekStartStr + "T00:00:00");
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(ws.getTime() + i * 24 * 60 * 60 * 1000);
-        if (d.getDate() === 1) {
-          const mm = d.getMonth();
-          return [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ][mm];
-        }
-      }
-      return null;
-    }
-    const out: Array<{
-      key: string;
-      label: string;
-      value: number;
-      range: { from: string; to: string };
-    }> = [];
-    for (const [weekStart, dks] of byWeek) {
-      const vals: number[] = [];
-      for (const dk of dks) {
-        const { totalScore } = computeDaySummary(
-          dk,
-          activeHabits,
-          entriesByDate.get(dk) ?? []
-        );
-        vals.push(totalScore);
-      }
-      const avg =
-        vals.length === 0
-          ? 0
-          : Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-      out.push({
-        key: weekStart,
-        label: compact ? weekMonthAbbr(weekStart) ?? "" : weekStart.slice(5),
-        value: avg,
-        range: { from: weekStart, to: endOfISOWeek(weekStart) },
-      });
-    }
-    return out.sort((a, b) => (a.key < b.key ? -1 : 1));
-  }, [from, to, activeHabits, entriesByDate]);
 
   // Streak segments per habit
   const streakRows = useMemo(() => {
@@ -602,7 +539,6 @@ export default function Trends() {
               </SelectTrigger>
               <SelectContent className="pixel-frame">
                 <SelectItem value="trend">Trend</SelectItem>
-                <SelectItem value="cadence">Cadence</SelectItem>
                 <SelectItem value="weekday">Weekday</SelectItem>
                 <SelectItem value="streaks">Streaks</SelectItem>
                 <SelectItem value="quantities">Quantities</SelectItem>
@@ -1014,7 +950,8 @@ export default function Trends() {
         <ChartFrame
           pannable
           fullscreenable
-          height={(w) => Math.max(300, Math.min(280, Math.floor(w * 0.4)))}
+          // height={(w) => Math.max(300, Math.min(280, Math.floor(w * 0.4)))}
+          height={(w) => Math.max(260, Math.floor(w * 0.4))}
         >
           {(vw, vh) => (
             <LineChart
@@ -1039,20 +976,11 @@ export default function Trends() {
           )}
         </ChartFrame>
       )}
-      {view === "cadence" && (
-        <ChartFrame
-          pannable
-          fullscreenable
-          height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
-        >
-          {(vw, vh) => <BarChart width={vw} height={vh} bars={weeklyBars} />}
-        </ChartFrame>
-      )}
       {view === "streaks" && (
         <ChartFrame
           pannable
           fullscreenable
-          height={(w) => Math.max(160, Math.min(260, Math.floor(w * 0.35)))}
+          height={(w) => Math.max(260, Math.floor(w * 0.4))}
         >
           {(vw, vh) => (
             <StreakTimeline
@@ -1070,7 +998,7 @@ export default function Trends() {
         <ChartFrame
           pannable
           fullscreenable
-          height={(w) => Math.max(180, Math.min(260, Math.floor(w * 0.35)))}
+          height={(w) => Math.max(260, Math.floor(w * 0.4))}
         >
           {(vw, vh) => {
             const days = enumKeys(from, to);
