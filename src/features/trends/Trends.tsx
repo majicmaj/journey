@@ -118,6 +118,35 @@ type ViewMode =
 type QuantityScope = "per-habit" | "aggregated";
 type BlocksLayout = "by-day" | "by-habit";
 
+// Helper to normalize entry to logs array (handles both new logs array and legacy flat fields)
+function getLogsFromEntry(entry: DailyEntry | undefined): Array<{
+  quantity: number | null;
+  startMinutes: number | null;
+  endMinutes: number | null;
+}> {
+  if (!entry) return [];
+  if (entry.logs && entry.logs.length > 0) {
+    return entry.logs;
+  }
+  // Fallback to legacy flat fields
+  return [
+    {
+      quantity: entry.quantity ?? null,
+      startMinutes: entry.startMinutes ?? null,
+      endMinutes: entry.endMinutes ?? null,
+    },
+  ];
+}
+
+// Helper to sum quantities from all logs in an entry
+function getTotalQuantity(entry: DailyEntry | undefined): number {
+  const logs = getLogsFromEntry(entry);
+  return logs.reduce((sum, log) => {
+    const q = typeof log.quantity === "number" ? log.quantity : null;
+    return sum + (Number.isFinite(q) && q !== null ? q : 0);
+  }, 0);
+}
+
 export default function Trends() {
   const settings = useSettings();
   const dayStart = settings.data?.dayStart ?? "00:00";
@@ -353,8 +382,9 @@ export default function Trends() {
     activeHabits.forEach((h, i) => {
       const byDate = entriesByHabitByDate.get(h.id) ?? new Map();
       const pts = dateKeys.map((dk) => {
-        const q = byDate.get(dk)?.quantity;
-        return { x: dk, y: Number.isFinite(q as number) ? (q as number) : 0 };
+        const entry = byDate.get(dk);
+        const totalQty = getTotalQuantity(entry);
+        return { x: dk, y: totalQty };
       });
       series.push({
         name: h.title,
@@ -370,8 +400,8 @@ export default function Trends() {
       let sum = 0;
       for (let i = 0; i < activeHabits.length; i++) {
         const h = activeHabits[i];
-        const q = entriesByHabitByDate.get(h.id)?.get(dk)?.quantity ?? 0;
-        if (Number.isFinite(q)) sum += q as number;
+        const entry = entriesByHabitByDate.get(h.id)?.get(dk);
+        sum += getTotalQuantity(entry);
       }
       return { x: dk, y: sum };
     });
@@ -387,10 +417,11 @@ export default function Trends() {
   const quantityStacked: StackedPoint[] = useMemo(() => {
     return dateKeys.map((dk) => {
       const segments = activeHabits.map((h, i) => {
-        const q = entriesByHabitByDate.get(h.id)?.get(dk)?.quantity ?? 0;
+        const entry = entriesByHabitByDate.get(h.id)?.get(dk);
+        const totalQty = getTotalQuantity(entry);
         return {
           key: h.id,
-          value: Number.isFinite(q) ? (q as number) : 0,
+          value: totalQty,
           color: habitColorAt(i, h.color),
         };
       });
@@ -411,20 +442,21 @@ export default function Trends() {
       for (let i = 0; i < activeHabits.length; i++) {
         const h = activeHabits[i];
         const e = entriesByHabitByDate.get(h.id)?.get(dk);
-        const s =
-          typeof e?.startMinutes === "number"
-            ? (e!.startMinutes as number)
-            : null;
-        const t =
-          typeof e?.endMinutes === "number" ? (e!.endMinutes as number) : null;
-        if (s != null && t != null && t > s) {
-          blocks.push({
-            row: r,
-            fromMin: s,
-            toMin: t,
-            color: h.color ?? habitColorAt(i),
-            label: `${dk} • ${h.title}`,
-          });
+        const logs = getLogsFromEntry(e);
+        // Add a block for each log that has valid start/end times
+        for (const log of logs) {
+          const s =
+            typeof log.startMinutes === "number" ? log.startMinutes : null;
+          const t = typeof log.endMinutes === "number" ? log.endMinutes : null;
+          if (s != null && t != null && t > s) {
+            blocks.push({
+              row: r,
+              fromMin: s,
+              toMin: t,
+              color: h.color ?? habitColorAt(i),
+              label: `${dk} • ${h.title}`,
+            });
+          }
         }
       }
     });
@@ -451,11 +483,15 @@ export default function Trends() {
       const starts: number[] = [];
       const ends: number[] = [];
       for (const e of entries) {
-        const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
-        const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
-        if (s != null && t != null && t > s) {
-          starts.push(s);
-          ends.push(t);
+        const logs = getLogsFromEntry(e);
+        for (const log of logs) {
+          const s =
+            typeof log.startMinutes === "number" ? log.startMinutes : null;
+          const t = typeof log.endMinutes === "number" ? log.endMinutes : null;
+          if (s != null && t != null && t > s) {
+            starts.push(s);
+            ends.push(t);
+          }
         }
       }
       const ms = median(starts);
@@ -479,6 +515,7 @@ export default function Trends() {
   // ---------- Hourly heat (24 columns) ----------
   const hourlyBins: number[] = useMemo(() => {
     const dayCount = Math.max(1, dateKeys.length);
+
     if (hourMetric === "time") {
       // Percent of days with any overlap in that hour
       const hitsPerHour = new Array(24).fill(0) as number[];
@@ -493,19 +530,24 @@ export default function Trends() {
       for (const [, list] of entriesByDate) {
         const hoursHit = new Set<number>();
         for (const e of list) {
-          const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
-          const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
-          if (s == null || t == null || t <= s) continue;
-          const startH = Math.max(0, Math.floor(s / 60));
-          const endH = Math.min(23, Math.floor((t - 1) / 60));
-          for (let h = startH; h <= endH; h++) {
-            const hStart = h * 60;
-            const hEnd = hStart + 60;
-            const overlap = Math.max(
-              0,
-              Math.min(t, hEnd) - Math.max(s, hStart)
-            );
-            if (overlap > 0) hoursHit.add(h);
+          const logs = getLogsFromEntry(e);
+          for (const log of logs) {
+            const s =
+              typeof log.startMinutes === "number" ? log.startMinutes : null;
+            const t =
+              typeof log.endMinutes === "number" ? log.endMinutes : null;
+            if (s == null || t == null || t <= s) continue;
+            const startH = Math.max(0, Math.floor(s / 60));
+            const endH = Math.min(23, Math.floor((t - 1) / 60));
+            for (let h = startH; h <= endH; h++) {
+              const hStart = h * 60;
+              const hEnd = hStart + 60;
+              const overlap = Math.max(
+                0,
+                Math.min(t, hEnd) - Math.max(s, hStart)
+              );
+              if (overlap > 0) hoursHit.add(h);
+            }
           }
         }
         hoursHit.forEach((h) => (hitsPerHour[h] += 1));
@@ -518,20 +560,26 @@ export default function Trends() {
       const qtyPerHour = new Array(24).fill(0) as number[];
       for (const e of entriesQ.data ?? []) {
         if (!activeHabits.find((h) => h.id === e.habitId)) continue;
-        const q =
-          typeof e.quantity === "number" ? (e.quantity as number) : null;
-        const s = typeof e.startMinutes === "number" ? e.startMinutes : null;
-        const t = typeof e.endMinutes === "number" ? e.endMinutes : null;
-        if (q == null || s == null || t == null || t <= s) continue;
-        const total = t - s;
-        if (total <= 0) continue;
-        const startH = Math.max(0, Math.floor(s / 60));
-        const endH = Math.min(23, Math.floor((t - 1) / 60));
-        for (let h = startH; h <= endH; h++) {
-          const hStart = h * 60;
-          const hEnd = hStart + 60;
-          const overlap = Math.max(0, Math.min(t, hEnd) - Math.max(s, hStart));
-          if (overlap > 0) qtyPerHour[h] += (q * overlap) / total;
+        const logs = getLogsFromEntry(e);
+        for (const log of logs) {
+          const q = typeof log.quantity === "number" ? log.quantity : null;
+          const s =
+            typeof log.startMinutes === "number" ? log.startMinutes : null;
+          const t = typeof log.endMinutes === "number" ? log.endMinutes : null;
+          if (q == null || s == null || t == null || t <= s) continue;
+          const total = t - s;
+          if (total <= 0) continue;
+          const startH = Math.max(0, Math.floor(s / 60));
+          const endH = Math.min(23, Math.floor((t - 1) / 60));
+          for (let h = startH; h <= endH; h++) {
+            const hStart = h * 60;
+            const hEnd = hStart + 60;
+            const overlap = Math.max(
+              0,
+              Math.min(t, hEnd) - Math.max(s, hStart)
+            );
+            if (overlap > 0) qtyPerHour[h] += (q * overlap) / total;
+          }
         }
       }
       // Average per day and normalize to 0..100 by max value across hours

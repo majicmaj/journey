@@ -694,7 +694,7 @@ function HabitRow({
                   <span className="text-xs">{streak}d</span>
                 </div>
               ) : isNew ? (
-                <span className="text-xs text-primary">- 0d</span>
+                <span className="text-xs text-primary"> 0d</span>
               ) : typeof coldStreak !== "undefined" && coldStreak > 0 ? (
                 <div className="flex items-center gap-1 text-chart-2">
                   <IceIcon className="size-4" />
